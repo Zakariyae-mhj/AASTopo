@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZASTopo Pro V12 - Street View المدمج</title>
+    <title>ZASTopo Pro V13 - زر الخروج المحسن</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
@@ -18,7 +18,7 @@
             background: rgba(255, 255, 255, 0.98); padding: 15px;
             border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);
             z-index: 1000; max-height: 92vh; overflow-y: auto;
-            border-right: 5px solid #2ecc71; transition: transform 0.3s ease;
+            border-right: 5px solid #2ecc71;
         }
         h1 { color: #2ecc71; font-size: 24px; margin: 0; text-align: center; font-weight: 800; }
         
@@ -41,10 +41,8 @@
         .excel-btn { background: #217346; } .csv-btn { background: #d35400; } .dxf-btn { background: #e67e22; }
         .import-btn { background: #d35400; color: #fff; }
         .buffer-btn { background: #16a085; color: #fff; }
-        /* زر ستريت فيو الجديد */
-        .street-view-active { background: #f39c12 !important; color: #000 !important; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(243, 156, 18, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(243, 156, 18, 0); } 100% { box-shadow: 0 0 0 0 rgba(243, 156, 18, 0); } }
-
+        .street-view-btn { background: #f1c40f; color: #333; }
+        .go-btn { background: #2980b9; color: #fff; flex: 0 0 40px; }
         .profile-btn { background: #8e44ad; width: 100%; margin-top: 5px; display: none; }
 
         #chart-container { display: none; margin-top: 10px; padding: 10px; background: #fff; border: 1px solid #ddd; border-radius: 4px; }
@@ -63,27 +61,53 @@
         .stat-item { background: #e8f6f3; padding: 8px; margin-top: 10px; border-radius: 6px; font-size: 12px; border: 1px solid #d1f2eb; color: #16a085; }
         .slope-info { font-size: 11px; color: #333; margin-top: 5px; padding: 5px; background: #ecf0f1; border-radius: 4px; text-align: center;}
 
-        /* نافذة Street View العائمة */
+        /* === تحسين نافذة Street View === */
+        /* الخلفية المظلمة (للنقر خارج النافذة) */
+        #sv-overlay {
+            display: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7); /* خلفية سوداء شفافة */
+            z-index: 1999;
+        }
+
+        /* النافذة نفسها */
         #sv-modal {
             display: none;
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 80%; height: 70%; background: #fff; z-index: 2000;
-            box-shadow: 0 0 50px rgba(0,0,0,0.5); border-radius: 8px; overflow: hidden;
-            border: 4px solid #f39c12;
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 85%; height: 80%; background: #fff; z-index: 2000;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8); border-radius: 8px; 
+            border: 2px solid #f39c12;
+            flex-direction: column; /* لضمان بقاء الهيدر في الأعلى */
         }
+
+        /* شريط العنوان وزر الإغلاق */
         #sv-header {
-            background: #333; color: #fff; padding: 10px; display: flex; justify-content: space-between; align-items: center; cursor: move;
+            background: #2c3e50; color: #fff; padding: 10px 15px; 
+            display: flex; justify-content: space-between; align-items: center; 
+            height: 40px; border-bottom: 2px solid #f39c12;
         }
-        #sv-iframe { width: 100%; height: 100%; border: none; }
-        .close-sv { cursor: pointer; color: #e74c3c; font-size: 20px; font-weight: bold; }
+
+        /* زر الإغلاق المحسن */
+        .close-sv-btn { 
+            cursor: pointer; background: #e74c3c; color: white; 
+            padding: 5px 15px; border-radius: 4px; font-weight: bold; 
+            border: 1px solid #c0392b; transition: 0.2s;
+        }
+        .close-sv-btn:hover { background: #c0392b; transform: scale(1.05); }
+
+        #sv-iframe { width: 100%; height: calc(100% - 40px); border: none; display: block; }
     </style>
 </head>
 <body>
 
+    <div id="sv-overlay" onclick="closeStreetView()"></div>
+
     <div id="sv-modal">
         <div id="sv-header">
             <span><i class="fas fa-street-view"></i> Google Street View</span>
-            <span class="close-sv" onclick="closeStreetView()"><i class="fas fa-times-circle"></i> إغلاق</span>
+            <button class="close-sv-btn" onclick="closeStreetView()">
+                <i class="fas fa-times"></i> خروج (X)
+            </button>
         </div>
         <iframe id="sv-iframe" src=""></iframe>
     </div>
@@ -112,27 +136,27 @@
         </div>
 
         <div class="btn-group">
-            <button onclick="locateUser()"><i class="fas fa-crosshairs"></i> موقعي</button>
-            <button class="danger" onclick="clearMap()"><i class="fas fa-trash-alt"></i> مسح الكل</button>
+            <button onclick="locateUser()">📍 موقعي</button>
+            <button class="danger" onclick="clearMap()">🗑️ مسح الكل</button>
         </div>
 
         <h2>📷 استكشاف ميداني</h2>
-        <button id="btn-sv-toggle" style="background:#34495e; color:#fff; width:100%; margin-bottom:10px;" onclick="toggleStreetViewMode()">
+        <button id="btn-sv-toggle" class="street-view-btn" style="width: 100%; margin-bottom:10px;" onclick="toggleStreetViewMode()">
             <i class="fas fa-street-view"></i> تفعيل وضع "Street View" (انقر في الخريطة)
         </button>
 
         <h2>✏️ الرسم والتحليل</h2>
         <div class="btn-group">
             <input type="file" id="file-input" accept=".kml,.gpx" style="display: none;" onchange="loadFile(this)">
-            <button class="import-btn" onclick="document.getElementById('file-input').click()"><i class="fas fa-file-import"></i> استيراد (KML/GPX)</button>
+            <button class="import-btn" onclick="document.getElementById('file-input').click()">📂 استيراد (KML/GPX)</button>
         </div>
 
         <div class="btn-group" style="align-items: center;">
             <input type="number" id="buffer-distance" placeholder="متر" value="50" style="width: 50px;">
-            <button class="buffer-btn" onclick="createBuffer()"><i class="fas fa-circle-notch"></i> نطاق عازل</button>
+            <button class="buffer-btn" onclick="createBuffer()">⭕ نطاق عازل</button>
         </div>
 
-        <button id="btn-profile" class="profile-btn" onclick="generateRealProfile()"><i class="fas fa-mountain"></i> رسم المقطع الطبوغرافي</button>
+        <button id="btn-profile" class="profile-btn" onclick="generateRealProfile()">🏔️ رسم المقطع الطبوغرافي</button>
         
         <div id="chart-container">
             <canvas id="elevationChart"></canvas>
@@ -143,7 +167,7 @@
         </div>
 
         <h2>📥 تصدير البيانات</h2>
-        <button style="background: #2c3e50; width: 100%; margin-bottom: 5px;" onclick="takeScreenshotAndMetadata()"><i class="fas fa-camera"></i> صورة + إحداثيات (ArcGIS)</button>
+        <button style="background: #2c3e50; width: 100%; margin-bottom: 5px;" onclick="takeScreenshotAndMetadata()">📷 تحميل الخريطة + ملف الإحداثيات</button>
 
         <div class="btn-group">
             <button class="dxf-btn" onclick="downloadDXF()">DXF</button>
@@ -155,7 +179,7 @@
             <button class="success" onclick="downloadData('kml')">KML</button>
         </div>
 
-        <div id="stats" class="stat-item">جاهز... (الخريطة الرسمية 🇲🇦)</div>
+        <div id="stats" class="stat-item">جاهز... (الخريطة الكاملة 🇲🇦)</div>
     </div>
 
     <div id="map"></div>
@@ -192,9 +216,9 @@
         }
 
         var map = L.map('map').setView([33.3, -5.4], 6);
-        var snapshoter = L.simpleMapScreenshoter({ hideElementsWithSelectors: ['.leaflet-control-container', '#sidebar', '#coords-bar', '#sv-modal'], mimeType: 'image/jpeg' }).addTo(map);
+        var snapshoter = L.simpleMapScreenshoter({ hideElementsWithSelectors: ['.leaflet-control-container', '#sidebar', '#coords-bar', '#sv-modal', '#sv-overlay'], mimeType: 'image/jpeg' }).addTo(map);
 
-        // === الطبقات (النسخة المغربية الرسمية) ===
+        // === الطبقات (النسخة المغربية) ===
         var googleHybridMA = L.tileLayer('https://{s}.google.com/vt/lyrs=y&gl=MA&hl=ar&x={x}&y={y}&z={z}',{ maxZoom: 22, subdomains:['mt0','mt1','mt2','mt3'], attribution: '© Google Maps (Maroc)' });
         var googleStreetsMA = L.tileLayer('https://{s}.google.com/vt/lyrs=m&gl=MA&hl=ar&x={x}&y={y}&z={z}',{ maxZoom: 22, subdomains:['mt0','mt1','mt2','mt3'], attribution: '© Google Maps (Maroc)' });
         var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 });
@@ -203,10 +227,10 @@
         googleHybridMA.addTo(map);
         L.control.layers(baseMaps).addTo(map);
 
-        var drawnItems = new L.FeatureGroup(); map.addLayer(drawnItems);
+        var drawnItems = new L.FeatureGroup(); 
+        map.addLayer(drawnItems);
         restoreSession();
 
-        // أدوات الرسم مع الممحاة
         var drawControl = new L.Control.Draw({ 
             edit: { featureGroup: drawnItems, remove: true, edit: true }, 
             draw: { polygon: true, rectangle: true, circle: false, marker: { repeatMode: true }, polyline: { shapeOptions: { color: '#8e44ad', weight: 4 } } } 
@@ -218,7 +242,7 @@
         var isStreetViewActive = false;
         var pegmanMarker = null;
 
-        // === 1. وظيفة Street View المدمجة (In-App) ===
+        // === 1. وظائف Street View (المحسنة) ===
         function toggleStreetViewMode() {
             isStreetViewActive = !isStreetViewActive;
             var btn = document.getElementById('btn-sv-toggle');
@@ -234,7 +258,6 @@
             }
         }
 
-        // الاستماع للنقر على الخريطة لتفعيل Street View
         map.on('click', function(e) {
             if (isStreetViewActive) {
                 openStreetViewModal(e.latlng.lat, e.latlng.lng);
@@ -249,23 +272,26 @@
         });
 
         function openStreetViewModal(lat, lng) {
+            document.getElementById('sv-overlay').style.display = 'block'; // إظهار الخلفية المظلمة
             var modal = document.getElementById('sv-modal');
             var iframe = document.getElementById('sv-iframe');
-            // رابط Embed المجاني (يعمل غالباً، إذا فشل قد يتطلب مفتاح API مستقبلاً)
+            
             iframe.src = `https://maps.google.com/maps?q=&layer=c&cbll=${lat},${lng}&cbp=11,0,0,0,0&output=svembed`;
-            modal.style.display = 'block';
+            
+            modal.style.display = 'flex'; // تغيير إلى flex لضبط الهيدر
         }
 
         function closeStreetView() {
-            document.getElementById('sv-modal').style.display = 'none';
-            document.getElementById('sv-iframe').src = "";
+            document.getElementById('sv-overlay').style.display = 'none'; // إخفاء الخلفية
+            document.getElementById('sv-modal').style.display = 'none'; // إخفاء النافذة
+            document.getElementById('sv-iframe').src = ""; // إيقاف التحميل
         }
 
         // === 2. الذهاب إلى (Aller à) ===
         function goToCoordinates() {
             var x = parseFloat(document.getElementById('input-x').value);
             var y = parseFloat(document.getElementById('input-y').value);
-            if (isNaN(x) || isNaN(y)) { alert("أرقام غير صحيحة"); return; }
+            if (isNaN(x) || isNaN(y)) { alert("أدخل أرقاماً صحيحة."); return; }
             if (x > 1000 || y > 1000) { 
                 try {
                     var latlng = proj4(currentZone, "EPSG:4326", [x, y]);

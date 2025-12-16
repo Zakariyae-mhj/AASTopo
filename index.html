@@ -3,31 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ZASTopo Pro - تسجيل الدخول</title>
+    <title>ZASTopo Pro | المنصة المغربية للتحليل الطبوغرافي</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     
     <style>
-        /* نفس تنسيقات الخريطة السابقة تماماً */
         body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4; overflow: hidden; }
         #map { height: 100vh; width: 100%; z-index: 1; }
         
-        /* ... (احتفظ بجميع تنسيقات CSS الخاصة بالشريط الجانبي والأزرار من V14 هنا) ... */
-        /* سأختصر CSS هنا لتوفير المساحة، لكن في ملفك ضع CSS النسخة V14 كاملاً */
-        #sidebar { position: absolute; top: 10px; right: 10px; width: 370px; background: rgba(255, 255, 255, 0.98); padding: 15px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); z-index: 2000; max-height: 90vh; overflow-y: auto; border-right: 5px solid #2ecc71; transition: transform 0.3s ease-in-out; }
-        @media (max-width: 768px) { #sidebar { position: fixed; top: 0; right: 0; bottom: 0; width: 85%; border-radius: 0; transform: translateX(100%); } #sidebar.active { transform: translateX(0); } }
-        /* ... باقي التنسيقات ... */
+        /* === تصميم الشريط الجانبي (Responsive) === */
+        #sidebar {
+            position: absolute; top: 10px; right: 10px; width: 370px;
+            background: rgba(255, 255, 255, 0.98); padding: 15px;
+            border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            z-index: 2000; max-height: 90vh; overflow-y: auto;
+            border-right: 5px solid #2ecc71;
+            transition: transform 0.3s ease-in-out;
+        }
 
-        /* ========================================= */
-        /* 🔐 تصميم شاشة تسجيل الدخول (جديد) */
-        /* ========================================= */
+        /* تحسينات للهاتف */
+        @media (max-width: 768px) {
+            #sidebar {
+                position: fixed; top: 0; right: 0; bottom: 0; width: 85%;
+                border-radius: 0; transform: translateX(100%);
+                max-height: 100vh;
+            }
+            #sidebar.active { transform: translateX(0); }
+            .leaflet-control-container { display: inherit; } 
+        }
+
+        /* زر القائمة (للموبايل) */
+        #menu-toggle-btn {
+            display: none; position: absolute; top: 15px; right: 15px; z-index: 1500;
+            background: #2ecc71; color: white; border: none;
+            padding: 10px 15px; border-radius: 8px; font-size: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2); cursor: pointer;
+        }
+        @media (max-width: 768px) { #menu-toggle-btn { display: block; } }
+
+        .close-sidebar-btn {
+            display: none; background: none; border: none; color: #e74c3c; font-size: 22px; cursor: pointer;
+            position: absolute; left: 15px; top: 15px;
+        }
+        @media (max-width: 768px) { .close-sidebar-btn { display: block; } }
+
+        /* تنسيقات النصوص والأزرار */
+        h1 { color: #2ecc71; font-size: 22px; margin: 0; text-align: center; font-weight: 800; margin-top: 10px; }
+        .header-info { text-align: center; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .dev-name { font-size: 14px; font-weight: bold; color: #2c3e50; }
+        .lab-info { font-size: 11px; color: #7f8c8d; font-weight: 500; }
+        .univ-info { font-size: 11px; color: #2980b9; font-weight: 700; }
+        h2 { font-size: 13px; color: #34495e; margin: 12px 0 5px 0; font-weight: bold; border-right: 3px solid #3498db; padding-right: 8px; }
+        
+        .btn-group { display: flex; gap: 5px; margin-bottom: 5px; flex-wrap: wrap; }
+        button { flex: 1; padding: 10px; border: none; border-radius: 6px; cursor: pointer; background-color: #3498db; color: white; font-weight: 600; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .danger { background: #e74c3c; } .success { background: #27ae60; } .dark { background: #34495e; }
+        .excel-btn { background: #217346; } .csv-btn { background: #d35400; } .dxf-btn { background: #e67e22; }
+        .street-view-btn { background: #f1c40f; color: #333; }
+        .go-btn { background: #2980b9; color: #fff; flex: 0 0 40px; }
+        .profile-btn { background: #8e44ad; width: 100%; margin-top: 5px; display: none; }
+
+        #chart-container { display: none; margin-top: 10px; padding: 10px; background: #fff; border: 1px solid #ddd; border-radius: 4px; }
+        canvas { width: 100% !important; height: 150px !important; }
+        select, input { width: 100%; padding: 8px; margin-bottom: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
+        .coord-input { width: 45%; }
+
+        #coords-bar { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(44, 62, 80, 0.95); color: #ecf0f1; padding: 5px 10px; font-size: 10px; z-index: 1000; display: flex; justify-content: space-between; direction: ltr; font-family: monospace; }
+        .stat-item { background: #e8f6f3; padding: 8px; margin-top: 10px; border-radius: 6px; font-size: 12px; border: 1px solid #d1f2eb; color: #16a085; }
+
+        /* === نافذة Street View (Embed) === */
+        #sv-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2999; }
+        #sv-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; height: 80%; background: #fff; z-index: 3000; border-radius: 8px; flex-direction: column; }
+        #sv-header { background: #2c3e50; color: #fff; padding: 10px; display: flex; justify-content: space-between; height: 40px; align-items: center; }
+        #sv-iframe { width: 100%; height: calc(100% - 40px); border: none; }
+        .close-sv-btn { background: #e74c3c; color: white; padding: 5px 10px; border-radius: 4px; font-size: 12px; }
+
+        /* === شاشة تسجيل الدخول (V15 Auth) === */
         #auth-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: linear-gradient(135deg, #2c3e50, #000000);
-            z-index: 9999; /* فوق كل شيء */
-            display: flex; justify-content: center; align-items: center;
+            z-index: 9999; display: flex; justify-content: center; align-items: center;
             flex-direction: column; color: white;
         }
         .auth-box {
@@ -36,23 +93,12 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
         .auth-box h2 { color: #2ecc71; margin-bottom: 20px; }
-        .auth-input {
-            width: 100%; padding: 12px; margin-bottom: 15px;
-            border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box;
-        }
-        .auth-btn {
-            width: 100%; padding: 12px; border: none; border-radius: 5px;
-            background: #2ecc71; color: white; font-weight: bold; cursor: pointer;
-            font-size: 16px; margin-bottom: 10px;
-        }
+        .auth-input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        .auth-btn { width: 100%; padding: 12px; border: none; border-radius: 5px; background: #2ecc71; color: white; font-weight: bold; cursor: pointer; font-size: 16px; margin-bottom: 10px; }
         .auth-btn:hover { background: #27ae60; }
         .switch-btn { background: none; color: #3498db; text-decoration: underline; cursor: pointer; border: none; }
         #auth-error { color: red; font-size: 12px; margin-bottom: 10px; display: none; }
-        
-        /* زر تسجيل الخروج داخل التطبيق */
-        #logout-btn {
-            background: #c0392b; color: white; margin-top: 20px; width: 100%;
-        }
+        #logout-btn { background: #c0392b; color: white; margin-top: 20px; width: 100%; }
     </style>
 </head>
 <body>
@@ -60,65 +106,144 @@
     <div id="auth-overlay">
         <div class="auth-box">
             <h1 style="color:#2ecc71; margin:0;">ZASTopo Pro 🇲🇦</h1>
-            <p style="color:#777; margin-bottom:20px;">منصة التحليل الطبوغرافي الاحترافية</p>
-            
+            <p style="color:#777; margin-bottom:20px;">المنصة الرسمية للتحليل الطبوغرافي</p>
             <h2 id="auth-title">تسجيل الدخول</h2>
             <p id="auth-error"></p>
-            
             <input type="email" id="email" class="auth-input" placeholder="البريد الإلكتروني">
             <input type="password" id="password" class="auth-input" placeholder="كلمة المرور">
-            
             <button class="auth-btn" onclick="handleAuth()" id="submit-btn">دخول</button>
-            
-            <p>
-                <button class="switch-btn" onclick="toggleAuthMode()" id="toggle-msg">ليس لديك حساب؟ إنشاء حساب جديد</button>
-            </p>
+            <p><button class="switch-btn" onclick="toggleAuthMode()" id="toggle-msg">ليس لديك حساب؟ إنشاء حساب جديد</button></p>
         </div>
     </div>
 
+    <button id="menu-toggle-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+
+    <div id="sv-overlay" onclick="closeStreetView()"></div>
+    <div id="sv-modal">
+        <div id="sv-header">
+            <span>Google Street View</span>
+            <button class="close-sv-btn" onclick="closeStreetView()"><i class="fas fa-times"></i> إغلاق</button>
+        </div>
+        <iframe id="sv-iframe" src=""></iframe>
+    </div>
+
     <div id="sidebar">
+        <button class="close-sidebar-btn" onclick="toggleSidebar()"><i class="fas fa-times"></i></button>
         <h1>ZASTopo Pro</h1>
-        <button id="logout-btn" onclick="logoutUser()">
-            <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
+        <div class="header-info">
+            <div class="dev-name">تطوير: زكرياء المحجوبي</div>
+            <div class="lab-info">مختبر دينامية الأوساط الجافة والتهيئة الجهوية</div>
+            <div class="univ-info">شعبة الجغرافيا، جامعة محمد الأول - وجدة</div>
+        </div>
+
+        <h2>⚙️ الإعدادات</h2>
+        <select id="lambert-zone" onchange="updateProjection()">
+            <option value="EPSG:26191" selected>Lambert Zone I (North)</option>
+            <option value="EPSG:26192">Lambert Zone II (Center)</option>
+            <option value="EPSG:26194">Lambert Zone III (South)</option>
+            <option value="EPSG:26195">Lambert Zone IV (Deep South)</option>
+        </select>
+        <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+            <input type="text" id="input-x" class="coord-input" placeholder="X / Lat">
+            <input type="text" id="input-y" class="coord-input" placeholder="Y / Lng">
+            <button class="go-btn" onclick="goToCoordinates()"><i class="fas fa-search"></i></button>
+        </div>
+        <div class="btn-group">
+            <button onclick="locateUser()"><i class="fas fa-location-arrow"></i> موقعي</button>
+            <button class="danger" onclick="clearMap()"><i class="fas fa-trash"></i> مسح</button>
+        </div>
+
+        <h2>📷 أدوات</h2>
+        <button id="btn-sv-toggle" class="street-view-btn" style="width:100%; margin-bottom:10px;" onclick="toggleStreetViewMode()">
+            <i class="fas fa-street-view"></i> تفعيل Street View
         </button>
+
+        <h2>✏️ الرسم</h2>
+        <div class="btn-group">
+            <input type="file" id="file-input" accept=".kml,.gpx" style="display: none;" onchange="loadFile(this)">
+            <button class="import-btn" onclick="document.getElementById('file-input').click()">📂 استيراد (KML/GPX)</button>
+        </div>
+        <div class="btn-group" style="align-items: center;">
+            <input type="number" id="buffer-distance" placeholder="متر" value="50" style="width: 60px;">
+            <button class="buffer-btn" onclick="createBuffer()">⭕ نطاق عازل</button>
+        </div>
+        <button id="btn-profile" class="profile-btn" onclick="generateRealProfile()">🏔️ المقطع الطبوغرافي</button>
+        
+        <div id="chart-container">
+            <canvas id="elevationChart"></canvas>
+            <div id="slope-stats" class="slope-info"></div>
+            <div style="text-align:center; margin-top:5px;">
+                <button class="dark" style="width:auto; padding:5px 15px;" onclick="downloadProfileImage()">تحميل</button>
+            </div>
+        </div>
+
+        <h2>📥 تصدير</h2>
+        <button style="background: #2c3e50; width: 100%; margin-bottom: 5px;" onclick="takeScreenshotAndMetadata()">📷 صورة + إحداثيات</button>
+        <div class="btn-group">
+            <button class="dxf-btn" onclick="downloadDXF()">DXF</button>
+            <button class="excel-btn" onclick="downloadExcel()">Excel</button>
+            <button class="csv-btn" onclick="downloadCSV()">CSV</button>
+        </div>
+        <div class="btn-group">
+            <button class="success" onclick="downloadData('geojson')">GeoJSON</button>
+            <button class="success" onclick="downloadData('kml')">KML</button>
+        </div>
+        
+        <button id="logout-btn" onclick="logoutUser()"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
+        <div id="stats" class="stat-item">جاهز...</div>
     </div>
 
     <div id="map"></div>
+    <div id="coords-bar">
+        <span id="metric-coords">X: 0 | Y: 0</span>
+        <span id="geo-coords">Lat: 0 | Lng: 0</span>
+    </div>
+
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-analytics-compat.js"></script>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
+    <script src="https://unpkg.com/@mapbox/togeojson@0.16.0/togeojson.js"></script>
+    <script src="https://unpkg.com/leaflet-geometryutil"></script>
+    <script src="https://unpkg.com/leaflet-simple-map-screenshoter"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+
     <script>
         // ============================================
-        // 1. إعدادات Firebase (استبدل القيم أدناه بالخاصة بك)
+        // 🛑🛑 إعدادات Firebase الخاصة بك 🛑🛑
         // ============================================
         const firebaseConfig = {
-            apiKey: "AIzaSyDxxxxxxxxxxxxxxxxxxxxxxxxxxxx", // 🔴 ضع مفتاحك هنا
-            authDomain: "zastopo-xxxxx.firebaseapp.com", // 🔴 ضع الدومين هنا
-            projectId: "zastopo-xxxxx",
-            storageBucket: "zastopo-xxxxx.appspot.com",
-            messagingSenderId: "xxxxxxxxxxxx",
-            appId: "1:xxxxxxxxxxxx:web:xxxxxxxxxxxx"
+          apiKey: "AIzaSyBHjDSoCDrZAh9KIW1LI4H6XxIdeB8YnFw",
+          authDomain: "rusle-462022.firebaseapp.com",
+          projectId: "rusle-462022",
+          storageBucket: "rusle-462022.firebasestorage.app",
+          messagingSenderId: "106974487623",
+          appId: "1:106974487623:web:f42e4cf7fd2e2218947d62",
+          measurementId: "G-YVJL1T2VXM"
         };
+        // ============================================
 
         // تهيئة Firebase
-        firebase.initializeApp(firebaseConfig);
+        try {
+            firebase.initializeApp(firebaseConfig);
+            const analytics = firebase.analytics(); // تفعيل التحليلات
+        } catch(e) {
+            console.error("Firebase Config Error:", e);
+        }
         const auth = firebase.auth();
 
-        // ============================================
-        // 2. منطق تسجيل الدخول
-        // ============================================
+        // منطق تسجيل الدخول
         let isLoginMode = true;
-
-        // التحقق من حالة المستخدم عند فتح الموقع
         auth.onAuthStateChanged((user) => {
             if (user) {
-                // المستخدم مسجل دخوله
-                document.getElementById('auth-overlay').style.display = 'none'; // إخفاء شاشة القفل
-                console.log("Welcome " + user.email);
+                document.getElementById('auth-overlay').style.display = 'none';
             } else {
-                // المستخدم غير مسجل
-                document.getElementById('auth-overlay').style.display = 'flex'; // إظهار شاشة القفل
+                document.getElementById('auth-overlay').style.display = 'flex';
             }
         });
 
@@ -148,38 +273,209 @@
             }
 
             if (isLoginMode) {
-                // تسجيل الدخول
-                auth.signInWithEmailAndPassword(email, pass)
-                    .catch((error) => {
-                        errorMsg.innerText = "خطأ: البريد أو كلمة المرور غير صحيحة";
-                        errorMsg.style.display = 'block';
-                    });
+                auth.signInWithEmailAndPassword(email, pass).catch((error) => {
+                    errorMsg.innerText = "خطأ: تأكد من البريد أو كلمة المرور";
+                    errorMsg.style.display = 'block';
+                });
             } else {
-                // إنشاء حساب
-                auth.createUserWithEmailAndPassword(email, pass)
-                    .then((userCredential) => {
-                        alert("تم إنشاء الحساب بنجاح! مرحباً بك.");
-                        // سيتم الدخول تلقائياً
-                    })
-                    .catch((error) => {
-                        errorMsg.innerText = "خطأ: " + error.message;
-                        errorMsg.style.display = 'block';
-                    });
+                auth.createUserWithEmailAndPassword(email, pass).then(() => {
+                    alert("تم إنشاء الحساب بنجاح!");
+                }).catch((error) => {
+                    errorMsg.innerText = "خطأ: " + error.message;
+                    errorMsg.style.display = 'block';
+                });
             }
         }
 
         function logoutUser() {
-            auth.signOut().then(() => {
-                alert("تم تسجيل الخروج");
-                location.reload(); // إعادة تحميل الصفحة لتظهر شاشة القفل
-            });
+            auth.signOut().then(() => { location.reload(); });
         }
 
         // ============================================
-        // 3. كود الخريطة وباقي التطبيق (V14)
+        // كود الخريطة والوظائف (V14 Logic)
         // ============================================
-        // ... (ضع هنا كل كود JavaScript السابق الخاص بـ Leaflet و ZASTopo) ...
-        // ...
+        proj4.defs("EPSG:26191", "+proj=lcc +lat_1=33.3 +lat_0=33.3 +lon_0=-5.4 +k_0=0.999625769 +x_0=500000 +y_0=300000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs");
+        proj4.defs("EPSG:26192", "+proj=lcc +lat_1=29.7 +lat_0=29.7 +lon_0=-5.4 +k_0=0.999615596 +x_0=500000 +y_0=300000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs");
+        proj4.defs("EPSG:26194", "+proj=lcc +lat_1=26.1 +lat_0=26.1 +lon_0=-5.4 +k_0=0.999616304 +x_0=500000 +y_0=400000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs");
+        proj4.defs("EPSG:26195", "+proj=lcc +lat_1=22.5 +lat_0=22.5 +lon_0=-5.4 +k_0=0.999616437 +x_0=500000 +y_0=500000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs");
+
+        var currentZone="EPSG:26191", currentZoneName="Lambert I";
+        function updateProjection(){
+            var s=document.getElementById('lambert-zone');
+            currentZone=s.value; currentZoneName=s.options[s.selectedIndex].text.split('(')[0].trim();
+            document.getElementById('stats').innerHTML="تم التغيير: "+currentZoneName;
+        }
+
+        var map = L.map('map', {zoomControl: false}).setView([33.3, -5.4], 6);
+        L.control.zoom({position: 'topleft'}).addTo(map);
+        var snapshoter = L.simpleMapScreenshoter({ hideElementsWithSelectors: ['.leaflet-control-container', '#sidebar', '#coords-bar', '#sv-modal', '#sv-overlay', '#menu-toggle-btn'], mimeType: 'image/jpeg' }).addTo(map);
+
+        var googleHybridMA = L.tileLayer('https://{s}.google.com/vt/lyrs=y&gl=MA&hl=ar&x={x}&y={y}&z={z}',{ maxZoom: 22, subdomains:['mt0','mt1','mt2','mt3'], attribution: 'Google Maps' });
+        var googleStreetsMA = L.tileLayer('https://{s}.google.com/vt/lyrs=m&gl=MA&hl=ar&x={x}&y={y}&z={z}',{ maxZoom: 22, subdomains:['mt0','mt1','mt2','mt3'], attribution: 'Google Maps' });
+        var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 });
+        var baseMaps = { "صور جوية": googleHybridMA, "خريطة طرقية": googleStreetsMA, "OSM": osm };
+        googleHybridMA.addTo(map);
+        L.control.layers(baseMaps, null, {position: 'bottomleft'}).addTo(map);
+
+        var drawnItems = new L.FeatureGroup(); map.addLayer(drawnItems);
+        var drawControl = new L.Control.Draw({ edit: { featureGroup: drawnItems, remove: true }, draw: { polygon: true, rectangle: true, circle: false, marker: { repeatMode: true }, polyline: { shapeOptions: { color: '#8e44ad', weight: 4 } } } });
+        map.addControl(drawControl);
+
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
+        map.on('click', function() { if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('active'); });
+
+        var selectedPolyline=null, lastSelectedLayer=null, isStreetViewActive=false, pegmanMarker=null;
+        function toggleStreetViewMode() {
+            isStreetViewActive = !isStreetViewActive;
+            var btn = document.getElementById('btn-sv-toggle');
+            if (isStreetViewActive) {
+                btn.style.background = '#f39c12'; btn.style.color = '#000';
+                btn.innerHTML = '<i class="fas fa-crosshairs"></i> انقر في الخريطة الآن';
+                if(window.innerWidth <= 768) toggleSidebar();
+            } else {
+                btn.style.background = '#34495e'; btn.style.color = '#fff';
+                btn.innerHTML = '<i class="fas fa-street-view"></i> تفعيل Street View';
+                if(pegmanMarker) map.removeLayer(pegmanMarker);
+            }
+        }
+        map.on('click', function(e) {
+            if (isStreetViewActive) {
+                openStreetViewModal(e.latlng.lat, e.latlng.lng);
+                if(pegmanMarker) map.removeLayer(pegmanMarker);
+                pegmanMarker = L.marker(e.latlng).addTo(map);
+                toggleStreetViewMode();
+            }
+        });
+        function openStreetViewModal(lat, lng) {
+            document.getElementById('sv-overlay').style.display = 'block';
+            document.getElementById('sv-modal').style.display = 'flex';
+            document.getElementById('sv-iframe').src = `https://maps.google.com/maps?q=&layer=c&cbll=${lat},${lng}&cbp=11,0,0,0,0&output=svembed`;
+        }
+        function closeStreetView() {
+            document.getElementById('sv-overlay').style.display = 'none';
+            document.getElementById('sv-modal').style.display = 'none';
+            document.getElementById('sv-iframe').src = "";
+        }
+        function goToCoordinates() {
+            var x = parseFloat(document.getElementById('input-x').value), y = parseFloat(document.getElementById('input-y').value);
+            if (isNaN(x) || isNaN(y)) return alert("خطأ في الأرقام");
+            if (x > 1000 || y > 1000) { try { var l=proj4(currentZone,"EPSG:4326",[x,y]); map.setView([l[1],l[0]],16); L.marker([l[1],l[0]]).addTo(map); } catch(e){alert("خطأ تحويل");} }
+            else { map.setView([x,y],16); L.marker([x,y]).addTo(map); }
+            if(window.innerWidth <= 768) toggleSidebar();
+        }
+        map.on(L.Draw.Event.CREATED, function(e) { drawnItems.addLayer(e.layer); handleSelection(e.layer, e.layerType); });
+        map.on(L.Draw.Event.DELETED, function() { selectedPolyline=null; lastSelectedLayer=null; document.getElementById('btn-profile').style.display='none'; document.getElementById('stats').innerHTML="تم الحذف"; });
+        drawnItems.on('click', function(e) { handleSelection(e.layer, (e.layer instanceof L.Polygon)?'polygon':(e.layer instanceof L.Polyline)?'polyline':'marker'); });
+        function handleSelection(l, t) {
+            lastSelectedLayer=l; calcStats(l,t);
+            if(l.setStyle) { var c=l.options.color; l.setStyle({color:'#f1c40f'}); setTimeout(()=>l.setStyle({color:c}),500); }
+            if(t==='polyline' && !(l instanceof L.Polygon)) { selectedPolyline=l; document.getElementById('btn-profile').style.display='block'; }
+            else document.getElementById('btn-profile').style.display='none';
+        }
+        async function generateRealProfile() {
+            if(!selectedPolyline) return;
+            document.getElementById('stats').innerHTML="جاري التحليل...";
+            var raw=selectedPolyline.getLatLngs(); if(Array.isArray(raw[0]) && !raw[0].lat) raw=raw.flat();
+            var total=0, dists=[0]; for(var i=0; i<raw.length-1; i++) { total+=raw[i].distanceTo(raw[i+1]); dists.push(total); }
+            var num=100, step=total/(num-1), sampled=[];
+            for(var k=0; k<num; k++) {
+                var target=k*step;
+                for(var i=0; i<dists.length-1; i++) {
+                    if(target>=dists[i] && target<=dists[i+1]) {
+                        var len=dists[i+1]-dists[i]; if(len==0){sampled.push(raw[i]);break;}
+                        var r=(target-dists[i])/len;
+                        sampled.push(L.latLng(raw[i].lat+(raw[i+1].lat-raw[i].lat)*r, raw[i].lng+(raw[i+1].lng-raw[i].lng)*r)); break;
+                    }
+                }
+            }
+            var lats=sampled.map(l=>l.lat.toFixed(5)), lngs=sampled.map(l=>l.lng.toFixed(5));
+            try {
+                var res=await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lats}&longitude=${lngs}`);
+                var data=await res.json();
+                if(data.elevation) { drawChart(data.elevation, sampled); calcSlope(data.elevation, total); document.getElementById('stats').innerHTML="تم الرسم"; }
+            } catch(e) { document.getElementById('stats').innerHTML="خطأ اتصال"; }
+        }
+        function calcSlope(e, d) {
+            var min=Math.min(...e), max=Math.max(...e), diff=max-min, pct=(diff/d)*100, deg=Math.atan(diff/d)*(180/Math.PI);
+            document.getElementById('slope-stats').innerHTML=`انحدار: <b>${pct.toFixed(1)}%</b> | Min: ${min}m | Max: ${max}m`;
+        }
+        var ch=null;
+        function drawChart(e, ll) {
+            document.getElementById('chart-container').style.display='block';
+            var ctx=document.getElementById('elevationChart').getContext('2d'), d=[0], t=0;
+            for(var i=0;i<ll.length-1;i++){t+=ll[i].distanceTo(ll[i+1]);d.push((t/1000).toFixed(2));}
+            if(ch) ch.destroy();
+            ch=new Chart(ctx,{type:'line',data:{labels:d,datasets:[{label:'متر',data:e,borderColor:'#8e44ad',backgroundColor:'rgba(142,68,173,0.3)',fill:true,pointRadius:0}]},options:{responsive:true,scales:{x:{display:true},y:{display:true}}}});
+        }
+        function createBuffer() {
+            if(!lastSelectedLayer) return alert("حدد عنصراً");
+            var d=parseFloat(document.getElementById('buffer-distance').value);
+            try { drawnItems.addLayer(L.geoJSON(turf.buffer(lastSelectedLayer.toGeoJSON(), d/1000, {units:'kilometers'}),{style:{color:'#16a085',dashArray:'5,5'}})); document.getElementById('stats').innerHTML="تم الإنشاء"; } catch(e){alert("خطأ");}
+        }
+        function loadFile(i) {
+            if(i.files[0]) {
+                var r=new FileReader();
+                r.onload=function(e) {
+                    try {
+                        var p=new DOMParser(), d=p.parseFromString(e.target.result,"text/xml");
+                        var g=i.files[0].name.toLowerCase().endsWith('.gpx')?toGeoJSON.gpx(d):toGeoJSON.kml(d);
+                        var l=L.geoJSON(g,{style:{color:"#d35400",weight:4},pointToLayer:(f,ll)=>L.marker(ll),onEachFeature:(f,l)=>drawnItems.addLayer(l)});
+                        if(drawnItems.getLayers().length>0) { map.fitBounds(drawnItems.getBounds()); document.getElementById('stats').innerHTML="تم الاستيراد"; }
+                        if(window.innerWidth<=768) toggleSidebar();
+                    } catch(x){alert("ملف غير صالح");}
+                }; r.readAsText(i.files[0]);
+            }
+        }
+        function downloadDXF(){
+            if(!drawnItems.getLayers().length) return alert("فارغ");
+            let d="0\nSECTION\n2\nHEADER\n9\n$ACADVER\n1\nAC1009\n0\nENDSEC\n0\nSECTION\n2\nENTITIES\n";
+            drawnItems.eachLayer(l=>{
+                if(l.feature && l.feature.geometry.type==='GeometryCollection') return;
+                if(l instanceof L.Marker) { try{let p=proj4("EPSG:4326",currentZone,[l.getLatLng().lng,l.getLatLng().lat]); d+=`0\nPOINT\n8\nPoints\n10\n${p[0]}\n20\n${p[1]}\n30\n0.0\n`;}catch(e){} }
+                else if(l instanceof L.Polyline||l instanceof L.Polygon) {
+                    let ll=l.getLatLngs(); if(Array.isArray(ll[0])&&!ll[0].lat) ll=ll.flat();
+                    d+=`0\nLWPOLYLINE\n8\nPolygons\n90\n${ll.length}\n70\n${(l instanceof L.Polygon?1:0)}\n`;
+                    ll.forEach(p=>{let c=proj4("EPSG:4326",currentZone,[p.lng,p.lat]); d+=`10\n${c[0]}\n20\n${c[1]}\n`;});
+                }
+            });
+            d+="0\nENDSEC\n0\nEOF"; downloadFile("zastopo.dxf",d,"application/dxf");
+        }
+        function downloadProfileImage(){var a=document.createElement('a');a.download='profile.png';a.href=document.getElementById('elevationChart').toDataURL();a.click();}
+        function calcStats(l,t){ if(t==='polyline'){var d=0,ll=l.getLatLngs();for(var i=0;i<ll.length-1;i++)d+=ll[i].distanceTo(ll[i+1]);document.getElementById('stats').innerHTML=`📏 ${(d/1000).toFixed(3)} كم`;} else if(t==='polygon') document.getElementById('stats').innerHTML=`📐 ${(L.GeometryUtil.geodesicArea(l.getLatLngs()[0])/10000).toFixed(4)} هكتار`; else document.getElementById('stats').innerHTML="📍 عنصر"; }
+        map.on('mousemove',e=>{ try{var p=proj4("EPSG:4326",currentZone,[e.latlng.lng,e.latlng.lat]); document.getElementById('metric-coords').innerText=`X:${p[0].toFixed(0)} Y:${p[1].toFixed(0)}`; document.getElementById('geo-coords').innerText=`Lat:${e.latlng.lat.toFixed(5)} Lng:${e.latlng.lng.toFixed(5)}`;}catch(x){} });
+        function downloadFile(n,c,t){var b=new Blob([c],{type:t}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=n;a.click();}
+        function downloadData(f){var d=drawnItems.toGeoJSON(); if(!d.features.length)return alert("فارغ"); downloadFile("data."+f, f==='geojson'?JSON.stringify(d):toKML(d), f==='geojson'?"application/json":"application/xml"); }
+        function toKML(g){return `<?xml version="1.0"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document>${g.features.map(f=>`<Placemark>${f.geometry.type==="Point"?`<Point><coordinates>${f.geometry.coordinates.join(",")}</coordinates></Point>`:`<LineString><coordinates>${f.geometry.coordinates.map(c=>c.join(",")).join(" ")}</coordinates></LineString>`}</Placemark>`).join("")}</Document></kml>`;}
+        function downloadExcel() {
+            var data = [];
+            drawnItems.eachLayer(l => {
+                if (l.feature && l.feature.geometry.type === 'GeometryCollection') return;
+                var s = { Type: "Unknown" };
+                if (l instanceof L.Marker) { s.Type="Point"; let p=proj4("EPSG:4326", currentZone, [l.getLatLng().lng, l.getLatLng().lat]); s.X=p[0].toFixed(2); s.Y=p[1].toFixed(2); }
+                else if (l instanceof L.Polygon) { s.Type="Polygon"; s.Area=(L.GeometryUtil.geodesicArea(l.getLatLngs()[0])/10000).toFixed(4)+" Ha"; }
+                else if (l instanceof L.Polyline) { var d=0, ll=l.getLatLngs(); for(var i=0;i<ll.length-1;i++) d+=ll[i].distanceTo(ll[i+1]); s.Type="Line"; s.Length=(d/1000).toFixed(3)+" KM"; }
+                data.push(s);
+            });
+            if(!data.length) return alert("فارغ");
+            var w=XLSX.utils.json_to_sheet(data), b=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(b,w,"Data"); XLSX.writeFile(b,"zastopo.xlsx");
+        }
+        function downloadCSV() { 
+            var data = []; 
+            drawnItems.eachLayer(l => { 
+                var s = {Type: (l instanceof L.Marker)?"Point":(l instanceof L.Polygon)?"Polygon":"Line"}; 
+                if(l instanceof L.Marker) { let p=proj4("EPSG:4326",currentZone,[l.getLatLng().lng,l.getLatLng().lat]); s.X=p[0].toFixed(2); s.Y=p[1].toFixed(2); }
+                data.push(s); 
+            });
+            if(!data.length) return alert("فارغ");
+            var c=XLSX.utils.sheet_to_csv(XLSX.utils.json_to_sheet(data)); downloadFile("zastopo.csv",c,"text/csv"); 
+        }
+        function takeScreenshotAndMetadata(){
+            var b=map.getBounds(), m=`TL: ${b.getNorthEast().lat}, ${b.getSouthWest().lng}\nBR: ${b.getSouthWest().lat}, ${b.getNorthEast().lng}`;
+            downloadFile("meta.txt",m,"text/plain");
+            setTimeout(()=>snapshoter.takeScreen('image').then(i=>{var a=document.createElement('a'); a.download="map.jpg"; a.href=i; a.click();}),500);
+        }
+        function clearMap() { drawnItems.clearLayers(); selectedPolyline=null; lastSelectedLayer=null; document.getElementById('btn-profile').style.display='none'; document.getElementById('chart-container').style.display='none'; document.getElementById('stats').innerHTML="تم المسح"; }
+        function locateUser() { map.locate({setView:true, maxZoom:15}); if(window.innerWidth<=768) toggleSidebar(); }
     </script>
 </body>
 </html>

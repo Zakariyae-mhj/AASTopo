@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZASTopo Pro V10 - النسخة الشاملة</title>
+    <title>ZASTopo Pro V11 - النسخة المغربية الكاملة</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
@@ -92,7 +92,7 @@
         </div>
 
         <h2>✏️ الرسم والتحليل</h2>
-        <p style="font-size:10px; color:#666;">* استخدم أزرار "Edit" بالأسفل للتعديل أو <b>الممحاة (Gomme)</b> للحذف.</p>
+        <p style="font-size:10px; color:#666;">* استخدم أزرار "Edit" للتعديل أو <b>الممحاة (Gomme)</b> للحذف.</p>
         
         <div class="btn-group">
             <input type="file" id="file-input" accept=".kml,.gpx" style="display: none;" onchange="loadFile(this)">
@@ -128,7 +128,7 @@
             <button class="success" onclick="downloadData('kml')">KML</button>
         </div>
 
-        <div id="stats" class="stat-item">ارسم أو استورد ملفاً للبدء...</div>
+        <div id="stats" class="stat-item">جاهز للعمل... (الخريطة الكاملة 🇲🇦)</div>
     </div>
 
     <div id="map"></div>
@@ -167,29 +167,43 @@
         var map = L.map('map').setView([33.3, -5.4], 6);
         var snapshoter = L.simpleMapScreenshoter({ hideElementsWithSelectors: ['.leaflet-control-container', '#sidebar', '#coords-bar'], mimeType: 'image/jpeg' }).addTo(map);
 
-        // === الطبقات (بما فيها Google Streets) ===
-        var googleHybrid = L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',{ maxZoom: 22, subdomains:['mt0','mt1','mt2','mt3'], attribution: '© Google Maps' });
-        var googleStreets = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',{ maxZoom: 22, subdomains:['mt0','mt1','mt2','mt3'], attribution: '© Google Maps' });
+        // === طبقات الخرائط (تم التعديل لتشمل gl=MA لإزالة الحدود) ===
+        // Hybrid (صور + أسماء) - النسخة المغربية
+        var googleHybridMA = L.tileLayer('https://{s}.google.com/vt/lyrs=y&gl=MA&hl=ar&x={x}&y={y}&z={z}',{ 
+            maxZoom: 22, 
+            subdomains:['mt0','mt1','mt2','mt3'], 
+            attribution: '© Google Maps (Maroc)' 
+        });
+
+        // Streets (طرقية) - النسخة المغربية
+        var googleStreetsMA = L.tileLayer('https://{s}.google.com/vt/lyrs=m&gl=MA&hl=ar&x={x}&y={y}&z={z}',{ 
+            maxZoom: 22, 
+            subdomains:['mt0','mt1','mt2','mt3'], 
+            attribution: '© Google Maps (Maroc)' 
+        });
+
         var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 });
         
         var baseMaps = { 
-            "Google Hybrid": googleHybrid,
-            "Google Streets (طرقية)": googleStreets,
+            "Google Hybrid (المغرب)": googleHybridMA,
+            "Google Streets (طرقية)": googleStreetsMA,
             "OpenStreetMap": osm
         };
-        googleHybrid.addTo(map);
+        
+        // تعيين الخريطة المغربية كافتراضية
+        googleHybridMA.addTo(map);
         L.control.layers(baseMaps).addTo(map);
 
         var drawnItems = new L.FeatureGroup(); 
         map.addLayer(drawnItems);
         restoreSession();
 
-        // === إضافة الممحاة (Edit Toolbar) ===
+        // === أدوات الرسم (مع الممحاة) ===
         var drawControl = new L.Control.Draw({ 
             edit: { 
                 featureGroup: drawnItems,
-                remove: true, // تفعيل زر الحذف (سلة المهملات)
-                edit: true    // تفعيل التعديل
+                remove: true, 
+                edit: true    
             }, 
             draw: { 
                 polygon: true, rectangle: true, circle: false,
@@ -202,42 +216,31 @@
         var selectedPolyline = null;
         var lastSelectedLayer = null;
 
-        // === الوظائف الجديدة: الذهاب إلى (Aller à) ===
+        // === البحث (Aller à) ===
         function goToCoordinates() {
             var x = parseFloat(document.getElementById('input-x').value);
             var y = parseFloat(document.getElementById('input-y').value);
+            if (isNaN(x) || isNaN(y)) { alert("أدخل أرقاماً صحيحة."); return; }
 
-            if (isNaN(x) || isNaN(y)) { alert("المرجو إدخال أرقام صحيحة."); return; }
-
-            // تحديد هل الإحداثيات لامبير أم جغرافية
-            // إحداثيات المغرب الجغرافية تكون صغيرة (Lat 21-36, Lng -17-1)
-            // إحداثيات لامبير تكون بالمئات والآلاف
-            if (x > 1000 || y > 1000) {
-                // افتراض أنها لامبير
+            if (x > 1000 || y > 1000) { // لامبير
                 try {
-                    var latlng = proj4(currentZone, "EPSG:4326", [x, y]); // عكس الترتيب للإدخال (X,Y)
-                    // proj4 يعيد [lng, lat]
-                    map.setView([latlng[1], latlng[0]], 15);
-                    L.marker([latlng[1], latlng[0]]).addTo(map).bindPopup(`X: ${x}, Y: ${y}<br>${currentZoneName}`).openPopup();
-                } catch(e) { alert("خطأ في تحويل لامبير."); }
-            } else {
-                // افتراض أنها Lat/Lng
-                map.setView([x, y], 15); // Leaflet يستخدم [Lat, Lng]
-                L.marker([x, y]).addTo(map).bindPopup(`Lat: ${x}, Lng: ${y}`).openPopup();
+                    var latlng = proj4(currentZone, "EPSG:4326", [x, y]);
+                    map.setView([latlng[1], latlng[0]], 16);
+                    L.marker([latlng[1], latlng[0]]).addTo(map).bindPopup(`<b>تم الذهاب إلى:</b><br>X: ${x}<br>Y: ${y}`).openPopup();
+                } catch(e) { alert("خطأ في التحويل."); }
+            } else { // درجات
+                map.setView([x, y], 16);
+                L.marker([x, y]).addTo(map).bindPopup(`<b>الموقع:</b><br>${x}, ${y}`).openPopup();
             }
         }
 
-        // === الوظائف الجديدة: فتح Street View ===
+        // === Street View ===
         function openStreetView() {
-            var center = map.getCenter();
-            var lat = center.lat;
-            var lng = center.lng;
-            // رابط لفتح ستريت فيو في تبويب جديد
-            var url = `https://www.google.com/maps?q&layer=c&cbll=${lat},${lng}`;
-            window.open(url, '_blank');
+            var c = map.getCenter();
+            window.open(`https://www.google.com/maps?q&layer=c&cbll=$${c.lat},${c.lng}`, '_blank');
         }
 
-        // === معالجة الرسم والحفظ ===
+        // === معالجة الأحداث ===
         map.on(L.Draw.Event.CREATED, function (e) {
             drawnItems.addLayer(e.layer);
             handleLayerSelection(e.layer, e.layerType);
@@ -252,9 +255,7 @@
             document.getElementById('btn-profile').style.display = 'none';
         });
 
-        drawnItems.on('click', function(e) {
-            handleLayerSelection(e.layer, getLayerType(e.layer));
-        });
+        drawnItems.on('click', function(e) { handleLayerSelection(e.layer, getLayerType(e.layer)); });
 
         function getLayerType(layer) {
             if (layer instanceof L.Marker) return 'marker';
@@ -282,7 +283,7 @@
         // === المقطع الطبوغرافي ===
         async function generateRealProfile() {
             if (!selectedPolyline) return;
-            document.getElementById('stats').innerHTML = "⏳ جاري المعالجة...";
+            document.getElementById('stats').innerHTML = "⏳ جاري التحليل...";
             var rawLatLngs = selectedPolyline.getLatLngs();
             if (Array.isArray(rawLatLngs[0]) && typeof rawLatLngs[0].lat === 'undefined') rawLatLngs = rawLatLngs.flat();
             
@@ -296,9 +297,7 @@
                         var segmentLen = dists[i+1] - dists[i];
                         if (segmentLen == 0) return rawLatLngs[i];
                         var ratio = (targetDist - dists[i]) / segmentLen;
-                        var lat = rawLatLngs[i].lat + (rawLatLngs[i+1].lat - rawLatLngs[i].lat) * ratio;
-                        var lng = rawLatLngs[i].lng + (rawLatLngs[i+1].lng - rawLatLngs[i].lng) * ratio;
-                        return L.latLng(lat, lng);
+                        return L.latLng(rawLatLngs[i].lat + (rawLatLngs[i+1].lat - rawLatLngs[i].lat) * ratio, rawLatLngs[i].lng + (rawLatLngs[i+1].lng - rawLatLngs[i].lng) * ratio);
                     }
                 }
                 return rawLatLngs[rawLatLngs.length - 1];
@@ -311,23 +310,21 @@
 
             try {
                 var res = await fetch(url);
-                if (!res.ok) throw new Error("API Error");
+                if (!res.ok) throw new Error("API");
                 var data = await res.json();
                 if (data.elevation) {
                     drawChart(data.elevation, sampledLatLngs);
                     calculateSlope(data.elevation, totalDist);
-                    document.getElementById('stats').innerHTML = "✅ تم التحليل.";
+                    document.getElementById('stats').innerHTML = "✅ تم رسم المقطع.";
                 }
-            } catch (error) { document.getElementById('stats').innerHTML = "❌ خطأ في الخادم."; }
+            } catch (e) { document.getElementById('stats').innerHTML = "❌ خطأ في البيانات."; }
         }
 
         function calculateSlope(elevations, totalDist) {
-            var minElev = Math.min(...elevations), maxElev = Math.max(...elevations);
-            var elevDiff = maxElev - minElev;
-            var avgSlopePct = (elevDiff / totalDist) * 100;
-            var avgSlopeDeg = Math.atan(elevDiff / totalDist) * (180 / Math.PI);
-            var info = `<b>تحليل التضاريس:</b><br>أدنى: ${minElev}م | أعلى: ${maxElev}م<br>متوسط الانحدار: <span style="color:${avgSlopePct > 15 ? 'red' : 'green'}"><b>${avgSlopePct.toFixed(1)}%</b> (${avgSlopeDeg.toFixed(1)}°)</span>`;
-            document.getElementById('slope-stats').innerHTML = info;
+            var min = Math.min(...elevations), max = Math.max(...elevations), diff = max - min;
+            var pct = (diff / totalDist) * 100;
+            var deg = Math.atan(diff / totalDist) * (180 / Math.PI);
+            document.getElementById('slope-stats').innerHTML = `<b>تحليل:</b> أدنى: ${min}م | أعلى: ${max}م | انحدار: <span style="color:${pct>15?'red':'green'}"><b>${pct.toFixed(1)}%</b> (${deg.toFixed(1)}°)</span>`;
         }
 
         var elevationChartInstance = null;
@@ -339,122 +336,91 @@
             if (elevationChartInstance) elevationChartInstance.destroy();
             elevationChartInstance = new Chart(ctx, {
                 type: 'line',
-                data: {
-                    labels: distances,
-                    datasets: [{ label: 'الارتفاع (م)', data: elevations, borderColor: '#8e44ad', backgroundColor: 'rgba(142, 68, 173, 0.4)', borderWidth: 2, pointRadius: 0, fill: true, tension: 0.3 }]
-                },
+                data: { labels: distances, datasets: [{ label: 'الارتفاع (م)', data: elevations, borderColor: '#8e44ad', backgroundColor: 'rgba(142, 68, 173, 0.4)', borderWidth: 2, pointRadius: 0, fill: true, tension: 0.3 }] },
                 options: { responsive: true, scales: { x: { display:true, text:'كم' }, y: { display:true } } }
             });
         }
 
-        // === باقي الوظائف (Buffer, Save, Export) ===
+        // === باقي الوظائف ===
         function createBuffer() {
             if (!lastSelectedLayer) { alert("حدد عنصراً أولاً."); return; }
-            var distance = parseFloat(document.getElementById('buffer-distance').value);
-            if (!distance) return;
+            var dist = parseFloat(document.getElementById('buffer-distance').value);
+            if (!dist) return;
             try {
-                var geojson = lastSelectedLayer.toGeoJSON();
-                var buffered = turf.buffer(geojson, distance / 1000, {units: 'kilometers'});
-                var bufferLayer = L.geoJSON(buffered, { style: { color: '#16a085', dashArray: '5, 5', fillOpacity: 0.2 } });
-                drawnItems.addLayer(bufferLayer);
-                saveSession();
-                document.getElementById('stats').innerHTML = `✅ تم إنشاء نطاق عازل.`;
+                var buffered = turf.buffer(lastSelectedLayer.toGeoJSON(), dist/1000, {units: 'kilometers'});
+                drawnItems.addLayer(L.geoJSON(buffered, { style: { color: '#16a085', dashArray: '5, 5', fillOpacity: 0.2 } }));
+                saveSession(); document.getElementById('stats').innerHTML = `✅ تم إنشاء النطاق.`;
             } catch(e) { alert("خطأ: " + e); }
         }
 
         function loadFile(input) {
-            if (input.files && input.files[0]) {
-                var file = input.files[0];
+            if (input.files[0]) {
                 var reader = new FileReader();
                 reader.onload = function(e) {
                     try {
-                        var parser = new DOMParser();
-                        var xmlDoc = parser.parseFromString(e.target.result, "text/xml");
-                        var geojson = file.name.toLowerCase().endsWith('.gpx') ? toGeoJSON.gpx(xmlDoc) : toGeoJSON.kml(xmlDoc);
-                        var layer = L.geoJSON(geojson, {
-                            style: function (feature) { return {color: "#d35400", weight: 4}; },
-                            pointToLayer: function(feature, latlng) { return L.marker(latlng); },
-                            onEachFeature: function (feature, layer) { drawnItems.addLayer(layer); }
-                        });
+                        var parser = new DOMParser(), doc = parser.parseFromString(e.target.result, "text/xml");
+                        var geojson = input.files[0].name.toLowerCase().endsWith('.gpx') ? toGeoJSON.gpx(doc) : toGeoJSON.kml(doc);
+                        var l = L.geoJSON(geojson, { style: {color: "#d35400", weight: 4}, pointToLayer: (f, ll) => L.marker(ll), onEachFeature: (f, l) => drawnItems.addLayer(l) });
                         if (drawnItems.getLayers().length > 0) { map.fitBounds(drawnItems.getBounds()); saveSession(); document.getElementById('stats').innerHTML = "✅ تم الاستيراد."; }
                     } catch (err) { alert("خطأ: " + err); }
                 };
-                reader.readAsText(file);
+                reader.readAsText(input.files[0]);
             }
         }
 
         function saveSession() { localStorage.setItem('zastopo_session', JSON.stringify(drawnItems.toGeoJSON())); }
-        function restoreSession() {
-            var data = localStorage.getItem('zastopo_session');
-            if (data) L.geoJSON(JSON.parse(data), { style: {color: "#8e44ad", weight: 4}, onEachFeature: function (f, l) { drawnItems.addLayer(l); } });
-        }
+        function restoreSession() { var d = localStorage.getItem('zastopo_session'); if(d) L.geoJSON(JSON.parse(d), { style: {color: "#8e44ad", weight: 4}, onEachFeature: (f, l) => drawnItems.addLayer(l) }); }
 
         function downloadDXF() {
-            if (drawnItems.getLayers().length === 0) { alert("ارسم شيئاً أولاً!"); return; }
+            if (drawnItems.getLayers().length === 0) { alert("ارسم أولاً."); return; }
             let dxf = "0\nSECTION\n2\nHEADER\n9\n$ACADVER\n1\nAC1009\n0\nENDSEC\n0\nSECTION\n2\nENTITIES\n";
-            drawnItems.eachLayer(function(layer) {
-                if (layer.feature && layer.feature.geometry.type === 'GeometryCollection') return;
-                if (layer instanceof L.Marker) {
-                    let ll = layer.getLatLng();
-                    try { let l = proj4("EPSG:4326", currentZone, [ll.lng, ll.lat]); dxf += `0\nPOINT\n8\nPoints\n10\n${l[0]}\n20\n${l[1]}\n30\n0.0\n`; } catch(e){}
-                } else if (layer instanceof L.Polyline || layer instanceof L.Polygon) {
-                    let ll = layer.getLatLngs();
-                    if (Array.isArray(ll[0]) && typeof ll[0].lat === 'undefined') ll = ll.flat();
-                    if (!ll[0]) return;
-                    dxf += `0\nLWPOLYLINE\n8\nPolygons\n90\n${ll.length}\n70\n${(layer instanceof L.Polygon ? 1 : 0)}\n`;
-                    ll.forEach(p => { let l = proj4("EPSG:4326", currentZone, [p.lng, p.lat]); dxf += `10\n${l[0]}\n20\n${l[1]}\n`; });
+            drawnItems.eachLayer(l => {
+                if (l.feature && l.feature.geometry.type === 'GeometryCollection') return;
+                if (l instanceof L.Marker) {
+                    try { let p = proj4("EPSG:4326", currentZone, [l.getLatLng().lng, l.getLatLng().lat]); dxf += `0\nPOINT\n8\nPoints\n10\n${p[0]}\n20\n${p[1]}\n30\n0.0\n`; } catch(e){}
+                } else if (l instanceof L.Polyline || l instanceof L.Polygon) {
+                    let ll = l.getLatLngs(); if (Array.isArray(ll[0]) && !ll[0].lat) ll = ll.flat();
+                    if(!ll[0]) return;
+                    dxf += `0\nLWPOLYLINE\n8\nPolygons\n90\n${ll.length}\n70\n${(l instanceof L.Polygon?1:0)}\n`;
+                    ll.forEach(p => { let c = proj4("EPSG:4326", currentZone, [p.lng, p.lat]); dxf += `10\n${c[0]}\n20\n${c[1]}\n`; });
                 }
             });
             dxf += "0\nENDSEC\n0\nEOF";
-            downloadFile("zastopo_export.dxf", dxf, "application/dxf");
+            downloadFile("zastopo.dxf", dxf, "application/dxf");
         }
 
-        function downloadProfileImage() { var link = document.createElement('a'); link.download = 'profile.png'; link.href = document.getElementById('elevationChart').toDataURL(); link.click(); }
-        function calculateStats(layer, type) {
-            var content = "";
-            if (type === 'polyline') {
-                var d=0, ll=layer.getLatLngs(); for(var i=0;i<ll.length-1;i++) d+=ll[i].distanceTo(ll[i+1]);
-                content = `📏 المسافة: ${(d/1000).toFixed(3)} كم`;
-            } else if (type === 'polygon' || type === 'rectangle') {
-                var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
-                content = `📐 المساحة: ${(area/10000).toFixed(4)} هكتار`;
-            } else if (type === 'marker') { content = "📍 نقطة محددة"; }
-            document.getElementById('stats').innerHTML = content;
+        function downloadProfileImage() { var a = document.createElement('a'); a.download = 'profile.png'; a.href = document.getElementById('elevationChart').toDataURL(); a.click(); }
+        function calculateStats(l, t) {
+            if (t === 'polyline') { var d=0, ll=l.getLatLngs(); for(var i=0;i<ll.length-1;i++) d+=ll[i].distanceTo(ll[i+1]); document.getElementById('stats').innerHTML = `📏 المسافة: ${(d/1000).toFixed(3)} كم`; }
+            else if (t === 'polygon') document.getElementById('stats').innerHTML = `📐 المساحة: ${(L.GeometryUtil.geodesicArea(l.getLatLngs()[0])/10000).toFixed(4)} هكتار`;
+            else document.getElementById('stats').innerHTML = "📍 عنصر محدد";
         }
-        map.on('mousemove', function(e) {
+        map.on('mousemove', e => {
             document.getElementById('geo-coords').innerText = `Lat: ${e.latlng.lat.toFixed(5)} | Lng: ${e.latlng.lng.toFixed(5)}`;
-            try { var l = proj4("EPSG:4326", currentZone, [e.latlng.lng, e.latlng.lat]); document.getElementById('metric-coords').innerText = `X: ${l[0].toFixed(0)} | Y: ${l[1].toFixed(0)} (${currentZoneName})`; } catch(e){}
+            try { var p = proj4("EPSG:4326", currentZone, [e.latlng.lng, e.latlng.lat]); document.getElementById('metric-coords').innerText = `X: ${p[0].toFixed(0)} | Y: ${p[1].toFixed(0)} (${currentZoneName})`; } catch(e){}
         });
         function getDrawnDataArray() {
             var data = [];
-            drawnItems.eachLayer(function(layer) {
-                if (layer.feature && layer.feature.geometry.type === 'GeometryCollection') return;
-                var shape = { Type: "Unknown", Metric_Info: "" };
-                if (layer instanceof L.Marker) {
-                    shape.Type = "Point"; 
-                    let l = proj4("EPSG:4326", currentZone, [layer.getLatLng().lng, layer.getLatLng().lat]);
-                    shape.X = l[0].toFixed(2); shape.Y = l[1].toFixed(2);
-                } else if (layer instanceof L.Polygon) {
-                    shape.Type = "Polygon"; shape.Metric_Info = (L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]) / 10000).toFixed(4) + " Ha";
-                } else if (layer instanceof L.Polyline) {
-                    var d=0, ll=layer.getLatLngs(); for(var i=0;i<ll.length-1;i++) d+=ll[i].distanceTo(ll[i+1]);
-                    shape.Type = "Line"; shape.Metric_Info = (d/1000).toFixed(3) + " KM";
-                }
-                data.push(shape);
+            drawnItems.eachLayer(l => {
+                if (l.feature && l.feature.geometry.type === 'GeometryCollection') return;
+                var s = { Type: "Unknown" };
+                if (l instanceof L.Marker) { s.Type="Point"; let p=proj4("EPSG:4326", currentZone, [l.getLatLng().lng, l.getLatLng().lat]); s.X=p[0].toFixed(2); s.Y=p[1].toFixed(2); }
+                else if (l instanceof L.Polygon) { s.Type="Polygon"; s.Metric=(L.GeometryUtil.geodesicArea(l.getLatLngs()[0])/10000).toFixed(4)+" Ha"; }
+                else if (l instanceof L.Polyline) { var d=0, ll=l.getLatLngs(); for(var i=0;i<ll.length-1;i++) d+=ll[i].distanceTo(ll[i+1]); s.Type="Line"; s.Metric=(d/1000).toFixed(3)+" KM"; }
+                data.push(s);
             });
             return data;
         }
-        function downloadExcel() { var d=getDrawnDataArray(); if(d.length===0){alert("لا توجد بيانات");return;} var w=XLSX.utils.json_to_sheet(d), b=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(b,w,"Data"); XLSX.writeFile(b,"zastopo.xlsx"); }
-        function downloadCSV() { var d=getDrawnDataArray(); if(d.length===0){alert("لا توجد بيانات");return;} var w=XLSX.utils.json_to_sheet(d), c=XLSX.utils.sheet_to_csv(w); downloadFile("zastopo.csv",c,"text/csv"); }
+        function downloadExcel() { var d=getDrawnDataArray(); if(!d.length) return alert("فارغ"); var w=XLSX.utils.json_to_sheet(d), b=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(b,w,"Data"); XLSX.writeFile(b,"zastopo.xlsx"); }
+        function downloadCSV() { var d=getDrawnDataArray(); if(!d.length) return alert("فارغ"); var c=XLSX.utils.sheet_to_csv(XLSX.utils.json_to_sheet(d)); downloadFile("zastopo.csv",c,"text/csv"); }
         function takeScreenshotAndMetadata() {
-            var b=map.getBounds(), ne=b.getNorthEast(), sw=b.getSouthWest();
-            var m=`ZASTopo Metadata\nTL: ${ne.lat}, ${sw.lng}\nBR: ${sw.lat}, ${ne.lng}`;
+            var b=map.getBounds(), m=`TL: ${b.getNorthEast().lat}, ${b.getSouthWest().lng}\nBR: ${b.getSouthWest().lat}, ${b.getNorthEast().lng}`;
             downloadFile("meta.txt",m,"text/plain");
-            setTimeout(()=>{ snapshoter.takeScreen('image').then(i=>{ var a=document.createElement('a'); a.download="map.jpg"; a.href=i; a.click(); }); },500);
+            setTimeout(()=>snapshoter.takeScreen('image').then(i=>{var a=document.createElement('a'); a.download="map.jpg"; a.href=i; a.click();}),500);
         }
-        function downloadData(f) { var d=drawnItems.toGeoJSON(); if(d.features.length===0){alert("فارغ");return;} downloadFile("data."+f, f==='geojson'?JSON.stringify(d):toKML(d), f==='geojson'?"application/json":"application/xml"); }
+        function downloadData(f) { var d=drawnItems.toGeoJSON(); if(!d.features.length) return alert("فارغ"); downloadFile("data."+f, f==='geojson'?JSON.stringify(d):toKML(d), f==='geojson'?"application/json":"application/xml"); }
         function downloadFile(n,c,t) { var b=new Blob([c],{type:t}), a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download=n; a.click(); }
-        function toKML(g){return `<?xml version="1.0"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document>${g.features.map(f=>`<Placemark><name>F</name>${f.geometry.type==="Point"?`<Point><coordinates>${f.geometry.coordinates.join(",")}</coordinates></Point>`:`<LineString><coordinates>${f.geometry.coordinates.map(c=>c.join(",")).join(" ")}</coordinates></LineString>`}</Placemark>`).join("")}</Document></kml>`;}
+        function toKML(g){return `<?xml version="1.0"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document>${g.features.map(f=>`<Placemark>${f.geometry.type==="Point"?`<Point><coordinates>${f.geometry.coordinates.join(",")}</coordinates></Point>`:`<LineString><coordinates>${f.geometry.coordinates.map(c=>c.join(",")).join(" ")}</coordinates></LineString>`}</Placemark>`).join("")}</Document></kml>`;}
         function clearMap() { drawnItems.clearLayers(); localStorage.removeItem('zastopo_session'); selectedPolyline=null; lastSelectedLayer=null; document.getElementById('btn-profile').style.display='none'; document.getElementById('chart-container').style.display='none'; document.getElementById('stats').innerHTML="تم المسح."; }
         function locateUser() { map.locate({setView:true, maxZoom:15}); }
     </script>

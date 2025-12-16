@@ -65,10 +65,11 @@
         
         <label style="font-size:12px;">المؤشر (Index):</label>
         <select id="sentinel-layer-select">
-            <option value="TRUE_COLOR">ألوان طبيعية (True Color)</option>
+            <option value="TRUE-COLOR">ألوان طبيعية (True Color)</option>
             <option value="NDVI">الغطاء النباتي (NDVI)</option>
             <option value="NDWI">المياه (NDWI)</option>
-            <option value="MOISTURE_INDEX">مؤشر الرطوبة (Moisture)</option>
+            <option value="NDMI">مؤشر الرطوبة (NDMI)</option>
+            <option value="FALSE-COLOR">أشعة تحت حمراء (False Color)</option>
         </select>
         <button class="warning" onclick="updateSentinel()">🔄 تحديث القمر الاصطناعي</button>
 
@@ -109,7 +110,7 @@
         // 1. إعداد الخريطة
         var map = L.map('map').setView([33.3, -5.4], 6);
 
-        // إضافة أداة التصوير (Screenshoter)
+        // إضافة أداة التصوير
         var snapshotOptions = {
             hideElementsWithSelectors: ['.leaflet-control-container', '#sidebar', '#coords-bar'],
             mimeType: 'image/jpeg'
@@ -120,21 +121,20 @@
         var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' });
         var esriSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '© Esri' });
         
-        // 3. طبقة Sentinel-2 (Dynamic WMS)
-        // ملاحظة: هذا الرابط يتطلب Instance ID من Sentinel Hub ليعمل الـ NDVI الحقيقي
-        // يمكنك استبدال YOUR_INSTANCE_ID برقمك الخاص إذا أنشأت حساباً في Sentinel Hub
-        var sentinelHubID = "YOUR_INSTANCE_ID_HERE"; // ⚠️ يحتاج مفتاح لتفعيل الـ NDVI
-        
-        // سنستخدم خدمة WMS عامة كبديل للعرض الأولي (Esri Sentinel)
-        var sentinelLayer = L.tileLayer.wms("https://services.sentinel-hub.com/ogc/wms/YOUR_ID", {
-            layers: 'TRUE_COLOR',
+        // ============================================
+        // 🔑 مفتاح SENTINEL HUB الخاص بك
+        // ============================================
+        var sentinelHubID = "fde278a6-6830-4065-a2a9-bde54f22f3c6"; 
+
+        var sentinelLayer = L.tileLayer.wms("https://services.sentinel-hub.com/ogc/wms/" + sentinelHubID, {
             format: 'image/png',
             transparent: true,
             version: '1.1.1',
-            attribution: '© Sentinel Hub'
+            attribution: '© Sentinel Hub',
+            maxZoom: 16
         });
 
-        // سنستخدم Esri Sentinel كبديل قوي ومجاني للعرض البصري
+        // طبقة بديلة للعرض السريع
         var esriSentinel = L.tileLayer('https://clarity.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
             attribution: '© Esri Sentinel 2'
         });
@@ -145,22 +145,40 @@
             "Sentinel-2 (Clarity)": esriSentinel
         };
 
-        esriSat.addTo(map); // الافتراضي
+        esriSat.addTo(map);
         L.control.layers(baseMaps).addTo(map);
 
-        // 4. دالة تحديث Sentinel (محاكاة الطلب حسب التاريخ والمؤشر)
+        // 3. دالة تحديث القمر الاصطناعي
         function updateSentinel() {
-            var date = document.getElementById('sentinel-date').value;
-            var index = document.getElementById('sentinel-layer-select').value;
+            var dateInput = document.getElementById('sentinel-date').value;
+            var layerIndex = document.getElementById('sentinel-layer-select').value;
             
-            alert(`سيتم طلب صور Sentinel-2\nالتاريخ: ${date}\nالمؤشر: ${index}\n\n(ملاحظة: لتفعيل المعالجة الحية للمؤشرات مثل NDVI، يجب ربط الكود بمفتاح API خاص بك).`);
+            // إزالة الطبقة القديمة
+            if (map.hasLayer(sentinelLayer)) {
+                map.removeLayer(sentinelLayer);
+            }
+
+            // تحديث المعايير (Sentinel Hub WMS)
+            sentinelLayer.setParams({ 
+                layers: layerIndex, 
+                time: dateInput + '/' + dateInput 
+            });
+
+            sentinelLayer.addTo(map);
+            sentinelLayer.bringToFront();
             
-            // هنا يتم تحديث طبقة WMS لو كان المفتاح موجوداً
-            // sentinelLayer.setParams({ layers: index, time: date + '/' + date });
-            // sentinelLayer.addTo(map);
+            document.getElementById('stats').innerHTML = `⏳ جاري تحميل صور ${layerIndex} لتاريخ ${dateInput}...`;
+            
+            sentinelLayer.on('load', function() {
+                document.getElementById('stats').innerHTML = `✅ تم تحميل طبقة ${layerIndex} بنجاح.`;
+            });
+            
+            sentinelLayer.on('tileerror', function() {
+                 document.getElementById('stats').innerHTML = `⚠️ لا توجد صور لهذا التاريخ، جرب تاريخاً آخر.`;
+            });
         }
 
-        // 5. أدوات الرسم (مع التكرار)
+        // 4. أدوات الرسم (مع التكرار)
         var drawnItems = new L.FeatureGroup();
         map.addLayer(drawnItems);
 
@@ -183,6 +201,7 @@
             drawnItems.addLayer(layer);
             calculateStats(layer, e.layerType);
             
+            // إعادة تفعيل الرسم للنقاط فقط
             if (e.layerType === 'marker') {
                 setTimeout(function(){
                     new L.Draw.Marker(map, drawControl.options.draw.marker).enable();
@@ -201,7 +220,7 @@
                 var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
                 content = `📐 المساحة: ${(area/10000).toFixed(4)} هكتار`;
             } else if (type === 'marker') {
-                content = "📍 تم إضافة نقطة";
+                content = "📍 تم إضافة نقطة (اضغط Cancel للإيقاف)";
             }
             document.getElementById('stats').innerHTML = content;
         }
@@ -216,11 +235,9 @@
             } catch(err) {}
         });
 
-        // 6. الوظائف المساعدة
         function locateUser() { map.locate({setView: true, maxZoom: 14}); }
         function clearMap() { drawnItems.clearLayers(); document.getElementById('stats').innerHTML = "تم المسح"; }
 
-        // 7. وظيفة تحميل لقطة الشاشة (Crop/Download)
         function takeScreenshot() {
             snapshoter.takeScreen('image')
                 .then(image => {

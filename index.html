@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZASTopo Pro V9 - النسخة المستقرة</title>
+    <title>ZASTopo Pro V10 - النسخة الشاملة</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     
     <style>
         body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4; }
@@ -39,13 +40,16 @@
         .excel-btn { background: #217346; } .csv-btn { background: #d35400; } .dxf-btn { background: #e67e22; }
         .import-btn { background: #d35400; color: #fff; }
         .buffer-btn { background: #16a085; color: #fff; }
+        .street-view-btn { background: #f1c40f; color: #333; }
+        .go-btn { background: #2980b9; color: #fff; flex: 0 0 40px; }
         .profile-btn { background: #8e44ad; width: 100%; margin-top: 5px; display: none; }
 
         #chart-container { display: none; margin-top: 10px; padding: 10px; background: #fff; border: 1px solid #ddd; border-radius: 4px; }
         canvas { width: 100% !important; height: 150px !important; }
 
         select { width: 100%; padding: 5px; margin-bottom: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; }
-        input[type="number"] { width: 60px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; }
+        input[type="number"], input[type="text"] { padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; }
+        .coord-input { width: 45%; }
 
         #coords-bar {
             position: absolute; bottom: 0; left: 0; right: 0;
@@ -70,25 +74,34 @@
 
         <h2>⚙️ الإعدادات العامة</h2>
         <select id="lambert-zone" onchange="updateProjection()">
-            <option value="EPSG:26191" selected>Lambert Zone I (North - 33.3°)</option>
-            <option value="EPSG:26192">Lambert Zone II (Center - 29.7°)</option>
-            <option value="EPSG:26194">Lambert Zone III (South - 26.1°)</option>
-            <option value="EPSG:26195">Lambert Zone IV (Deep South - 22.5°)</option>
+            <option value="EPSG:26191" selected>Lambert Zone I (North)</option>
+            <option value="EPSG:26192">Lambert Zone II (Center)</option>
+            <option value="EPSG:26194">Lambert Zone III (South)</option>
+            <option value="EPSG:26195">Lambert Zone IV (Deep South)</option>
         </select>
+        
+        <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+            <input type="text" id="input-x" class="coord-input" placeholder="X أو Lat">
+            <input type="text" id="input-y" class="coord-input" placeholder="Y أو Lng">
+            <button class="go-btn" onclick="goToCoordinates()"><i class="fas fa-search"></i></button>
+        </div>
+
         <div class="btn-group">
             <button onclick="locateUser()">📍 موقعي</button>
             <button class="danger" onclick="clearMap()">🗑️ مسح الكل</button>
         </div>
 
         <h2>✏️ الرسم والتحليل</h2>
+        <p style="font-size:10px; color:#666;">* استخدم أزرار "Edit" بالأسفل للتعديل أو <b>الممحاة (Gomme)</b> للحذف.</p>
+        
         <div class="btn-group">
             <input type="file" id="file-input" accept=".kml,.gpx" style="display: none;" onchange="loadFile(this)">
             <button class="import-btn" onclick="document.getElementById('file-input').click()">📂 استيراد (KML/GPX)</button>
         </div>
 
         <div class="btn-group" style="align-items: center;">
-            <input type="number" id="buffer-distance" placeholder="متر" value="50">
-            <button class="buffer-btn" onclick="createBuffer()">⭕ إنشاء نطاق عازل</button>
+            <input type="number" id="buffer-distance" placeholder="متر" value="50" style="width: 50px;">
+            <button class="buffer-btn" onclick="createBuffer()">⭕ نطاق عازل</button>
         </div>
 
         <button id="btn-profile" class="profile-btn" onclick="generateRealProfile()">🏔️ رسم المقطع الطبوغرافي</button>
@@ -101,14 +114,12 @@
             </div>
         </div>
 
-        <h2>📷 للإرجاع الجغرافي (ArcGIS)</h2>
+        <h2>📷 أدوات العرض والتصدير</h2>
+        <button class="street-view-btn" style="width: 100%; margin-bottom: 5px;" onclick="openStreetView()">👁️ فتح Google Street View</button>
         <button style="background: #2c3e50; width: 100%;" onclick="takeScreenshotAndMetadata()">📷 تحميل الخريطة + ملف الإحداثيات</button>
 
-        <h2>📥 تصدير البيانات</h2>
-        <div class="btn-group">
-            <button class="dxf-btn" onclick="downloadDXF()">DXF (AutoCAD)</button>
-        </div>
-        <div class="btn-group">
+        <div class="btn-group" style="margin-top: 5px;">
+            <button class="dxf-btn" onclick="downloadDXF()">DXF</button>
             <button class="excel-btn" onclick="downloadExcel()">Excel</button>
             <button class="csv-btn" onclick="downloadCSV()">CSV</button>
         </div>
@@ -150,25 +161,36 @@
             var select = document.getElementById('lambert-zone');
             currentZone = select.value;
             currentZoneName = select.options[select.selectedIndex].text.split('(')[0].trim();
-            document.getElementById('stats').innerHTML = "✅ تم تغيير نظام الإحداثيات إلى: " + currentZoneName;
+            document.getElementById('stats').innerHTML = "✅ تم تغيير المنطقة إلى: " + currentZoneName;
         }
 
         var map = L.map('map').setView([33.3, -5.4], 6);
         var snapshoter = L.simpleMapScreenshoter({ hideElementsWithSelectors: ['.leaflet-control-container', '#sidebar', '#coords-bar'], mimeType: 'image/jpeg' }).addTo(map);
 
+        // === الطبقات (بما فيها Google Streets) ===
         var googleHybrid = L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',{ maxZoom: 22, subdomains:['mt0','mt1','mt2','mt3'], attribution: '© Google Maps' });
+        var googleStreets = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',{ maxZoom: 22, subdomains:['mt0','mt1','mt2','mt3'], attribution: '© Google Maps' });
         var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 });
-        var baseMaps = { "Google Hybrid": googleHybrid, "OpenStreetMap": osm };
+        
+        var baseMaps = { 
+            "Google Hybrid": googleHybrid,
+            "Google Streets (طرقية)": googleStreets,
+            "OpenStreetMap": osm
+        };
         googleHybrid.addTo(map);
         L.control.layers(baseMaps).addTo(map);
 
         var drawnItems = new L.FeatureGroup(); 
         map.addLayer(drawnItems);
-        
         restoreSession();
 
+        // === إضافة الممحاة (Edit Toolbar) ===
         var drawControl = new L.Control.Draw({ 
-            edit: { featureGroup: drawnItems }, 
+            edit: { 
+                featureGroup: drawnItems,
+                remove: true, // تفعيل زر الحذف (سلة المهملات)
+                edit: true    // تفعيل التعديل
+            }, 
             draw: { 
                 polygon: true, rectangle: true, circle: false,
                 marker: { repeatMode: true }, 
@@ -180,12 +202,47 @@
         var selectedPolyline = null;
         var lastSelectedLayer = null;
 
+        // === الوظائف الجديدة: الذهاب إلى (Aller à) ===
+        function goToCoordinates() {
+            var x = parseFloat(document.getElementById('input-x').value);
+            var y = parseFloat(document.getElementById('input-y').value);
+
+            if (isNaN(x) || isNaN(y)) { alert("المرجو إدخال أرقام صحيحة."); return; }
+
+            // تحديد هل الإحداثيات لامبير أم جغرافية
+            // إحداثيات المغرب الجغرافية تكون صغيرة (Lat 21-36, Lng -17-1)
+            // إحداثيات لامبير تكون بالمئات والآلاف
+            if (x > 1000 || y > 1000) {
+                // افتراض أنها لامبير
+                try {
+                    var latlng = proj4(currentZone, "EPSG:4326", [x, y]); // عكس الترتيب للإدخال (X,Y)
+                    // proj4 يعيد [lng, lat]
+                    map.setView([latlng[1], latlng[0]], 15);
+                    L.marker([latlng[1], latlng[0]]).addTo(map).bindPopup(`X: ${x}, Y: ${y}<br>${currentZoneName}`).openPopup();
+                } catch(e) { alert("خطأ في تحويل لامبير."); }
+            } else {
+                // افتراض أنها Lat/Lng
+                map.setView([x, y], 15); // Leaflet يستخدم [Lat, Lng]
+                L.marker([x, y]).addTo(map).bindPopup(`Lat: ${x}, Lng: ${y}`).openPopup();
+            }
+        }
+
+        // === الوظائف الجديدة: فتح Street View ===
+        function openStreetView() {
+            var center = map.getCenter();
+            var lat = center.lat;
+            var lng = center.lng;
+            // رابط لفتح ستريت فيو في تبويب جديد
+            var url = `https://www.google.com/maps?q&layer=c&cbll=${lat},${lng}`;
+            window.open(url, '_blank');
+        }
+
+        // === معالجة الرسم والحفظ ===
         map.on(L.Draw.Event.CREATED, function (e) {
             drawnItems.addLayer(e.layer);
             handleLayerSelection(e.layer, e.layerType);
             saveSession();
         });
-
         map.on(L.Draw.Event.EDITED, saveSession);
         map.on(L.Draw.Event.DELETED, function() {
             saveSession();
@@ -222,30 +279,18 @@
             }
         }
 
-        // === المقطع الطبوغرافي: الحل النهائي (Fixed Sampling) ===
+        // === المقطع الطبوغرافي ===
         async function generateRealProfile() {
             if (!selectedPolyline) return;
             document.getElementById('stats').innerHTML = "⏳ جاري المعالجة...";
-
             var rawLatLngs = selectedPolyline.getLatLngs();
             if (Array.isArray(rawLatLngs[0]) && typeof rawLatLngs[0].lat === 'undefined') rawLatLngs = rawLatLngs.flat();
-
-            // 1. حساب المسافات التراكمية لكل نقطة أصلية
-            var totalDist = 0;
-            var dists = [0];
-            for(var i=0; i<rawLatLngs.length-1; i++){
-                totalDist += rawLatLngs[i].distanceTo(rawLatLngs[i+1]);
-                dists.push(totalDist);
-            }
-
-            // 2. إنشاء 100 نقطة فقط موزعة بالتساوي
-            var numPoints = 100; // عدد ثابت ومضمون
-            var step = totalDist / (numPoints - 1);
-            var sampledLatLngs = [];
-
-            // دالة استيفاء (Interpolation) لإيجاد الإحداثيات عند مسافة معينة
+            
+            var totalDist = 0, dists = [0];
+            for(var i=0; i<rawLatLngs.length-1; i++){ totalDist += rawLatLngs[i].distanceTo(rawLatLngs[i+1]); dists.push(totalDist); }
+            
+            var numPoints = 100, step = totalDist / (numPoints - 1), sampledLatLngs = [];
             function getPointAtDist(targetDist) {
-                // البحث عن القطعة المناسبة
                 for (var i = 0; i < dists.length - 1; i++) {
                     if (targetDist >= dists[i] && targetDist <= dists[i+1]) {
                         var segmentLen = dists[i+1] - dists[i];
@@ -258,12 +303,8 @@
                 }
                 return rawLatLngs[rawLatLngs.length - 1];
             }
+            for (var k = 0; k < numPoints; k++) sampledLatLngs.push(getPointAtDist(k * step));
 
-            for (var k = 0; k < numPoints; k++) {
-                sampledLatLngs.push(getPointAtDist(k * step));
-            }
-
-            // 3. إرسال الطلب (الآن الرابط قصير دائماً)
             var lats = sampledLatLngs.map(ll => ll.lat.toFixed(5));
             var lngs = sampledLatLngs.map(ll => ll.lng.toFixed(5));
             var url = `https://api.open-meteo.com/v1/elevation?latitude=${lats.join(',')}&longitude=${lngs.join(',')}`;
@@ -275,25 +316,17 @@
                 if (data.elevation) {
                     drawChart(data.elevation, sampledLatLngs);
                     calculateSlope(data.elevation, totalDist);
-                    document.getElementById('stats').innerHTML = "✅ تم التحليل بنجاح.";
+                    document.getElementById('stats').innerHTML = "✅ تم التحليل.";
                 }
-            } catch (error) { 
-                alert("فشل الاتصال: " + error.message); 
-                document.getElementById('stats').innerHTML = "❌ خطأ في الخادم.";
-            }
+            } catch (error) { document.getElementById('stats').innerHTML = "❌ خطأ في الخادم."; }
         }
 
         function calculateSlope(elevations, totalDist) {
-            var minElev = Math.min(...elevations);
-            var maxElev = Math.max(...elevations);
+            var minElev = Math.min(...elevations), maxElev = Math.max(...elevations);
             var elevDiff = maxElev - minElev;
             var avgSlopePct = (elevDiff / totalDist) * 100;
             var avgSlopeDeg = Math.atan(elevDiff / totalDist) * (180 / Math.PI);
-
-            var info = `<b>تحليل التضاريس:</b><br>
-                        أدنى نقطة: ${minElev}م | أعلى نقطة: ${maxElev}م<br>
-                        فرق الارتفاع: ${elevDiff.toFixed(1)}م<br>
-                        متوسط الانحدار: <span style="color:${avgSlopePct > 15 ? 'red' : 'green'}"><b>${avgSlopePct.toFixed(1)}%</b> (${avgSlopeDeg.toFixed(1)}°)</span>`;
+            var info = `<b>تحليل التضاريس:</b><br>أدنى: ${minElev}م | أعلى: ${maxElev}م<br>متوسط الانحدار: <span style="color:${avgSlopePct > 15 ? 'red' : 'green'}"><b>${avgSlopePct.toFixed(1)}%</b> (${avgSlopeDeg.toFixed(1)}°)</span>`;
             document.getElementById('slope-stats').innerHTML = info;
         }
 
@@ -303,17 +336,12 @@
             var ctx = document.getElementById('elevationChart').getContext('2d');
             var distances = [0], total = 0;
             for(var i=0; i<latlngs.length-1; i++) { total += latlngs[i].distanceTo(latlngs[i+1]); distances.push((total/1000).toFixed(2)); }
-
             if (elevationChartInstance) elevationChartInstance.destroy();
             elevationChartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: distances,
-                    datasets: [{
-                        label: 'الارتفاع (م)', data: elevations,
-                        borderColor: '#8e44ad', backgroundColor: 'rgba(142, 68, 173, 0.4)',
-                        borderWidth: 2, pointRadius: 0, fill: true, tension: 0.3
-                    }]
+                    datasets: [{ label: 'الارتفاع (م)', data: elevations, borderColor: '#8e44ad', backgroundColor: 'rgba(142, 68, 173, 0.4)', borderWidth: 2, pointRadius: 0, fill: true, tension: 0.3 }]
                 },
                 options: { responsive: true, scales: { x: { display:true, text:'كم' }, y: { display:true } } }
             });

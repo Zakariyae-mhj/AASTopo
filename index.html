@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZASTopo Pro V5 - استيراد KML</title>
+    <title>ZASTopo Pro V6 - خرائط جوجل</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
@@ -128,11 +128,40 @@
             mimeType: 'image/jpeg'
         }).addTo(map);
 
-        var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' });
-        var esriSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '© Esri' });
+        // === طبقات الخرائط الجديدة (بما فيها جوجل) ===
+        var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
+            attribution: '© OpenStreetMap', 
+            maxZoom: 19 
+        });
+
+        // طبقة جوجل هايبرد (صور + أسماء) - الأهم بالنسبة لك
+        var googleHybrid = L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',{
+            maxZoom: 22, // تكبير عالي جداً
+            subdomains:['mt0','mt1','mt2','mt3'],
+            attribution: '© Google Maps'
+        });
+
+        // طبقة جوجل ساتلايت (صور فقط)
+        var googleSat = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',{
+            maxZoom: 22,
+            subdomains:['mt0','mt1','mt2','mt3'],
+            attribution: '© Google Maps'
+        });
+
+        var esriSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { 
+            attribution: '© Esri',
+            maxZoom: 19 
+        });
         
-        var baseMaps = { "خريطة طرقية": osm, "صور جوية (Esri)": esriSat };
-        esriSat.addTo(map);
+        var baseMaps = { 
+            "Google Hybrid (الأفضل)": googleHybrid,
+            "Google Satellite": googleSat,
+            "Esri Satellite": esriSat,
+            "OpenStreetMap": osm
+        };
+
+        // جعل جوجل هايبرد هي الافتراضية لأنها الأوضح
+        googleHybrid.addTo(map);
         L.control.layers(baseMaps).addTo(map);
 
         var drawnItems = new L.FeatureGroup(); map.addLayer(drawnItems);
@@ -148,7 +177,7 @@
 
         var selectedPolyline = null;
 
-        // === 1. معالجة الرسم (وإعادة تفعيل النقاط) ===
+        // === 1. معالجة الرسم ===
         map.on(L.Draw.Event.CREATED, function (e) {
             drawnItems.addLayer(e.layer);
             calculateStats(e.layer, e.layerType);
@@ -165,66 +194,50 @@
             }
         });
 
-        // تفعيل تحديد الخطوط عند النقر عليها (خاصة للمستوردة من KML)
         drawnItems.on('click', function(e) {
             if (e.layer instanceof L.Polyline && !(e.layer instanceof L.Polygon)) {
                 selectedPolyline = e.layer;
                 document.getElementById('btn-profile').style.display = 'block';
                 document.getElementById('stats').innerHTML = "تم تحديد مسار (KML). اضغط 'رسم المقطع' للتحليل.";
-                
-                // تغيير لون الخط لتمييز التحديد
                 e.layer.setStyle({color: '#e74c3c'});
                 setTimeout(() => { e.layer.setStyle({color: '#8e44ad'}); }, 1000);
             }
         });
 
-        // === 2. وظيفة استيراد KML الجديدة ===
+        // === 2. استيراد KML ===
         function loadKML(input) {
             if (input.files && input.files[0]) {
                 var reader = new FileReader();
                 reader.onload = function(e) {
                     try {
-                        // تحويل نص KML إلى XML DOM
                         var parser = new DOMParser();
                         var kmlDoc = parser.parseFromString(e.target.result, "text/xml");
-                        
-                        // تحويل XML إلى GeoJSON
                         var geojson = toGeoJSON.kml(kmlDoc);
-                        
-                        // إضافة GeoJSON للخريطة
                         var layer = L.geoJSON(geojson, {
-                            style: function (feature) {
-                                return {color: "#d35400", weight: 4};
-                            },
-                            onEachFeature: function (feature, layer) {
-                                drawnItems.addLayer(layer); // إضافته لطبقة الرسم ليتم تصديره لاحقاً
-                            }
+                            style: function (feature) { return {color: "#d35400", weight: 4}; },
+                            onEachFeature: function (feature, layer) { drawnItems.addLayer(layer); }
                         });
                         
                         if (drawnItems.getLayers().length > 0) {
                             map.fitBounds(drawnItems.getBounds());
-                            document.getElementById('stats').innerHTML = "✅ تم استيراد مجال الدراسة بنجاح.";
+                            document.getElementById('stats').innerHTML = "✅ تم استيراد مجال الدراسة.";
                         } else {
-                            alert("الملف لا يحتوي على بيانات جغرافية صالحة.");
+                            alert("الملف فارغ أو غير مدعوم.");
                         }
-
-                    } catch (err) {
-                        alert("خطأ في قراءة ملف KML: " + err);
-                    }
+                    } catch (err) { alert("خطأ KML: " + err); }
                 };
                 reader.readAsText(input.files[0]);
             }
         }
 
-        // === 3. المقطع الطبوغرافي (Sampling الآمن) ===
+        // === 3. المقطع الطبوغرافي ===
         async function generateRealProfile() {
             if (!selectedPolyline) return;
             document.getElementById('stats').innerHTML = "⏳ جاري جلب البيانات...";
 
             var rawLatLngs = selectedPolyline.getLatLngs();
-            // دعم الخطوط المستوردة التي قد تكون MultiLineString
             if (Array.isArray(rawLatLngs[0]) && typeof rawLatLngs[0].lat === 'undefined') {
-                rawLatLngs = rawLatLngs.flat(); // تبسيط المصفوفة
+                rawLatLngs = rawLatLngs.flat();
             }
 
             var totalDistanceMeters = 0;
@@ -237,14 +250,11 @@
             if (stepSize < 30) stepSize = 30;
 
             var denseLatLngs = [];
-            
             for (var i = 0; i < rawLatLngs.length - 1; i++) {
                 var start = rawLatLngs[i];
                 var end = rawLatLngs[i+1];
                 var segmentDist = start.distanceTo(end);
-                
                 var segmentSteps = Math.floor(segmentDist / stepSize);
-                
                 denseLatLngs.push(start);
                 for (var j = 1; j <= segmentSteps; j++) {
                     var factor = j * stepSize / segmentDist;
@@ -254,10 +264,7 @@
                 }
             }
             denseLatLngs.push(rawLatLngs[rawLatLngs.length - 1]);
-
-            if (denseLatLngs.length > 100) {
-                denseLatLngs = denseLatLngs.filter((_, i) => i % 2 === 0);
-            }
+            if (denseLatLngs.length > 100) denseLatLngs = denseLatLngs.filter((_, i) => i % 2 === 0);
 
             var lats = denseLatLngs.map(ll => ll.lat.toFixed(5));
             var lngs = denseLatLngs.map(ll => ll.lng.toFixed(5));
@@ -265,35 +272,26 @@
 
             try {
                 var response = await fetch(url);
-                if (!response.ok) throw new Error("Server Limit");
+                if (!response.ok) throw new Error("Limit");
                 var data = await response.json();
-                
                 if (data.elevation) {
                     drawChart(data.elevation, denseLatLngs);
                     document.getElementById('stats').innerHTML = "✅ تم رسم المقطع.";
-                } else {
-                    document.getElementById('stats').innerHTML = "⚠️ البيانات غير متوفرة.";
-                }
-            } catch (error) {
-                console.error(error);
-                alert("تعذر جلب البيانات. حاول تقليل طول الخط.");
-            }
+                } else { document.getElementById('stats').innerHTML = "⚠️ لا توجد بيانات."; }
+            } catch (error) { alert("خطأ في الاتصال."); }
         }
 
         var elevationChartInstance = null;
         function drawChart(elevations, latlngs) {
             document.getElementById('chart-container').style.display = 'block';
             var ctx = document.getElementById('elevationChart').getContext('2d');
-            
             var distances = [0];
             var totalDist = 0;
             for(var i=0; i<latlngs.length-1; i++){
                 totalDist += latlngs[i].distanceTo(latlngs[i+1]);
                 distances.push((totalDist/1000).toFixed(2));
             }
-
             if (elevationChartInstance) elevationChartInstance.destroy();
-
             elevationChartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -303,10 +301,7 @@
                         data: elevations,
                         borderColor: '#8e44ad',
                         backgroundColor: 'rgba(142, 68, 173, 0.4)',
-                        borderWidth: 2,
-                        pointRadius: 0, 
-                        fill: true,
-                        tension: 0.3 
+                        borderWidth: 2, pointRadius: 0, fill: true, tension: 0.3 
                     }]
                 },
                 options: {
@@ -323,39 +318,26 @@
         // === 4. وظائف التصدير ===
         function downloadDXF() {
             if (drawnItems.getLayers().length === 0) { alert("ارسم شيئاً أولاً!"); return; }
-
-            let dxf = "0\nSECTION\n2\nHEADER\n9\n$ACADVER\n1\nAC1009\n0\nENDSEC\n";
-            dxf += "0\nSECTION\n2\nENTITIES\n";
-
+            let dxf = "0\nSECTION\n2\nHEADER\n9\n$ACADVER\n1\nAC1009\n0\nENDSEC\n0\nSECTION\n2\nENTITIES\n";
             drawnItems.eachLayer(function(layer) {
-                // تجاهل الطبقات المعقدة المتداخلة من KML للحفاظ على DXF بسيط
                 if (layer.feature && layer.feature.geometry.type === 'GeometryCollection') return;
-
                 if (layer instanceof L.Marker) {
-                    let lat = layer.getLatLng().lat;
-                    let lng = layer.getLatLng().lng;
+                    let lat = layer.getLatLng().lat, lng = layer.getLatLng().lng;
                     try {
-                        let lambert = proj4("EPSG:4326", "EPSG:26191", [lng, lat]);
-                        dxf += "0\nPOINT\n8\nPoints\n10\n" + lambert[0] + "\n20\n" + lambert[1] + "\n30\n0.0\n";
+                        let l = proj4("EPSG:4326", "EPSG:26191", [lng, lat]);
+                        dxf += "0\nPOINT\n8\nPoints\n10\n" + l[0] + "\n20\n" + l[1] + "\n30\n0.0\n";
                     } catch(e) {}
-                } 
-                else if (layer instanceof L.Polyline || layer instanceof L.Polygon) {
-                    let latlngs = layer.getLatLngs();
-                    // إصلاح هيكلية البيانات للمضلعات المستوردة
-                    if (Array.isArray(latlngs[0]) && typeof latlngs[0].lat === 'undefined') {
-                         latlngs = latlngs.flat();
-                    }
-                    if (!latlngs[0]) return; // تخطي الفارغ
-
-                    dxf += "0\nLWPOLYLINE\n8\nPolygons\n90\n" + latlngs.length + "\n70\n" + (layer instanceof L.Polygon ? 1 : 0) + "\n";
-                    
-                    latlngs.forEach(ll => {
-                        let lambert = proj4("EPSG:4326", "EPSG:26191", [ll.lng, ll.lat]);
-                        dxf += "10\n" + lambert[0] + "\n20\n" + lambert[1] + "\n";
+                } else if (layer instanceof L.Polyline || layer instanceof L.Polygon) {
+                    let ll = layer.getLatLngs();
+                    if (Array.isArray(ll[0]) && typeof ll[0].lat === 'undefined') ll = ll.flat();
+                    if (!ll[0]) return;
+                    dxf += "0\nLWPOLYLINE\n8\nPolygons\n90\n" + ll.length + "\n70\n" + (layer instanceof L.Polygon ? 1 : 0) + "\n";
+                    ll.forEach(p => {
+                        let l = proj4("EPSG:4326", "EPSG:26191", [p.lng, p.lat]);
+                        dxf += "10\n" + l[0] + "\n20\n" + l[1] + "\n";
                     });
                 }
             });
-
             dxf += "0\nENDSEC\n0\nEOF";
             downloadFile("zastopo_export.dxf", dxf, "application/dxf");
         }
@@ -390,14 +372,9 @@
             var data = [];
             drawnItems.eachLayer(function(layer) {
                 var shapeData = { Type: "Unknown", Lat: "", Lng: "", X_Lambert: "", Y_Lambert: "", MetricValue: "" };
-                
-                // تجاهل البيانات المعقدة جداً في Excel
                 if (layer.feature && layer.feature.geometry.type === 'GeometryCollection') return;
-
                 if (layer instanceof L.Marker) {
-                    shapeData.Type = "Point"; 
-                    shapeData.Lat = layer.getLatLng().lat.toFixed(6); 
-                    shapeData.Lng = layer.getLatLng().lng.toFixed(6);
+                    shapeData.Type = "Point"; shapeData.Lat = layer.getLatLng().lat.toFixed(6); shapeData.Lng = layer.getLatLng().lng.toFixed(6);
                     let l = proj4("EPSG:4326", "EPSG:26191", [layer.getLatLng().lng, layer.getLatLng().lat]);
                     shapeData.X_Lambert = l[0].toFixed(2); shapeData.Y_Lambert = l[1].toFixed(2);
                 } else if (layer instanceof L.Polygon) {

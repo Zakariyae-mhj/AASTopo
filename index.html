@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZASTopo Pro V3 - الحل المتكامل</title>
+    <title>ZASTopo Pro V4 - النسخة الأكاديمية</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
@@ -20,7 +20,13 @@
             border-right: 5px solid #2ecc71;
         }
         h1 { color: #2ecc71; font-size: 22px; margin: 0; text-align: center; font-weight: 800; }
-        .sub-title { text-align: center; font-size: 11px; color: #7f8c8d; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        
+        /* تنسيق النصوص الجديدة */
+        .sub-title { text-align: center; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; line-height: 1.6; }
+        .dev-name { font-size: 13px; font-weight: bold; color: #34495e; }
+        .lab-name { font-size: 11px; color: #7f8c8d; }
+        .univ-name { font-size: 11px; color: #2980b9; font-weight: 600; }
+
         h2 { font-size: 13px; color: #34495e; margin: 12px 0 5px 0; font-weight: bold; border-right: 3px solid #3498db; padding-right: 8px; }
         
         .btn-group { display: flex; gap: 5px; margin-bottom: 5px; flex-wrap: wrap; }
@@ -50,7 +56,11 @@
 
     <div id="sidebar">
         <h1>ZASTopo Pro</h1>
-        <div class="sub-title">تطوير: زكرياء المحجوبي</div>
+        <div class="sub-title">
+            <div class="dev-name">تطوير: زكرياء المحجوبي</div>
+            <div class="lab-name">مختبر دينامية الأوساط الجافة والتهيئة الجهوية</div>
+            <div class="univ-name">شعبة الجغرافيا، جامعة محمد الأول وجدة</div>
+        </div>
 
         <h2>✏️ أدوات الرسم (مسترسلة)</h2>
         <div class="btn-group">
@@ -136,7 +146,7 @@
             edit: { featureGroup: drawnItems }, 
             draw: { 
                 polygon: true, rectangle: true, circle: false,
-                marker: { repeatMode: true }, // محاولة تفعيل التكرار الأصلي
+                marker: { repeatMode: true }, 
                 polyline: { shapeOptions: { color: '#8e44ad', weight: 4 } }
             } 
         });
@@ -154,63 +164,74 @@
                 document.getElementById('btn-profile').style.display = 'block';
                 document.getElementById('stats').innerHTML = "تم رسم مسار. اضغط 'رسم المقطع' لعرض التضاريس.";
             } else if (e.layerType === 'marker') {
-                // إعادة تفعيل رسم النقاط فوراً (Continuous Drawing)
                 setTimeout(function(){
-                    // نتحقق من أن المستخدم لم يلغ الأداة يدوياً
                     var markerDrawer = new L.Draw.Marker(map, drawControl.options.draw.marker);
                     markerDrawer.enable();
                 }, 100);
             }
         });
 
-        // === 2. المقطع الطبوغرافي الواقعي (Sampling/Densification) ===
+        // === 2. المقطع الطبوغرافي المتطور (Smart Sampling) ===
         async function generateRealProfile() {
             if (!selectedPolyline) return;
-            document.getElementById('stats').innerHTML = "⏳ جاري تحليل التضاريس (Sampling)...";
+            document.getElementById('stats').innerHTML = "⏳ جاري جلب البيانات...";
 
-            // 1. تكثيف النقاط (إضافة نقاط وسطية كل 50 متر)
             var rawLatLngs = selectedPolyline.getLatLngs();
+            
+            // حساب طول الخط الإجمالي أولاً
+            var totalDistanceMeters = 0;
+            for(var i=0; i<rawLatLngs.length-1; i++){
+                totalDistanceMeters += rawLatLngs[i].distanceTo(rawLatLngs[i+1]);
+            }
+
+            // تحديد مسافة العينة ديناميكياً لتجنب تجاوز الحد المسموح به
+            // الهدف: الحصول على حوالي 100-150 نقطة كحد أقصى لضمان سرعة الاستجابة
+            var targetPoints = 150;
+            var stepSize = Math.max(50, totalDistanceMeters / targetPoints); // لا تقل عن 50 متر
+
             var denseLatLngs = [];
             
             for (var i = 0; i < rawLatLngs.length - 1; i++) {
                 var start = rawLatLngs[i];
                 var end = rawLatLngs[i+1];
-                var dist = start.distanceTo(end);
+                var segmentDist = start.distanceTo(end);
                 
-                // عدد الخطوات (نقطة كل 50 متر تقريباً)
-                var steps = Math.max(1, Math.floor(dist / 50)); 
+                var segmentSteps = Math.floor(segmentDist / stepSize);
                 
-                for (var j = 0; j < steps; j++) {
-                    var lat = start.lat + (end.lat - start.lat) * (j / steps);
-                    var lng = start.lng + (end.lng - start.lng) * (j / steps);
+                // إضافة نقطة البداية دائماً
+                denseLatLngs.push(start);
+
+                for (var j = 1; j <= segmentSteps; j++) {
+                    var factor = j * stepSize / segmentDist;
+                    var lat = start.lat + (end.lat - start.lat) * factor;
+                    var lng = start.lng + (end.lng - start.lng) * factor;
                     denseLatLngs.push(L.latLng(lat, lng));
                 }
             }
             denseLatLngs.push(rawLatLngs[rawLatLngs.length - 1]); // إضافة النقطة الأخيرة
 
-            // حماية من كثرة النقاط (الحد الأقصى للـ API)
-            if (denseLatLngs.length > 400) {
-                // إذا كان الخط طويلاً جداً، نأخذ عينة كل 2 أو 3
-                denseLatLngs = denseLatLngs.filter((_, i) => i % 2 === 0);
-            }
-
-            // 2. تحضير الرابط
+            // إرسال الطلب
             var lats = denseLatLngs.map(ll => ll.lat.toFixed(5));
             var lngs = denseLatLngs.map(ll => ll.lng.toFixed(5));
             var url = `https://api.open-meteo.com/v1/elevation?latitude=${lats.join(',')}&longitude=${lngs.join(',')}`;
 
             try {
                 var response = await fetch(url);
+                
+                if (!response.ok) throw new Error("API Limit or Network Error");
+                
                 var data = await response.json();
                 
                 if (data.elevation) {
-                    drawChart(data.elevation, denseLatLngs); // نرسل النقاط الكثيفة للرسم
-                    document.getElementById('stats').innerHTML = "✅ تم رسم المقطع بناءً على " + denseLatLngs.length + " نقطة ارتفاع.";
+                    drawChart(data.elevation, denseLatLngs);
+                    document.getElementById('stats').innerHTML = "✅ تم رسم المقطع بنجاح.";
                 } else {
-                    alert("فشل جلب البيانات.");
+                    document.getElementById('stats').innerHTML = "⚠️ فشل جلب البيانات.";
                 }
             } catch (error) {
-                alert("خطأ: " + error);
+                console.error(error);
+                alert("تعذر جلب البيانات. قد يكون الخط طويلاً جداً أو خدمة الإنترنت ضعيفة.");
+                document.getElementById('stats').innerHTML = "❌ خطأ في الاتصال.";
             }
         }
 
@@ -237,10 +258,10 @@
                         data: elevations,
                         borderColor: '#8e44ad',
                         backgroundColor: 'rgba(142, 68, 173, 0.4)',
-                        borderWidth: 1,
-                        pointRadius: 0, // إخفاء النقاط لخط ناعم
+                        borderWidth: 2,
+                        pointRadius: 0, 
                         fill: true,
-                        tension: 0.2 // تنعيم بسيط
+                        tension: 0.3 
                     }]
                 },
                 options: {
@@ -258,7 +279,6 @@
         function downloadDXF() {
             if (drawnItems.getLayers().length === 0) { alert("ارسم شيئاً أولاً!"); return; }
 
-            // هيدر ملف DXF الأساسي
             let dxf = "0\nSECTION\n2\nHEADER\n9\n$ACADVER\n1\nAC1009\n0\nENDSEC\n";
             dxf += "0\nSECTION\n2\nENTITIES\n";
 
@@ -266,7 +286,6 @@
                 if (layer instanceof L.Marker) {
                     let lat = layer.getLatLng().lat;
                     let lng = layer.getLatLng().lng;
-                    // تحويل إلى Lambert Zone 1
                     try {
                         let lambert = proj4("EPSG:4326", "EPSG:26191", [lng, lat]);
                         dxf += "0\nPOINT\n8\nPoints\n10\n" + lambert[0] + "\n20\n" + lambert[1] + "\n30\n0.0\n";
@@ -274,7 +293,6 @@
                 } 
                 else if (layer instanceof L.Polyline || layer instanceof L.Polygon) {
                     let latlngs = layer.getLatLngs();
-                    // التعامل مع المضلعات المتداخلة (Holes) في Leaflet
                     if (Array.isArray(latlngs[0])) latlngs = latlngs[0]; 
 
                     dxf += "0\nLWPOLYLINE\n8\nPolygons\n90\n" + latlngs.length + "\n70\n" + (layer instanceof L.Polygon ? 1 : 0) + "\n";
@@ -307,7 +325,7 @@
                 var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
                 content = `📐 المساحة: ${(area/10000).toFixed(4)} هكتار`;
             } else if (type === 'marker') {
-                content = "📍 تم إضافة نقطة (لرسم أخرى انقر في الخريطة، للإيقاف اضغط Cancel)";
+                content = "📍 تم إضافة نقطة (للمتابعة انقر، للإيقاف اضغط Cancel)";
             }
             document.getElementById('stats').innerHTML = content;
         }

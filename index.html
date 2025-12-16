@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZASTopo Pro - النسخة الأكاديمية</title>
+    <title>ZASTopo Pro V5 - استيراد KML</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
@@ -21,7 +21,6 @@
         }
         h1 { color: #2ecc71; font-size: 24px; margin: 0; text-align: center; font-weight: 800; }
         
-        /* تنسيق المعلومات الأكاديمية */
         .header-info { text-align: center; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
         .dev-name { font-size: 14px; font-weight: bold; color: #2c3e50; margin-bottom: 5px; }
         .lab-info { font-size: 11px; color: #7f8c8d; line-height: 1.4; font-weight: 500; }
@@ -38,6 +37,7 @@
         button:hover { transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .danger { background: #e74c3c; } .success { background: #27ae60; } .dark { background: #34495e; }
         .excel-btn { background: #217346; } .csv-btn { background: #d35400; } .dxf-btn { background: #e67e22; }
+        .kml-import-btn { background: #d35400; color: #fff; }
         .profile-btn { background: #8e44ad; width: 100%; margin-top: 5px; display: none; }
 
         #chart-container { display: none; margin-top: 10px; padding: 10px; background: #fff; border: 1px solid #ddd; border-radius: 4px; }
@@ -68,19 +68,19 @@
             <button onclick="locateUser()">📍 موقعي</button>
             <button class="danger" onclick="clearMap()">🗑️ مسح الكل</button>
         </div>
-        <p style="font-size:10px; color:#666; margin-top:2px;">* لإيقاف الرسم اضغط على Cancel بجانب الأيقونة.</p>
+        
+        <div class="btn-group">
+            <input type="file" id="kml-input" accept=".kml" style="display: none;" onchange="loadKML(this)">
+            <button class="kml-import-btn" onclick="document.getElementById('kml-input').click()">📂 استيراد مجال الدراسة (KML)</button>
+        </div>
 
         <button id="btn-profile" class="profile-btn" onclick="generateRealProfile()">🏔️ رسم المقطع الطبوغرافي</button>
+        
         <div id="chart-container">
             <canvas id="elevationChart"></canvas>
             <div style="text-align:center; margin-top:5px;">
                 <button class="dark" style="width:auto; padding:4px 10px;" onclick="downloadProfileImage()">تحميل المبيان</button>
             </div>
-        </div>
-
-        <h2>🛠️ أدوات المساعدة</h2>
-        <div class="btn-group">
-            <button class="dark" onclick="toggleGraticule()">🌐 إظهار الشبكة</button>
         </div>
 
         <h2>📷 للإرجاع الجغرافي (ArcGIS)</h2>
@@ -99,7 +99,7 @@
             <button class="success" onclick="downloadData('kml')">KML</button>
         </div>
 
-        <div id="stats" class="stat-item">ارسم عنصراً للبدء...</div>
+        <div id="stats" class="stat-item">جاهز للعمل...</div>
     </div>
 
     <div id="map"></div>
@@ -116,8 +116,6 @@
     <script src="https://unpkg.com/leaflet-simple-map-screenshoter"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <script>L.GridLayer.Graticule=L.GridLayer.extend({options:{showLabel:!0,opacity:1,weight:0.8,color:"#333",font:"10px Verdana",dashArray:[4,4],minZoom:5},createTile:function(t){var e=this.getTileSize(),i=L.DomUtil.create("canvas","leaflet-tile");i.width=e.x,i.height=e.y;var a=i.getContext("2d");a.beginPath(),a.strokeStyle=this.options.color,a.lineWidth=this.options.weight,a.setLineDash(this.options.dashArray),a.font=this.options.font,a.fillStyle=this.options.color;var o=this._map.unproject(t.multiplyBy(e.x)),n=this._map.unproject(t.add([1,1]).multiplyBy(e.x)),s=this._map.project([n.lat,o.lng]),l=t.multiplyBy(e.x).subtract(s);o.lng>n.lng&&(l.x+=this._map.getSize().x);for(var r=this._getWrapTileNum(),h=Math.floor(o.lat/r)*r;h>n.lat;h-=r){var c=this._map.project([h,o.lng]).subtract(s).add(l);if(c.y>0&&c.y<e.y){a.moveTo(0,c.y),a.lineTo(e.x,c.y);if(this.options.showLabel){var d=h.toFixed(2);a.fillText(d,2,c.y-2)}}}for(var g=Math.floor(o.lng/r)*r;g<n.lng;g+=r){var u=this._map.project([o.lat,g]).subtract(s).add(l);if(u.x>0&&u.x<e.x){a.moveTo(u.x,0),a.lineTo(u.x,e.y);if(this.options.showLabel){var p=g.toFixed(2);a.fillText(p,u.x+2,e.y-2)}}}return a.stroke(),i},_getWrapTileNum:function(){var t=this._map.getZoom(),e=40;return t<3&&(e=20),t<5&&(e=10),t<7&&(e=5),t<9&&(e=2),t<11&&(e=1),t<13&&(e=.5),t<15&&(e=.1),e}});L.gridLayer.graticule=function(t){return new L.GridLayer.Graticule(t)};</script>
 
     <script>
         // تعريف نظام الإحداثيات Lambert Zone 1
@@ -137,11 +135,6 @@
         esriSat.addTo(map);
         L.control.layers(baseMaps).addTo(map);
 
-        var graticule = L.gridLayer.graticule({ showLabel: true, opacity: 0.6, color: '#2c3e50', weight: 0.8 });
-        function toggleGraticule() {
-            if (map.hasLayer(graticule)) { map.removeLayer(graticule); } else { map.addLayer(graticule); }
-        }
-
         var drawnItems = new L.FeatureGroup(); map.addLayer(drawnItems);
         var drawControl = new L.Control.Draw({ 
             edit: { featureGroup: drawnItems }, 
@@ -155,7 +148,7 @@
 
         var selectedPolyline = null;
 
-        // === 1. الرسم (مسترسل) ===
+        // === 1. معالجة الرسم (وإعادة تفعيل النقاط) ===
         map.on(L.Draw.Event.CREATED, function (e) {
             drawnItems.addLayer(e.layer);
             calculateStats(e.layer, e.layerType);
@@ -172,26 +165,75 @@
             }
         });
 
-        // === 2. المقطع الطبوغرافي (الحل النهائي للمشكلة) ===
+        // تفعيل تحديد الخطوط عند النقر عليها (خاصة للمستوردة من KML)
+        drawnItems.on('click', function(e) {
+            if (e.layer instanceof L.Polyline && !(e.layer instanceof L.Polygon)) {
+                selectedPolyline = e.layer;
+                document.getElementById('btn-profile').style.display = 'block';
+                document.getElementById('stats').innerHTML = "تم تحديد مسار (KML). اضغط 'رسم المقطع' للتحليل.";
+                
+                // تغيير لون الخط لتمييز التحديد
+                e.layer.setStyle({color: '#e74c3c'});
+                setTimeout(() => { e.layer.setStyle({color: '#8e44ad'}); }, 1000);
+            }
+        });
+
+        // === 2. وظيفة استيراد KML الجديدة ===
+        function loadKML(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        // تحويل نص KML إلى XML DOM
+                        var parser = new DOMParser();
+                        var kmlDoc = parser.parseFromString(e.target.result, "text/xml");
+                        
+                        // تحويل XML إلى GeoJSON
+                        var geojson = toGeoJSON.kml(kmlDoc);
+                        
+                        // إضافة GeoJSON للخريطة
+                        var layer = L.geoJSON(geojson, {
+                            style: function (feature) {
+                                return {color: "#d35400", weight: 4};
+                            },
+                            onEachFeature: function (feature, layer) {
+                                drawnItems.addLayer(layer); // إضافته لطبقة الرسم ليتم تصديره لاحقاً
+                            }
+                        });
+                        
+                        if (drawnItems.getLayers().length > 0) {
+                            map.fitBounds(drawnItems.getBounds());
+                            document.getElementById('stats').innerHTML = "✅ تم استيراد مجال الدراسة بنجاح.";
+                        } else {
+                            alert("الملف لا يحتوي على بيانات جغرافية صالحة.");
+                        }
+
+                    } catch (err) {
+                        alert("خطأ في قراءة ملف KML: " + err);
+                    }
+                };
+                reader.readAsText(input.files[0]);
+            }
+        }
+
+        // === 3. المقطع الطبوغرافي (Sampling الآمن) ===
         async function generateRealProfile() {
             if (!selectedPolyline) return;
             document.getElementById('stats').innerHTML = "⏳ جاري جلب البيانات...";
 
             var rawLatLngs = selectedPolyline.getLatLngs();
-            
-            // حساب الطول الإجمالي
+            // دعم الخطوط المستوردة التي قد تكون MultiLineString
+            if (Array.isArray(rawLatLngs[0]) && typeof rawLatLngs[0].lat === 'undefined') {
+                rawLatLngs = rawLatLngs.flat(); // تبسيط المصفوفة
+            }
+
             var totalDistanceMeters = 0;
             for(var i=0; i<rawLatLngs.length-1; i++){
                 totalDistanceMeters += rawLatLngs[i].distanceTo(rawLatLngs[i+1]);
             }
 
-            // === التغيير الجذري هنا ===
-            // تحديد عدد نقاط ثابت (مثلاً 80 نقطة) لتجنب مشكلة URL Too Long
-            // مهما كان طول الخط، سنقسمه إلى 80 جزءاً متساوياً فقط.
             var maxSamples = 80;
             var stepSize = totalDistanceMeters / maxSamples;
-
-            // إذا كان الخط قصيراً جداً، نستخدم دقة 30 متر كحد أدنى
             if (stepSize < 30) stepSize = 30;
 
             var denseLatLngs = [];
@@ -203,9 +245,7 @@
                 
                 var segmentSteps = Math.floor(segmentDist / stepSize);
                 
-                // إضافة نقطة البداية
                 denseLatLngs.push(start);
-
                 for (var j = 1; j <= segmentSteps; j++) {
                     var factor = j * stepSize / segmentDist;
                     var lat = start.lat + (end.lat - start.lat) * factor;
@@ -215,12 +255,10 @@
             }
             denseLatLngs.push(rawLatLngs[rawLatLngs.length - 1]);
 
-            // حماية إضافية: إذا تجاوز العدد 100، نقلصه للنصف
             if (denseLatLngs.length > 100) {
                 denseLatLngs = denseLatLngs.filter((_, i) => i % 2 === 0);
             }
 
-            // إرسال الطلب (الآن مضمون ألا يكون طويلاً جداً)
             var lats = denseLatLngs.map(ll => ll.lat.toFixed(5));
             var lngs = denseLatLngs.map(ll => ll.lng.toFixed(5));
             var url = `https://api.open-meteo.com/v1/elevation?latitude=${lats.join(',')}&longitude=${lngs.join(',')}`;
@@ -232,14 +270,13 @@
                 
                 if (data.elevation) {
                     drawChart(data.elevation, denseLatLngs);
-                    document.getElementById('stats').innerHTML = "✅ تم رسم المقطع بنجاح.";
+                    document.getElementById('stats').innerHTML = "✅ تم رسم المقطع.";
                 } else {
-                    document.getElementById('stats').innerHTML = "⚠️ البيانات غير متوفرة لهذه المنطقة.";
+                    document.getElementById('stats').innerHTML = "⚠️ البيانات غير متوفرة.";
                 }
             } catch (error) {
                 console.error(error);
-                document.getElementById('stats').innerHTML = "❌ خطأ في الاتصال بالسيرفر.";
-                alert("تعذر جلب البيانات. حاول رسم خط أقصر قليلاً.");
+                alert("تعذر جلب البيانات. حاول تقليل طول الخط.");
             }
         }
 
@@ -283,7 +320,7 @@
             });
         }
 
-        // === 3. وظائف التصدير (كما هي) ===
+        // === 4. وظائف التصدير ===
         function downloadDXF() {
             if (drawnItems.getLayers().length === 0) { alert("ارسم شيئاً أولاً!"); return; }
 
@@ -291,6 +328,9 @@
             dxf += "0\nSECTION\n2\nENTITIES\n";
 
             drawnItems.eachLayer(function(layer) {
+                // تجاهل الطبقات المعقدة المتداخلة من KML للحفاظ على DXF بسيط
+                if (layer.feature && layer.feature.geometry.type === 'GeometryCollection') return;
+
                 if (layer instanceof L.Marker) {
                     let lat = layer.getLatLng().lat;
                     let lng = layer.getLatLng().lng;
@@ -301,7 +341,11 @@
                 } 
                 else if (layer instanceof L.Polyline || layer instanceof L.Polygon) {
                     let latlngs = layer.getLatLngs();
-                    if (Array.isArray(latlngs[0])) latlngs = latlngs[0]; 
+                    // إصلاح هيكلية البيانات للمضلعات المستوردة
+                    if (Array.isArray(latlngs[0]) && typeof latlngs[0].lat === 'undefined') {
+                         latlngs = latlngs.flat();
+                    }
+                    if (!latlngs[0]) return; // تخطي الفارغ
 
                     dxf += "0\nLWPOLYLINE\n8\nPolygons\n90\n" + latlngs.length + "\n70\n" + (layer instanceof L.Polygon ? 1 : 0) + "\n";
                     
@@ -346,6 +390,10 @@
             var data = [];
             drawnItems.eachLayer(function(layer) {
                 var shapeData = { Type: "Unknown", Lat: "", Lng: "", X_Lambert: "", Y_Lambert: "", MetricValue: "" };
+                
+                // تجاهل البيانات المعقدة جداً في Excel
+                if (layer.feature && layer.feature.geometry.type === 'GeometryCollection') return;
+
                 if (layer instanceof L.Marker) {
                     shapeData.Type = "Point"; 
                     shapeData.Lat = layer.getLatLng().lat.toFixed(6); 

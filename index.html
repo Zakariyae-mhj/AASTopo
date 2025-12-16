@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZASTopo Pro V4 - النسخة الأكاديمية</title>
+    <title>ZASTopo Pro - النسخة الأكاديمية</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
@@ -19,13 +19,13 @@
             z-index: 1000; max-height: 92vh; overflow-y: auto;
             border-right: 5px solid #2ecc71;
         }
-        h1 { color: #2ecc71; font-size: 22px; margin: 0; text-align: center; font-weight: 800; }
+        h1 { color: #2ecc71; font-size: 24px; margin: 0; text-align: center; font-weight: 800; }
         
-        /* تنسيق النصوص الجديدة */
-        .sub-title { text-align: center; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; line-height: 1.6; }
-        .dev-name { font-size: 13px; font-weight: bold; color: #34495e; }
-        .lab-name { font-size: 11px; color: #7f8c8d; }
-        .univ-name { font-size: 11px; color: #2980b9; font-weight: 600; }
+        /* تنسيق المعلومات الأكاديمية */
+        .header-info { text-align: center; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .dev-name { font-size: 14px; font-weight: bold; color: #2c3e50; margin-bottom: 5px; }
+        .lab-info { font-size: 11px; color: #7f8c8d; line-height: 1.4; font-weight: 500; }
+        .univ-info { font-size: 11px; color: #2980b9; font-weight: 700; margin-top: 3px; }
 
         h2 { font-size: 13px; color: #34495e; margin: 12px 0 5px 0; font-weight: bold; border-right: 3px solid #3498db; padding-right: 8px; }
         
@@ -56,10 +56,11 @@
 
     <div id="sidebar">
         <h1>ZASTopo Pro</h1>
-        <div class="sub-title">
+        
+        <div class="header-info">
             <div class="dev-name">تطوير: زكرياء المحجوبي</div>
-            <div class="lab-name">مختبر دينامية الأوساط الجافة والتهيئة الجهوية</div>
-            <div class="univ-name">شعبة الجغرافيا، جامعة محمد الأول وجدة</div>
+            <div class="lab-info">مختبر دينامية الأوساط الجافة والتهيئة الجهوية</div>
+            <div class="univ-info">شعبة الجغرافيا، جامعة محمد الأول - وجدة</div>
         </div>
 
         <h2>✏️ أدوات الرسم (مسترسلة)</h2>
@@ -67,9 +68,9 @@
             <button onclick="locateUser()">📍 موقعي</button>
             <button class="danger" onclick="clearMap()">🗑️ مسح الكل</button>
         </div>
-        <p style="font-size:10px; color:#666;">* لإيقاف رسم النقاط اضغط على زر Cancel بجانب الأيقونة.</p>
+        <p style="font-size:10px; color:#666; margin-top:2px;">* لإيقاف الرسم اضغط على Cancel بجانب الأيقونة.</p>
 
-        <button id="btn-profile" class="profile-btn" onclick="generateRealProfile()">🏔️ رسم المقطع الطبوغرافي (تضاريس واقعية)</button>
+        <button id="btn-profile" class="profile-btn" onclick="generateRealProfile()">🏔️ رسم المقطع الطبوغرافي</button>
         <div id="chart-container">
             <canvas id="elevationChart"></canvas>
             <div style="text-align:center; margin-top:5px;">
@@ -154,7 +155,7 @@
 
         var selectedPolyline = null;
 
-        // === 1. معالجة الرسم (وإعادة تفعيل النقاط) ===
+        // === 1. الرسم (مسترسل) ===
         map.on(L.Draw.Event.CREATED, function (e) {
             drawnItems.addLayer(e.layer);
             calculateStats(e.layer, e.layerType);
@@ -171,23 +172,27 @@
             }
         });
 
-        // === 2. المقطع الطبوغرافي المتطور (Smart Sampling) ===
+        // === 2. المقطع الطبوغرافي (الحل النهائي للمشكلة) ===
         async function generateRealProfile() {
             if (!selectedPolyline) return;
             document.getElementById('stats').innerHTML = "⏳ جاري جلب البيانات...";
 
             var rawLatLngs = selectedPolyline.getLatLngs();
             
-            // حساب طول الخط الإجمالي أولاً
+            // حساب الطول الإجمالي
             var totalDistanceMeters = 0;
             for(var i=0; i<rawLatLngs.length-1; i++){
                 totalDistanceMeters += rawLatLngs[i].distanceTo(rawLatLngs[i+1]);
             }
 
-            // تحديد مسافة العينة ديناميكياً لتجنب تجاوز الحد المسموح به
-            // الهدف: الحصول على حوالي 100-150 نقطة كحد أقصى لضمان سرعة الاستجابة
-            var targetPoints = 150;
-            var stepSize = Math.max(50, totalDistanceMeters / targetPoints); // لا تقل عن 50 متر
+            // === التغيير الجذري هنا ===
+            // تحديد عدد نقاط ثابت (مثلاً 80 نقطة) لتجنب مشكلة URL Too Long
+            // مهما كان طول الخط، سنقسمه إلى 80 جزءاً متساوياً فقط.
+            var maxSamples = 80;
+            var stepSize = totalDistanceMeters / maxSamples;
+
+            // إذا كان الخط قصيراً جداً، نستخدم دقة 30 متر كحد أدنى
+            if (stepSize < 30) stepSize = 30;
 
             var denseLatLngs = [];
             
@@ -198,7 +203,7 @@
                 
                 var segmentSteps = Math.floor(segmentDist / stepSize);
                 
-                // إضافة نقطة البداية دائماً
+                // إضافة نقطة البداية
                 denseLatLngs.push(start);
 
                 for (var j = 1; j <= segmentSteps; j++) {
@@ -208,30 +213,33 @@
                     denseLatLngs.push(L.latLng(lat, lng));
                 }
             }
-            denseLatLngs.push(rawLatLngs[rawLatLngs.length - 1]); // إضافة النقطة الأخيرة
+            denseLatLngs.push(rawLatLngs[rawLatLngs.length - 1]);
 
-            // إرسال الطلب
+            // حماية إضافية: إذا تجاوز العدد 100، نقلصه للنصف
+            if (denseLatLngs.length > 100) {
+                denseLatLngs = denseLatLngs.filter((_, i) => i % 2 === 0);
+            }
+
+            // إرسال الطلب (الآن مضمون ألا يكون طويلاً جداً)
             var lats = denseLatLngs.map(ll => ll.lat.toFixed(5));
             var lngs = denseLatLngs.map(ll => ll.lng.toFixed(5));
             var url = `https://api.open-meteo.com/v1/elevation?latitude=${lats.join(',')}&longitude=${lngs.join(',')}`;
 
             try {
                 var response = await fetch(url);
-                
-                if (!response.ok) throw new Error("API Limit or Network Error");
-                
+                if (!response.ok) throw new Error("Server Limit");
                 var data = await response.json();
                 
                 if (data.elevation) {
                     drawChart(data.elevation, denseLatLngs);
                     document.getElementById('stats').innerHTML = "✅ تم رسم المقطع بنجاح.";
                 } else {
-                    document.getElementById('stats').innerHTML = "⚠️ فشل جلب البيانات.";
+                    document.getElementById('stats').innerHTML = "⚠️ البيانات غير متوفرة لهذه المنطقة.";
                 }
             } catch (error) {
                 console.error(error);
-                alert("تعذر جلب البيانات. قد يكون الخط طويلاً جداً أو خدمة الإنترنت ضعيفة.");
-                document.getElementById('stats').innerHTML = "❌ خطأ في الاتصال.";
+                document.getElementById('stats').innerHTML = "❌ خطأ في الاتصال بالسيرفر.";
+                alert("تعذر جلب البيانات. حاول رسم خط أقصر قليلاً.");
             }
         }
 
@@ -268,14 +276,14 @@
                     responsive: true,
                     interaction: { intersect: false, mode: 'index' },
                     scales: {
-                        x: { title: { display: true, text: 'المسافة (كم)' }, ticks: { maxTicksLimit: 10 } },
+                        x: { title: { display: true, text: 'المسافة (كم)' }, ticks: { maxTicksLimit: 8 } },
                         y: { title: { display: true, text: 'الارتفاع (م)' } }
                     }
                 }
             });
         }
 
-        // === 3. تصدير DXF (AutoCAD) ===
+        // === 3. وظائف التصدير (كما هي) ===
         function downloadDXF() {
             if (drawnItems.getLayers().length === 0) { alert("ارسم شيئاً أولاً!"); return; }
 
@@ -308,7 +316,6 @@
             downloadFile("zastopo_export.dxf", dxf, "application/dxf");
         }
 
-        // الوظائف المساعدة
         function downloadProfileImage() {
             var link = document.createElement('a');
             link.download = 'profile_topographique.png';
@@ -325,7 +332,7 @@
                 var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
                 content = `📐 المساحة: ${(area/10000).toFixed(4)} هكتار`;
             } else if (type === 'marker') {
-                content = "📍 تم إضافة نقطة (للمتابعة انقر، للإيقاف اضغط Cancel)";
+                content = "📍 تم إضافة نقطة";
             }
             document.getElementById('stats').innerHTML = content;
         }

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZASTopo Pro V6 - خرائط جوجل</title>
+    <title>ZASTopo Pro V7 - النسخة المستقرة</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
@@ -63,7 +63,7 @@
             <div class="univ-info">شعبة الجغرافيا، جامعة محمد الأول - وجدة</div>
         </div>
 
-        <h2>✏️ أدوات الرسم (مسترسلة)</h2>
+        <h2>✏️ أدوات الرسم</h2>
         <div class="btn-group">
             <button onclick="locateUser()">📍 موقعي</button>
             <button class="danger" onclick="clearMap()">🗑️ مسح الكل</button>
@@ -128,20 +128,20 @@
             mimeType: 'image/jpeg'
         }).addTo(map);
 
-        // === طبقات الخرائط الجديدة (بما فيها جوجل) ===
+        // === طبقات الخرائط ===
         var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
             attribution: '© OpenStreetMap', 
             maxZoom: 19 
         });
 
-        // طبقة جوجل هايبرد (صور + أسماء) - الأهم بالنسبة لك
+        // طبقة جوجل هايبرد
         var googleHybrid = L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',{
-            maxZoom: 22, // تكبير عالي جداً
+            maxZoom: 22,
             subdomains:['mt0','mt1','mt2','mt3'],
             attribution: '© Google Maps'
         });
 
-        // طبقة جوجل ساتلايت (صور فقط)
+        // طبقة جوجل ساتلايت
         var googleSat = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',{
             maxZoom: 22,
             subdomains:['mt0','mt1','mt2','mt3'],
@@ -160,15 +160,19 @@
             "OpenStreetMap": osm
         };
 
-        // جعل جوجل هايبرد هي الافتراضية لأنها الأوضح
         googleHybrid.addTo(map);
         L.control.layers(baseMaps).addTo(map);
 
         var drawnItems = new L.FeatureGroup(); map.addLayer(drawnItems);
+        
+        // === إعدادات الرسم ===
         var drawControl = new L.Control.Draw({ 
             edit: { featureGroup: drawnItems }, 
             draw: { 
-                polygon: true, rectangle: true, circle: false,
+                polygon: true, 
+                rectangle: true, 
+                circle: false,
+                // هنا الإصلاح: نستخدم repeatMode فقط، بدون أي كود إضافي
                 marker: { repeatMode: true }, 
                 polyline: { shapeOptions: { color: '#8e44ad', weight: 4 } }
             } 
@@ -177,7 +181,7 @@
 
         var selectedPolyline = null;
 
-        // === 1. معالجة الرسم ===
+        // === 1. معالجة الرسم (تم حذف كود التكرار اليدوي) ===
         map.on(L.Draw.Event.CREATED, function (e) {
             drawnItems.addLayer(e.layer);
             calculateStats(e.layer, e.layerType);
@@ -187,10 +191,9 @@
                 document.getElementById('btn-profile').style.display = 'block';
                 document.getElementById('stats').innerHTML = "تم رسم مسار. اضغط 'رسم المقطع' لعرض التضاريس.";
             } else if (e.layerType === 'marker') {
-                setTimeout(function(){
-                    var markerDrawer = new L.Draw.Marker(map, drawControl.options.draw.marker);
-                    markerDrawer.enable();
-                }, 100);
+                // لا حاجة لأي كود هنا، المكتبة ستعيد تفعيل النقطة تلقائياً بسبب repeatMode: true
+                // وإذا اخترت أداة أخرى، ستتوقف تلقائياً.
+                document.getElementById('stats').innerHTML = "تم وضع نقطة (مسترسل). للإيقاف اضغط Cancel أو اختر أداة أخرى.";
             }
         });
 

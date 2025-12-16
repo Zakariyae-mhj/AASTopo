@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZASTopo - منصة التحليل الجغرافي</title>
+    <title>ZASTopo Pro - منصة التحليل الجغرافي</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
@@ -12,99 +12,99 @@
         body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4; }
         #map { height: 100vh; width: 100%; z-index: 1; }
         
-        /* تصميم الشريط الجانبي */
+        /* الشريط الجانبي */
         #sidebar {
-            position: absolute; top: 10px; right: 10px; width: 320px;
-            background: rgba(255, 255, 255, 0.98); padding: 20px;
+            position: absolute; top: 10px; right: 10px; width: 340px;
+            background: rgba(255, 255, 255, 0.98); padding: 15px;
             border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            z-index: 1000; max-height: 90vh; overflow-y: auto;
+            z-index: 1000; max-height: 92vh; overflow-y: auto;
             border-right: 5px solid #2ecc71;
         }
-        h1 { color: #2ecc71; font-size: 26px; margin: 0; text-align: center; font-weight: 800; letter-spacing: 1px; }
-        .sub-title { text-align: center; font-size: 13px; color: #7f8c8d; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-        h2 { font-size: 15px; color: #34495e; margin: 15px 0 5px 0; font-weight: bold; border-right: 3px solid #3498db; padding-right: 8px; }
+        h1 { color: #2ecc71; font-size: 24px; margin: 0; text-align: center; font-weight: 800; }
+        .sub-title { text-align: center; font-size: 12px; color: #7f8c8d; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        h2 { font-size: 14px; color: #34495e; margin: 15px 0 5px 0; font-weight: bold; border-right: 3px solid #3498db; padding-right: 8px; }
         
-        /* الأزرار والمدخلات */
-        .btn-group { display: flex; gap: 5px; margin-bottom: 10px; flex-wrap: wrap; }
+        /* العناصر */
+        .btn-group { display: flex; gap: 5px; margin-bottom: 5px; flex-wrap: wrap; }
         button {
-            flex: 1; padding: 10px; border: none; border-radius: 6px;
+            flex: 1; padding: 8px; border: none; border-radius: 4px;
             cursor: pointer; background-color: #3498db; color: white;
-            font-weight: 600; transition: 0.2s; font-size: 13px;
+            font-weight: 600; transition: 0.2s; font-size: 12px; min-width: 70px;
         }
         button:hover { transform: translateY(-2px); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        button.danger { background-color: #e74c3c; }
-        button.success { background-color: #27ae60; }
-        button.warning { background-color: #f39c12; color: #fff; }
+        .danger { background: #e74c3c; } .success { background: #27ae60; } .warning { background: #f39c12; } .dark { background: #34495e; }
+        .excel-btn { background: #217346; } .csv-btn { background: #d35400; }
 
         select, input[type="date"] {
-            width: 100%; padding: 8px; margin-bottom: 10px;
-            border: 1px solid #ddd; border-radius: 6px;
-            background: #f9f9f9; font-family: inherit;
+            width: 100%; padding: 6px; margin-bottom: 5px; font-size: 12px;
+            border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;
         }
 
         /* شريط الإحداثيات */
         #coords-bar {
             position: absolute; bottom: 0; left: 0; right: 0;
-            background: rgba(44, 62, 80, 0.9); color: #ecf0f1;
-            padding: 8px 20px; font-size: 13px; z-index: 1000;
+            background: rgba(44, 62, 80, 0.95); color: #ecf0f1;
+            padding: 5px 15px; font-size: 11px; z-index: 1000;
             display: flex; justify-content: space-between; direction: ltr;
             font-family: 'Courier New', monospace;
         }
-        .stat-item { background: #e8f6f3; padding: 12px; margin-top: 5px; border-radius: 6px; font-size: 14px; border: 1px solid #d1f2eb; color: #16a085; }
+        .stat-item { background: #e8f6f3; padding: 10px; margin-top: 10px; border-radius: 6px; font-size: 13px; border: 1px solid #d1f2eb; color: #16a085; }
+        
+        /* تنسيق شبكة الإحداثيات */
+        .leaflet-grid-label { color: #333; font-size: 10px; }
     </style>
 </head>
 <body>
 
     <div id="sidebar">
-        <h1>ZASTopo</h1>
+        <h1>ZASTopo Pro</h1>
         <div class="sub-title">تطوير: زكرياء المحجوبي</div>
         
-        <h2>🛰️ إعدادات Sentinel-2</h2>
-        <label style="font-size:12px;">تاريخ الصورة:</label>
-        <input type="date" id="sentinel-date" value="2024-06-01">
-        
-        <label style="font-size:12px;">المؤشر (Index):</label>
+        <h2>🛰️ صور الأقمار الاصطناعية</h2>
+        <label style="font-size:11px;">تاريخ النهاية (يبحث في آخر 30 يوم):</label>
+        <input type="date" id="sentinel-date" value="2024-05-01">
         <select id="sentinel-layer-select">
-            <option value="TRUE-COLOR">ألوان طبيعية (True Color)</option>
-            <option value="NDVI">الغطاء النباتي (NDVI)</option>
+            <option value="NDVI" selected>الغطاء النباتي (NDVI)</option>
             <option value="NDWI">المياه (NDWI)</option>
-            <option value="NDMI">مؤشر الرطوبة (NDMI)</option>
+            <option value="TRUE-COLOR">ألوان طبيعية (True Color)</option>
             <option value="FALSE-COLOR">أشعة تحت حمراء (False Color)</option>
         </select>
-        
-        <label style="font-size:12px; margin-top:5px; display:block;">نسبة الغيوم القصوى:</label>
         <select id="cloud-cover">
-            <option value="10">10% (صافية جداً)</option>
-            <option value="30" selected>30% (متوسطة)</option>
-            <option value="100">100% (أرني أي شيء)</option>
+             <option value="20">غيوم < 20%</option>
+             <option value="50" selected>غيوم < 50%</option>
         </select>
-        
-        <button class="warning" onclick="updateSentinel()">🔄 تحديث القمر الاصطناعي</button>
+        <button class="warning" style="width:100%" onclick="updateSentinel()">🔄 محاولة جلب الصورة</button>
 
-        <h2>📐 أدوات الرسم</h2>
+        <h2>🛠️ أدوات المساعدة</h2>
+        <div class="btn-group">
+            <button class="dark" onclick="toggleGraticule()">🌐 إظهار/إخفاء الشبكة</button>
+        </div>
         <div class="btn-group">
             <button onclick="locateUser()">📍 موقعي</button>
-            <button class="danger" onclick="clearMap()">🗑️ مسح</button>
+            <button class="danger" onclick="clearMap()">🗑️ مسح الكل</button>
         </div>
 
-        <h2>📥 التصدير والتحميل</h2>
+        <h2>📷 تجهيز للإرجاع الجغرافي (ArcGIS)</h2>
+        <p style="font-size:11px; color:#666; margin:5px 0;">ارسم المنطقة، ثم حمل الصورة وملف الإحداثيات.</p>
+        <button style="background: #8e44ad; width: 100%;" onclick="takeScreenshotAndMetadata()">📷 تحميل الصورة + ملف الإحداثيات (TXT)</button>
+
+        <h2>📥 تصدير البيانات المرسومة</h2>
+        <div class="btn-group">
+            <button class="excel-btn" onclick="downloadExcel()">Excel (XLSX)</button>
+            <button class="csv-btn" onclick="downloadCSV()">CSV</button>
+        </div>
         <div class="btn-group">
             <button class="success" onclick="downloadData('geojson')">GeoJSON</button>
             <button class="success" onclick="downloadData('kml')">KML</button>
         </div>
-        <button style="background: #8e44ad; width: 100%; margin-top: 5px;" onclick="takeScreenshot()">📷 تحميل صورة الخريطة (JPG)</button>
 
-        <h2>📊 الإحصائيات</h2>
-        <div id="stats" class="stat-item">
-            جاهز للعمل...
-        </div>
+        <div id="stats" class="stat-item">جاهز.</div>
     </div>
 
     <div id="map"></div>
-    
     <div id="coords-bar">
         <span id="metric-coords">X: 000000 | Y: 000000 (Lambert I)</span>
-        <span id="geo-coords">Lat: 0.00 | Lng: 0.00</span>
+        <span id="geo-coords">Lat: 0.00000 | Lng: 0.00000</span>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -113,184 +113,158 @@
     <script src="https://unpkg.com/@mapbox/togeojson@0.16.0/togeojson.js"></script>
     <script src="https://unpkg.com/leaflet-geometryutil"></script>
     <script src="https://unpkg.com/leaflet-simple-map-screenshoter"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <script>
+        // إضافة بسيطة لرسم الشبكة (Graticule)
+        L.GridLayer.Graticule = L.GridLayer.extend({options:{showLabel:!0,opacity:1,weight:0.8,color:"#aaa",font:"10px Verdana",dashArray:[5,5],minZoom:5},createTile:function(t){var e=this.getTileSize(),i=L.DomUtil.create("canvas","leaflet-tile");i.width=e.x,i.height=e.y;var a=i.getContext("2d");a.beginPath(),a.strokeStyle=this.options.color,a.lineWidth=this.options.weight,a.setLineDash(this.options.dashArray),a.font=this.options.font,a.fillStyle=this.options.color;var o=this._map.unproject(t.multiplyBy(e.x)),n=this._map.unproject(t.add([1,1]).multiplyBy(e.x)),s=this._map.project([n.lat,o.lng]),l=t.multiplyBy(e.x).subtract(s);o.lng>n.lng&&(l.x+=this._map.getSize().x);for(var r=this._getWrapTileNum(),h=Math.floor(o.lat/r)*r;h>n.lat;h-=r){var c=this._map.project([h,o.lng]).subtract(s).add(l);if(c.y>0&&c.y<e.y){a.moveTo(0,c.y),a.lineTo(e.x,c.y);if(this.options.showLabel){var d=h.toFixed(2)+"° N";a.fillText(d,5,c.y-2)}}}for(var g=Math.floor(o.lng/r)*r;g<n.lng;g+=r){var u=this._map.project([o.lat,g]).subtract(s).add(l);if(u.x>0&&u.x<e.x){a.moveTo(u.x,0),a.lineTo(u.x,e.y);if(this.options.showLabel){var p=g.toFixed(2)+"° E";a.fillText(p,u.x+2,e.y-5)}}}return a.stroke(),i},_getWrapTileNum:function(){var t=this._map.getZoom(),e=40;return t<3&&(e=20),t<5&&(e=10),t<7&&(e=5),t<9&&(e=2),t<11&&(e=1),t<13&&(e=.5),t<15&&(e=.1),e}});L.gridLayer.graticule=function(t){return new L.GridLayer.Graticule(t)};
+    </script>
 
     <script>
-        // 1. إعداد الخريطة
         var map = L.map('map').setView([33.3, -5.4], 6);
-
+        
+        // إعداد أداة التقاط الصور
         var snapshoter = L.simpleMapScreenshoter({
             hideElementsWithSelectors: ['.leaflet-control-container', '#sidebar', '#coords-bar'],
             mimeType: 'image/jpeg'
         }).addTo(map);
 
-        // 2. الطبقات الأساسية
+        // الطبقات
         var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' });
         var esriSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '© Esri' });
         
-        // ============================================
-        // 🔑 مفتاح SENTINEL HUB الصحيح
-        // ============================================
+        // مفتاح Sentinel Hub
         var sentinelHubID = "fde278a6-6830-4065-a2a9-bde54f22f3c6"; 
-
         var sentinelLayer = L.tileLayer.wms("https://services.sentinel-hub.com/ogc/wms/" + sentinelHubID, {
-            format: 'image/png',
-            transparent: true,
-            version: '1.1.1',
-            attribution: '© Sentinel Hub',
-            maxZoom: 16,
-            crs: L.CRS.EPSG3857 // ضمان توافق نظام الإحداثيات
+            format: 'image/png', transparent: true, version: '1.1.1', attribution: '© Sentinel Hub', maxZoom: 16, crs: L.CRS.EPSG3857
         });
 
-        var esriSentinel = L.tileLayer('https://clarity.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: '© Esri Sentinel 2'
-        });
-
-        var baseMaps = {
-            "خريطة طرقية": osm,
-            "صور جوية (Esri)": esriSat,
-            "Sentinel-2 (Clarity)": esriSentinel
-        };
-
+        var baseMaps = { "خريطة طرقية": osm, "صور جوية (Esri)": esriSat };
         esriSat.addTo(map);
         L.control.layers(baseMaps).addTo(map);
 
-        // 3. دالة تحديث القمر الاصطناعي (تم تحسينها للبحث في فترة زمنية)
-        function updateSentinel() {
-            var dateInput = document.getElementById('sentinel-date').value;
-            var layerIndex = document.getElementById('sentinel-layer-select').value;
-            var cloudCover = document.getElementById('cloud-cover').value;
-            
-            if (map.hasLayer(sentinelLayer)) {
-                map.removeLayer(sentinelLayer);
-            }
-
-            // === المنطق الجديد: البحث في فترة زمنية (شهر كامل) ===
-            // لأن القمر لا يمر كل يوم، سنبحث من التاريخ المختار ونعود 30 يوماً للوراء
-            var endDate = new Date(dateInput);
-            var startDate = new Date(endDate);
-            startDate.setDate(endDate.getDate() - 30); // فترة بحث 30 يوم
-
-            var timeRange = startDate.toISOString().split('T')[0] + '/' + endDate.toISOString().split('T')[0];
-
-            // تحديث المعايير
-            sentinelLayer.setParams({ 
-                layers: layerIndex, 
-                time: timeRange,
-                maxcc: cloudCover, // فلتر الغيوم
-                showLogo: false
-            });
-
-            sentinelLayer.addTo(map);
-            sentinelLayer.bringToFront();
-            
-            document.getElementById('stats').innerHTML = `⏳ جاري البحث عن أفضل صورة (NDVI) خلال الشهر...`;
-            
-            sentinelLayer.on('load', function() {
-                document.getElementById('stats').innerHTML = `✅ تم تحميل طبقة ${layerIndex} بنجاح.`;
-            });
-            
-            // التعامل مع الأخطاء بصمت لتجنب الإزعاج
-            sentinelLayer.on('tileerror', function() {});
+        // شبكة الإحداثيات
+        var graticule = L.gridLayer.graticule({ showLabel: true, opacity: 0.7, color: '#34495e', weight: 0.5 });
+        function toggleGraticule() {
+            if (map.hasLayer(graticule)) { map.removeLayer(graticule); } else { map.addLayer(graticule); }
         }
 
-        // 4. أدوات الرسم
-        var drawnItems = new L.FeatureGroup();
-        map.addLayer(drawnItems);
+        // تحديث Sentinel (محاولة أفضل)
+        function updateSentinel() {
+            var date = new Date(document.getElementById('sentinel-date').value);
+            var startDate = new Date(date); startDate.setDate(date.getDate() - 30);
+            var timeRange = startDate.toISOString().split('T')[0] + '/' + date.toISOString().split('T')[0];
+            var layerIndex = document.getElementById('sentinel-layer-select').value;
+            var cloud = document.getElementById('cloud-cover').value;
 
-        var drawControl = new L.Control.Draw({
-            edit: { featureGroup: drawnItems },
-            draw: {
-                polygon: { allowIntersection: false, showArea: true },
-                polyline: { shapeOptions: { color: '#f357a1' } },
-                marker: true,
-                circle: false,
-                rectangle: true
-            }
-        });
+            if (map.hasLayer(sentinelLayer)) map.removeLayer(sentinelLayer);
+            sentinelLayer.setParams({ layers: layerIndex, time: timeRange, maxcc: cloud, showLogo: false });
+            sentinelLayer.addTo(map); sentinelLayer.bringToFront();
+            
+            document.getElementById('stats').innerHTML = `⏳ جاري محاولة جلب ${layerIndex}... (قد يستغرق وقتاً)`;
+            sentinelLayer.on('load', () => document.getElementById('stats').innerHTML = `✅ تم التحميل (إذا كانت المنطقة صافية).`);
+            sentinelLayer.on('tileerror', () => document.getElementById('stats').innerHTML = `⚠️ فشل التحميل. ربما غيوم كثيفة أو ضغط على السيرفر المجاني.`);
+        }
+
+        // أدوات الرسم
+        var drawnItems = new L.FeatureGroup(); map.addLayer(drawnItems);
+        var drawControl = new L.Control.Draw({ edit: { featureGroup: drawnItems }, draw: { polygon: true, rectangle: true, polyline: true, marker: true, circle: false } });
         map.addControl(drawControl);
 
         proj4.defs("EPSG:26191", "+proj=lcc +lat_1=33.3 +lat_0=33.3 +lon_0=-5.4 +k_0=0.999625769 +x_0=500000 +y_0=300000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs");
 
         map.on(L.Draw.Event.CREATED, function (e) {
-            var layer = e.layer;
-            drawnItems.addLayer(layer);
-            calculateStats(layer, e.layerType);
-            
-            if (e.layerType === 'marker') {
-                setTimeout(function(){
-                    new L.Draw.Marker(map, drawControl.options.draw.marker).enable();
-                }, 100);
+            drawnItems.addLayer(e.layer);
+            // تكبير الخريطة على العنصر المرسوم
+            if (e.layerType === 'polygon' || e.layerType === 'rectangle') {
+                map.fitBounds(e.layer.getBounds(), {padding: [50, 50]});
             }
         });
 
-        function calculateStats(layer, type) {
-            var content = "";
-            if (type === 'polyline') {
-                var d = 0;
-                var latlngs = layer.getLatLngs();
-                for (var i = 0; i < latlngs.length - 1; i++) d += latlngs[i].distanceTo(latlngs[i + 1]);
-                content = `📏 الطول: ${(d/1000).toFixed(3)} كم`;
-            } else if (type === 'polygon' || type === 'rectangle') {
-                var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
-                content = `📐 المساحة: ${(area/10000).toFixed(4)} هكتار`;
-            } else if (type === 'marker') {
-                content = "📍 تم إضافة نقطة";
-            }
-            document.getElementById('stats').innerHTML = content;
-        }
-
+        // عرض الإحداثيات
         map.on('mousemove', function(e) {
-            var lat = e.latlng.lat;
-            var lng = e.latlng.lng;
-            document.getElementById('geo-coords').innerText = `Lat: ${lat.toFixed(5)} | Lng: ${lng.toFixed(5)}`;
-            try {
-                var lambert = proj4("EPSG:4326", "EPSG:26191", [lng, lat]);
-                document.getElementById('metric-coords').innerText = `X: ${lambert[0].toFixed(2)} | Y: ${lambert[1].toFixed(2)}`;
-            } catch(err) {}
+            document.getElementById('geo-coords').innerText = `Lat: ${e.latlng.lat.toFixed(5)} | Lng: ${e.latlng.lng.toFixed(5)}`;
+            try { var l = proj4("EPSG:4326", "EPSG:26191", [e.latlng.lng, e.latlng.lat]); document.getElementById('metric-coords').innerText = `X: ${l[0].toFixed(0)} | Y: ${l[1].toFixed(0)}`; } catch(e){}
         });
 
-        function locateUser() { map.locate({setView: true, maxZoom: 14}); }
-        function clearMap() { drawnItems.clearLayers(); document.getElementById('stats').innerHTML = "تم المسح"; }
+        // الوظائف الأساسية
+        function locateUser() { map.locate({setView: true, maxZoom: 15}); }
+        function clearMap() { drawnItems.clearLayers(); document.getElementById('stats').innerHTML = "تم المسح."; }
 
-        function takeScreenshot() {
-            snapshoter.takeScreen('image')
-                .then(image => {
-                    var link = document.createElement('a');
-                    link.download = "ZASTopo_Capture.jpg";
-                    link.href = image;
-                    link.click();
-                }).catch(e => {
-                    alert('خطأ في التقاط الصورة');
-                });
+        // =========================================
+        // 🆕 وظيفة تحميل الصورة + ملف الإحداثيات (Metadata)
+        // =========================================
+        function takeScreenshotAndMetadata() {
+            // 1. حساب حدود الشاشة الحالية
+            var bounds = map.getBounds();
+            var northEast = bounds.getNorthEast();
+            var southWest = bounds.getSouthWest();
+
+            // 2. إنشاء ملف نصي يحتوي على الإحداثيات لـ ArcGIS
+            var metadataContent = 
+                "ZASTopo Image Metadata for ArcGIS Georeferencing\n" +
+                "------------------------------------------------\n" +
+                "Use these coordinates as Control Points (DMS or DD):\n\n" +
+                "Top-Left (NW) Corner:\n   Lat: " + northEast.lat.toFixed(6) + "\n   Lng: " + southWest.lng.toFixed(6) + "\n\n" +
+                "Bottom-Right (SE) Corner:\n   Lat: " + southWest.lat.toFixed(6) + "\n   Lng: " + northEast.lng.toFixed(6) + "\n\n" +
+                "Projection: WGS 84 (EPSG:4326)";
+            
+            downloadFile("image_metadata_bounds.txt", metadataContent, "text/plain");
+
+            // 3. تحميل الصورة بعد ثانية (لضمان تحميل النص أولاً)
+            setTimeout(() => {
+                snapshoter.takeScreen('image').then(image => {
+                    var link = document.createElement('a'); link.download = "ZASTopo_Map_Image.jpg"; link.href = image; link.click();
+                }).catch(e => alert('خطأ في الصورة: ' + e));
+            }, 1000);
         }
 
-        function downloadData(format) {
-            var data = drawnItems.toGeoJSON();
-            if (data.features.length === 0) { alert("ارسم شيئاً أولاً"); return; }
-            var content = format === 'geojson' ? JSON.stringify(data) : toKML(data);
-            var blob = new Blob([content], {type: "text/plain"});
-            var a = document.createElement("a");
-            a.href = URL.createObjectURL(blob);
-            a.download = "zastopo." + format;
-            a.click();
-        }
-
-        function toKML(geojson) {
-            let kml = `<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document>`;
-            geojson.features.forEach(f => {
-                kml += `<Placemark><name>Feature</name>`;
-                if (f.geometry.type === "Point") {
-                    kml += `<Point><coordinates>${f.geometry.coordinates[0]},${f.geometry.coordinates[1]}</coordinates></Point>`;
-                } else if (f.geometry.type === "Polygon") {
-                    kml += `<Polygon><outerBoundaryIs><LinearRing><coordinates>`;
-                    f.geometry.coordinates[0].forEach(c => { kml += `${c[0]},${c[1]} `; });
-                    kml += `</coordinates></LinearRing></outerBoundaryIs></Polygon>`;
+        // =========================================
+        // 🆕 وظائف التصدير الجديدة (Excel & CSV)
+        // =========================================
+        function getDrawnDataArray() {
+            var data = [];
+            drawnItems.eachLayer(function(layer) {
+                var shapeData = { Type: "Unknown", Lat: "", Lng: "", MetricValue: "" };
+                if (layer instanceof L.Marker) {
+                    shapeData.Type = "Point"; shapeData.Lat = layer.getLatLng().lat.toFixed(6); shapeData.Lng = layer.getLatLng().lng.toFixed(6);
+                } else if (layer instanceof L.Polygon) {
+                    shapeData.Type = "Polygon"; shapeData.MetricValue = (L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]) / 10000).toFixed(4) + " Hectares";
+                } else if (layer instanceof L.Polyline) {
+                    var d=0, ll=layer.getLatLngs(); for(var i=0;i<ll.length-1;i++) d+=ll[i].distanceTo(ll[i+1]);
+                    shapeData.Type = "Line"; shapeData.MetricValue = (d/1000).toFixed(3) + " KM";
                 }
-                kml += `</Placemark>`;
+                data.push(shapeData);
             });
-            kml += `</Document></kml>`;
-            return kml;
+            return data;
         }
+
+        function downloadExcel() {
+            var data = getDrawnDataArray();
+            if (data.length === 0) { alert("ارسم شيئاً أولاً!"); return; }
+            var ws = XLSX.utils.json_to_sheet(data);
+            var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "ZASTopo Data");
+            XLSX.writeFile(wb, "zastopo_data.xlsx");
+        }
+
+        function downloadCSV() {
+            var data = getDrawnDataArray();
+            if (data.length === 0) { alert("ارسم شيئاً أولاً!"); return; }
+            var ws = XLSX.utils.json_to_sheet(data);
+            var csv = XLSX.utils.sheet_to_csv(ws);
+            downloadFile("zastopo_data.csv", csv, "text/csv;charset=utf-8;");
+        }
+
+        // وظائف مساعدة
+        function downloadData(format) {
+            var data = drawnItems.toGeoJSON(); if (data.features.length === 0) { alert("ارسم أولاً"); return; }
+            downloadFile("zastopo." + format, format === 'geojson' ? JSON.stringify(data) : toKML(data), format === 'geojson' ? "application/json" : "application/xml");
+        }
+        function downloadFile(filename, content, type) {
+            var blob = new Blob([content], {type: type}); var a = document.createElement("a");
+            a.href = URL.createObjectURL(blob); a.download = filename; a.click();
+        }
+        // دالة KML بسيطة (مبسطة للسرعة)
+        function toKML(gj){return `<?xml version="1.0"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document>${gj.features.map(f=>{let c=f.geometry.coordinates;let g=f.geometry.type==="Point"?`<Point><coordinates>${c[0]},${c[1]}</coordinates></Point>`:f.geometry.type==="Polygon"?`<Polygon><outerBoundaryIs><LinearRing><coordinates>${c[0].map(p=>p[0]+","+p[1]).join(" ")}</coordinates></LinearRing></outerBoundaryIs></Polygon>`:"";return `<Placemark>${g}</Placemark>`}).join("")}</Document></kml>`;}
     </script>
 </body>
 </html>

@@ -61,7 +61,7 @@
         
         <h2>🛰️ إعدادات Sentinel-2</h2>
         <label style="font-size:12px;">تاريخ الصورة:</label>
-        <input type="date" id="sentinel-date" value="2023-12-01">
+        <input type="date" id="sentinel-date" value="2024-06-01">
         
         <label style="font-size:12px;">المؤشر (Index):</label>
         <select id="sentinel-layer-select">
@@ -71,6 +71,14 @@
             <option value="NDMI">مؤشر الرطوبة (NDMI)</option>
             <option value="FALSE-COLOR">أشعة تحت حمراء (False Color)</option>
         </select>
+        
+        <label style="font-size:12px; margin-top:5px; display:block;">نسبة الغيوم القصوى:</label>
+        <select id="cloud-cover">
+            <option value="10">10% (صافية جداً)</option>
+            <option value="30" selected>30% (متوسطة)</option>
+            <option value="100">100% (أرني أي شيء)</option>
+        </select>
+        
         <button class="warning" onclick="updateSentinel()">🔄 تحديث القمر الاصطناعي</button>
 
         <h2>📐 أدوات الرسم</h2>
@@ -110,19 +118,17 @@
         // 1. إعداد الخريطة
         var map = L.map('map').setView([33.3, -5.4], 6);
 
-        // إضافة أداة التصوير
-        var snapshotOptions = {
+        var snapshoter = L.simpleMapScreenshoter({
             hideElementsWithSelectors: ['.leaflet-control-container', '#sidebar', '#coords-bar'],
             mimeType: 'image/jpeg'
-        };
-        var snapshoter = L.simpleMapScreenshoter(snapshotOptions).addTo(map);
+        }).addTo(map);
 
         // 2. الطبقات الأساسية
         var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' });
         var esriSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '© Esri' });
         
         // ============================================
-        // 🔑 مفتاح SENTINEL HUB الخاص بك
+        // 🔑 مفتاح SENTINEL HUB الصحيح
         // ============================================
         var sentinelHubID = "fde278a6-6830-4065-a2a9-bde54f22f3c6"; 
 
@@ -131,10 +137,10 @@
             transparent: true,
             version: '1.1.1',
             attribution: '© Sentinel Hub',
-            maxZoom: 16
+            maxZoom: 16,
+            crs: L.CRS.EPSG3857 // ضمان توافق نظام الإحداثيات
         });
 
-        // طبقة بديلة للعرض السريع
         var esriSentinel = L.tileLayer('https://clarity.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
             attribution: '© Esri Sentinel 2'
         });
@@ -148,37 +154,46 @@
         esriSat.addTo(map);
         L.control.layers(baseMaps).addTo(map);
 
-        // 3. دالة تحديث القمر الاصطناعي
+        // 3. دالة تحديث القمر الاصطناعي (تم تحسينها للبحث في فترة زمنية)
         function updateSentinel() {
             var dateInput = document.getElementById('sentinel-date').value;
             var layerIndex = document.getElementById('sentinel-layer-select').value;
+            var cloudCover = document.getElementById('cloud-cover').value;
             
-            // إزالة الطبقة القديمة
             if (map.hasLayer(sentinelLayer)) {
                 map.removeLayer(sentinelLayer);
             }
 
-            // تحديث المعايير (Sentinel Hub WMS)
+            // === المنطق الجديد: البحث في فترة زمنية (شهر كامل) ===
+            // لأن القمر لا يمر كل يوم، سنبحث من التاريخ المختار ونعود 30 يوماً للوراء
+            var endDate = new Date(dateInput);
+            var startDate = new Date(endDate);
+            startDate.setDate(endDate.getDate() - 30); // فترة بحث 30 يوم
+
+            var timeRange = startDate.toISOString().split('T')[0] + '/' + endDate.toISOString().split('T')[0];
+
+            // تحديث المعايير
             sentinelLayer.setParams({ 
                 layers: layerIndex, 
-                time: dateInput + '/' + dateInput 
+                time: timeRange,
+                maxcc: cloudCover, // فلتر الغيوم
+                showLogo: false
             });
 
             sentinelLayer.addTo(map);
             sentinelLayer.bringToFront();
             
-            document.getElementById('stats').innerHTML = `⏳ جاري تحميل صور ${layerIndex} لتاريخ ${dateInput}...`;
+            document.getElementById('stats').innerHTML = `⏳ جاري البحث عن أفضل صورة (NDVI) خلال الشهر...`;
             
             sentinelLayer.on('load', function() {
                 document.getElementById('stats').innerHTML = `✅ تم تحميل طبقة ${layerIndex} بنجاح.`;
             });
             
-            sentinelLayer.on('tileerror', function() {
-                 document.getElementById('stats').innerHTML = `⚠️ لا توجد صور لهذا التاريخ، جرب تاريخاً آخر.`;
-            });
+            // التعامل مع الأخطاء بصمت لتجنب الإزعاج
+            sentinelLayer.on('tileerror', function() {});
         }
 
-        // 4. أدوات الرسم (مع التكرار)
+        // 4. أدوات الرسم
         var drawnItems = new L.FeatureGroup();
         map.addLayer(drawnItems);
 
@@ -201,7 +216,6 @@
             drawnItems.addLayer(layer);
             calculateStats(layer, e.layerType);
             
-            // إعادة تفعيل الرسم للنقاط فقط
             if (e.layerType === 'marker') {
                 setTimeout(function(){
                     new L.Draw.Marker(map, drawControl.options.draw.marker).enable();
@@ -220,7 +234,7 @@
                 var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
                 content = `📐 المساحة: ${(area/10000).toFixed(4)} هكتار`;
             } else if (type === 'marker') {
-                content = "📍 تم إضافة نقطة (اضغط Cancel للإيقاف)";
+                content = "📍 تم إضافة نقطة";
             }
             document.getElementById('stats').innerHTML = content;
         }
@@ -246,7 +260,7 @@
                     link.href = image;
                     link.click();
                 }).catch(e => {
-                    alert('خطأ في التقاط الصورة: ' + e.toString());
+                    alert('خطأ في التقاط الصورة');
                 });
         }
 

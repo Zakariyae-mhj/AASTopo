@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZASTopo Pro - المقطع الطبوغرافي</title>
+    <title>ZASTopo Pro V3 - الحل المتكامل</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
@@ -12,9 +12,8 @@
         body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4; }
         #map { height: 100vh; width: 100%; z-index: 1; }
         
-        /* الشريط الجانبي */
         #sidebar {
-            position: absolute; top: 10px; right: 10px; width: 350px;
+            position: absolute; top: 10px; right: 10px; width: 360px;
             background: rgba(255, 255, 255, 0.98); padding: 15px;
             border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);
             z-index: 1000; max-height: 92vh; overflow-y: auto;
@@ -24,7 +23,6 @@
         .sub-title { text-align: center; font-size: 11px; color: #7f8c8d; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
         h2 { font-size: 13px; color: #34495e; margin: 12px 0 5px 0; font-weight: bold; border-right: 3px solid #3498db; padding-right: 8px; }
         
-        /* الأزرار */
         .btn-group { display: flex; gap: 5px; margin-bottom: 5px; flex-wrap: wrap; }
         button {
             flex: 1; padding: 8px; border: none; border-radius: 4px;
@@ -33,14 +31,12 @@
         }
         button:hover { transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .danger { background: #e74c3c; } .success { background: #27ae60; } .dark { background: #34495e; }
-        .excel-btn { background: #217346; } .csv-btn { background: #d35400; }
-        .profile-btn { background: #8e44ad; width: 100%; margin-top: 5px; display: none; } /* مخفي افتراضياً */
+        .excel-btn { background: #217346; } .csv-btn { background: #d35400; } .dxf-btn { background: #e67e22; }
+        .profile-btn { background: #8e44ad; width: 100%; margin-top: 5px; display: none; }
 
-        /* منطقة المبيان */
         #chart-container { display: none; margin-top: 10px; padding: 10px; background: #fff; border: 1px solid #ddd; border-radius: 4px; }
         canvas { width: 100% !important; height: 150px !important; }
 
-        /* شريط الإحداثيات */
         #coords-bar {
             position: absolute; bottom: 0; left: 0; right: 0;
             background: rgba(44, 62, 80, 0.95); color: #ecf0f1;
@@ -56,13 +52,14 @@
         <h1>ZASTopo Pro</h1>
         <div class="sub-title">تطوير: زكرياء المحجوبي</div>
 
-        <h2>✏️ أدوات الرسم</h2>
-        <div id="draw-ctrl-container"></div> <div class="btn-group">
+        <h2>✏️ أدوات الرسم (مسترسلة)</h2>
+        <div class="btn-group">
             <button onclick="locateUser()">📍 موقعي</button>
             <button class="danger" onclick="clearMap()">🗑️ مسح الكل</button>
         </div>
+        <p style="font-size:10px; color:#666;">* لإيقاف رسم النقاط اضغط على زر Cancel بجانب الأيقونة.</p>
 
-        <button id="btn-profile" class="profile-btn" onclick="generateProfile()">🏔️ رسم المقطع الطبوغرافي للخط المحدد</button>
+        <button id="btn-profile" class="profile-btn" onclick="generateRealProfile()">🏔️ رسم المقطع الطبوغرافي (تضاريس واقعية)</button>
         <div id="chart-container">
             <canvas id="elevationChart"></canvas>
             <div style="text-align:center; margin-top:5px;">
@@ -80,6 +77,9 @@
 
         <h2>📥 تصدير البيانات</h2>
         <div class="btn-group">
+            <button class="dxf-btn" onclick="downloadDXF()">DXF (AutoCAD)</button>
+        </div>
+        <div class="btn-group">
             <button class="excel-btn" onclick="downloadExcel()">Excel</button>
             <button class="csv-btn" onclick="downloadCSV()">CSV</button>
         </div>
@@ -93,7 +93,7 @@
 
     <div id="map"></div>
     <div id="coords-bar">
-        <span id="metric-coords">X: 000000 | Y: 000000</span>
+        <span id="metric-coords">X: 000000 | Y: 000000 (Lambert I)</span>
         <span id="geo-coords">Lat: 0.00000 | Lng: 0.00000</span>
     </div>
 
@@ -104,10 +104,14 @@
     <script src="https://unpkg.com/leaflet-geometryutil"></script>
     <script src="https://unpkg.com/leaflet-simple-map-screenshoter"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <script>L.GridLayer.Graticule=L.GridLayer.extend({options:{showLabel:!0,opacity:1,weight:0.8,color:"#333",font:"10px Verdana",dashArray:[4,4],minZoom:5},createTile:function(t){var e=this.getTileSize(),i=L.DomUtil.create("canvas","leaflet-tile");i.width=e.x,i.height=e.y;var a=i.getContext("2d");a.beginPath(),a.strokeStyle=this.options.color,a.lineWidth=this.options.weight,a.setLineDash(this.options.dashArray),a.font=this.options.font,a.fillStyle=this.options.color;var o=this._map.unproject(t.multiplyBy(e.x)),n=this._map.unproject(t.add([1,1]).multiplyBy(e.x)),s=this._map.project([n.lat,o.lng]),l=t.multiplyBy(e.x).subtract(s);o.lng>n.lng&&(l.x+=this._map.getSize().x);for(var r=this._getWrapTileNum(),h=Math.floor(o.lat/r)*r;h>n.lat;h-=r){var c=this._map.project([h,o.lng]).subtract(s).add(l);if(c.y>0&&c.y<e.y){a.moveTo(0,c.y),a.lineTo(e.x,c.y);if(this.options.showLabel){var d=h.toFixed(2);a.fillText(d,2,c.y-2)}}}for(var g=Math.floor(o.lng/r)*r;g<n.lng;g+=r){var u=this._map.project([o.lat,g]).subtract(s).add(l);if(u.x>0&&u.x<e.x){a.moveTo(u.x,0),a.lineTo(u.x,e.y);if(this.options.showLabel){var p=g.toFixed(2);a.fillText(p,u.x+2,e.y-2)}}}return a.stroke(),i},_getWrapTileNum:function(){var t=this._map.getZoom(),e=40;return t<3&&(e=20),t<5&&(e=10),t<7&&(e=5),t<9&&(e=2),t<11&&(e=1),t<13&&(e=.5),t<15&&(e=.1),e}});L.gridLayer.graticule=function(t){return new L.GridLayer.Graticule(t)};</script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>L.GridLayer.Graticule=L.GridLayer.extend({options:{showLabel:!0,opacity:1,weight:0.8,color:"#333",font:"10px Verdana",dashArray:[4,4],minZoom:5},createTile:function(t){var e=this.getTileSize(),i=L.DomUtil.create("canvas","leaflet-tile");i.width=e.x,i.height=e.y;var a=i.getContext("2d");a.beginPath(),a.strokeStyle=this.options.color,a.lineWidth=this.options.weight,a.setLineDash(this.options.dashArray),a.font=this.options.font,a.fillStyle=this.options.color;var o=this._map.unproject(t.multiplyBy(e.x)),n=this._map.unproject(t.add([1,1]).multiplyBy(e.x)),s=this._map.project([n.lat,o.lng]),l=t.multiplyBy(e.x).subtract(s);o.lng>n.lng&&(l.x+=this._map.getSize().x);for(var r=this._getWrapTileNum(),h=Math.floor(o.lat/r)*r;h>n.lat;h-=r){var c=this._map.project([h,o.lng]).subtract(s).add(l);if(c.y>0&&c.y<e.y){a.moveTo(0,c.y),a.lineTo(e.x,c.y);if(this.options.showLabel){var d=h.toFixed(2);a.fillText(d,2,c.y-2)}}}for(var g=Math.floor(o.lng/r)*r;g<n.lng;g+=r){var u=this._map.project([o.lat,g]).subtract(s).add(l);if(u.x>0&&u.x<e.x){a.moveTo(u.x,0),a.lineTo(u.x,e.y);if(this.options.showLabel){var p=g.toFixed(2);a.fillText(p,u.x+2,e.y-2)}}}return a.stroke(),i},_getWrapTileNum:function(){var t=this._map.getZoom(),e=40;return t<3&&(e=20),t<5&&(e=10),t<7&&(e=5),t<9&&(e=2),t<11&&(e=1),t<13&&(e=.5),t<15&&(e=.1),e}});L.gridLayer.graticule=function(t){return new L.GridLayer.Graticule(t)};</script>
 
     <script>
-        // 1. إعداد الخريطة
+        // تعريف نظام الإحداثيات Lambert Zone 1
+        proj4.defs("EPSG:26191", "+proj=lcc +lat_1=33.3 +lat_0=33.3 +lon_0=-5.4 +k_0=0.999625769 +x_0=500000 +y_0=300000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs");
+
         var map = L.map('map').setView([33.3, -5.4], 6);
         
         var snapshoter = L.simpleMapScreenshoter({
@@ -115,7 +119,6 @@
             mimeType: 'image/jpeg'
         }).addTo(map);
 
-        // الطبقات (اكتفيت بالأساسية كما طلبت)
         var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' });
         var esriSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '© Esri' });
         
@@ -123,67 +126,77 @@
         esriSat.addTo(map);
         L.control.layers(baseMaps).addTo(map);
 
-        // شبكة الإحداثيات
         var graticule = L.gridLayer.graticule({ showLabel: true, opacity: 0.6, color: '#2c3e50', weight: 0.8 });
         function toggleGraticule() {
             if (map.hasLayer(graticule)) { map.removeLayer(graticule); } else { map.addLayer(graticule); }
         }
 
-        // 2. أدوات الرسم
         var drawnItems = new L.FeatureGroup(); map.addLayer(drawnItems);
         var drawControl = new L.Control.Draw({ 
             edit: { featureGroup: drawnItems }, 
             draw: { 
-                polygon: true, rectangle: true, marker: true, circle: false,
-                polyline: { shapeOptions: { color: '#8e44ad', weight: 4 } } // لون مميز للخط
+                polygon: true, rectangle: true, circle: false,
+                marker: { repeatMode: true }, // محاولة تفعيل التكرار الأصلي
+                polyline: { shapeOptions: { color: '#8e44ad', weight: 4 } }
             } 
         });
         map.addControl(drawControl);
 
-        // متغير لتخزين آخر خط تم رسمه للمقطع
         var selectedPolyline = null;
 
-        // 3. التعامل مع الرسم
+        // === 1. معالجة الرسم (وإعادة تفعيل النقاط) ===
         map.on(L.Draw.Event.CREATED, function (e) {
             drawnItems.addLayer(e.layer);
             calculateStats(e.layer, e.layerType);
 
-            // إذا رسم المستخدم خطاً، نظهر زر المقطع الطبوغرافي
             if (e.layerType === 'polyline') {
                 selectedPolyline = e.layer;
                 document.getElementById('btn-profile').style.display = 'block';
-                document.getElementById('stats').innerHTML = "تم رسم خط. اضغط على زر 'رسم المقطع' لعرض التضاريس.";
-            } else {
-                // إخفاء الزر إذا لم يكن خطاً
-                document.getElementById('btn-profile').style.display = 'none';
-                document.getElementById('chart-container').style.display = 'none';
+                document.getElementById('stats').innerHTML = "تم رسم مسار. اضغط 'رسم المقطع' لعرض التضاريس.";
+            } else if (e.layerType === 'marker') {
+                // إعادة تفعيل رسم النقاط فوراً (Continuous Drawing)
+                setTimeout(function(){
+                    // نتحقق من أن المستخدم لم يلغ الأداة يدوياً
+                    var markerDrawer = new L.Draw.Marker(map, drawControl.options.draw.marker);
+                    markerDrawer.enable();
+                }, 100);
             }
         });
 
-        // عند الحذف
-        map.on(L.Draw.Event.DELETED, function() {
-            if (drawnItems.getLayers().length === 0) {
-                document.getElementById('btn-profile').style.display = 'none';
-                document.getElementById('chart-container').style.display = 'none';
-                document.getElementById('stats').innerHTML = "جاهز...";
-            }
-        });
-
-        // 4. دالة المقطع الطبوغرافي (جديدة)
-        async function generateProfile() {
+        // === 2. المقطع الطبوغرافي الواقعي (Sampling/Densification) ===
+        async function generateRealProfile() {
             if (!selectedPolyline) return;
+            document.getElementById('stats').innerHTML = "⏳ جاري تحليل التضاريس (Sampling)...";
 
-            var latlngs = selectedPolyline.getLatLngs();
-            // تبسيط النقاط (نأخذ نقاطاً لتمثيل الخط)
-            // ملاحظة: الـ API يقبل عدداً محدوداً في الطلب الواحد، سنقوم بأخذ عينات إذا كان الخط طويلاً
+            // 1. تكثيف النقاط (إضافة نقاط وسطية كل 50 متر)
+            var rawLatLngs = selectedPolyline.getLatLngs();
+            var denseLatLngs = [];
             
-            // تحويل النقاط لنسق URL
-            var lats = [], lngs = [];
-            latlngs.forEach(ll => { lats.push(ll.lat); lngs.push(ll.lng); });
+            for (var i = 0; i < rawLatLngs.length - 1; i++) {
+                var start = rawLatLngs[i];
+                var end = rawLatLngs[i+1];
+                var dist = start.distanceTo(end);
+                
+                // عدد الخطوات (نقطة كل 50 متر تقريباً)
+                var steps = Math.max(1, Math.floor(dist / 50)); 
+                
+                for (var j = 0; j < steps; j++) {
+                    var lat = start.lat + (end.lat - start.lat) * (j / steps);
+                    var lng = start.lng + (end.lng - start.lng) * (j / steps);
+                    denseLatLngs.push(L.latLng(lat, lng));
+                }
+            }
+            denseLatLngs.push(rawLatLngs[rawLatLngs.length - 1]); // إضافة النقطة الأخيرة
 
-            document.getElementById('stats').innerHTML = "⏳ جاري جلب بيانات الارتفاع...";
-            
-            // استخدام Open-Meteo API (مجاني ولا يحتاج مفتاح)
+            // حماية من كثرة النقاط (الحد الأقصى للـ API)
+            if (denseLatLngs.length > 400) {
+                // إذا كان الخط طويلاً جداً، نأخذ عينة كل 2 أو 3
+                denseLatLngs = denseLatLngs.filter((_, i) => i % 2 === 0);
+            }
+
+            // 2. تحضير الرابط
+            var lats = denseLatLngs.map(ll => ll.lat.toFixed(5));
+            var lngs = denseLatLngs.map(ll => ll.lng.toFixed(5));
             var url = `https://api.open-meteo.com/v1/elevation?latitude=${lats.join(',')}&longitude=${lngs.join(',')}`;
 
             try {
@@ -191,28 +204,26 @@
                 var data = await response.json();
                 
                 if (data.elevation) {
-                    drawChart(data.elevation, latlngs);
-                    document.getElementById('stats').innerHTML = "✅ تم رسم المقطع.";
+                    drawChart(data.elevation, denseLatLngs); // نرسل النقاط الكثيفة للرسم
+                    document.getElementById('stats').innerHTML = "✅ تم رسم المقطع بناءً على " + denseLatLngs.length + " نقطة ارتفاع.";
                 } else {
                     alert("فشل جلب البيانات.");
                 }
             } catch (error) {
-                alert("خطأ في الاتصال بخدمة الارتفاعات: " + error);
+                alert("خطأ: " + error);
             }
         }
 
         var elevationChartInstance = null;
-
         function drawChart(elevations, latlngs) {
             document.getElementById('chart-container').style.display = 'block';
             var ctx = document.getElementById('elevationChart').getContext('2d');
             
-            // حساب المسافات التراكمية للمحور X
             var distances = [0];
             var totalDist = 0;
             for(var i=0; i<latlngs.length-1; i++){
                 totalDist += latlngs[i].distanceTo(latlngs[i+1]);
-                distances.push((totalDist/1000).toFixed(2)); // كم
+                distances.push((totalDist/1000).toFixed(2));
             }
 
             if (elevationChartInstance) elevationChartInstance.destroy();
@@ -225,21 +236,61 @@
                         label: 'الارتفاع (متر)',
                         data: elevations,
                         borderColor: '#8e44ad',
-                        backgroundColor: 'rgba(142, 68, 173, 0.2)',
+                        backgroundColor: 'rgba(142, 68, 173, 0.4)',
+                        borderWidth: 1,
+                        pointRadius: 0, // إخفاء النقاط لخط ناعم
                         fill: true,
-                        tension: 0.4
+                        tension: 0.2 // تنعيم بسيط
                     }]
                 },
                 options: {
                     responsive: true,
+                    interaction: { intersect: false, mode: 'index' },
                     scales: {
-                        x: { title: { display: true, text: 'المسافة (كم)' } },
+                        x: { title: { display: true, text: 'المسافة (كم)' }, ticks: { maxTicksLimit: 10 } },
                         y: { title: { display: true, text: 'الارتفاع (م)' } }
                     }
                 }
             });
         }
 
+        // === 3. تصدير DXF (AutoCAD) ===
+        function downloadDXF() {
+            if (drawnItems.getLayers().length === 0) { alert("ارسم شيئاً أولاً!"); return; }
+
+            // هيدر ملف DXF الأساسي
+            let dxf = "0\nSECTION\n2\nHEADER\n9\n$ACADVER\n1\nAC1009\n0\nENDSEC\n";
+            dxf += "0\nSECTION\n2\nENTITIES\n";
+
+            drawnItems.eachLayer(function(layer) {
+                if (layer instanceof L.Marker) {
+                    let lat = layer.getLatLng().lat;
+                    let lng = layer.getLatLng().lng;
+                    // تحويل إلى Lambert Zone 1
+                    try {
+                        let lambert = proj4("EPSG:4326", "EPSG:26191", [lng, lat]);
+                        dxf += "0\nPOINT\n8\nPoints\n10\n" + lambert[0] + "\n20\n" + lambert[1] + "\n30\n0.0\n";
+                    } catch(e) {}
+                } 
+                else if (layer instanceof L.Polyline || layer instanceof L.Polygon) {
+                    let latlngs = layer.getLatLngs();
+                    // التعامل مع المضلعات المتداخلة (Holes) في Leaflet
+                    if (Array.isArray(latlngs[0])) latlngs = latlngs[0]; 
+
+                    dxf += "0\nLWPOLYLINE\n8\nPolygons\n90\n" + latlngs.length + "\n70\n" + (layer instanceof L.Polygon ? 1 : 0) + "\n";
+                    
+                    latlngs.forEach(ll => {
+                        let lambert = proj4("EPSG:4326", "EPSG:26191", [ll.lng, ll.lat]);
+                        dxf += "10\n" + lambert[0] + "\n20\n" + lambert[1] + "\n";
+                    });
+                }
+            });
+
+            dxf += "0\nENDSEC\n0\nEOF";
+            downloadFile("zastopo_export.dxf", dxf, "application/dxf");
+        }
+
+        // الوظائف المساعدة
         function downloadProfileImage() {
             var link = document.createElement('a');
             link.download = 'profile_topographique.png';
@@ -247,34 +298,35 @@
             link.click();
         }
 
-
-        // 5. الإحصائيات البسيطة
         function calculateStats(layer, type) {
             var content = "";
             if (type === 'polyline') {
                 var d=0, ll=layer.getLatLngs(); for(var i=0;i<ll.length-1;i++) d+=ll[i].distanceTo(ll[i+1]);
-                content = `📏 طول الخط: ${(d/1000).toFixed(3)} كم`;
+                content = `📏 طول المسار: ${(d/1000).toFixed(3)} كم`;
             } else if (type === 'polygon' || type === 'rectangle') {
                 var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
                 content = `📐 المساحة: ${(area/10000).toFixed(4)} هكتار`;
+            } else if (type === 'marker') {
+                content = "📍 تم إضافة نقطة (لرسم أخرى انقر في الخريطة، للإيقاف اضغط Cancel)";
             }
             document.getElementById('stats').innerHTML = content;
         }
 
-        // 6. الإحداثيات
-        proj4.defs("EPSG:26191", "+proj=lcc +lat_1=33.3 +lat_0=33.3 +lon_0=-5.4 +k_0=0.999625769 +x_0=500000 +y_0=300000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs");
         map.on('mousemove', function(e) {
             document.getElementById('geo-coords').innerText = `Lat: ${e.latlng.lat.toFixed(5)} | Lng: ${e.latlng.lng.toFixed(5)}`;
             try { var l = proj4("EPSG:4326", "EPSG:26191", [e.latlng.lng, e.latlng.lat]); document.getElementById('metric-coords').innerText = `X: ${l[0].toFixed(0)} | Y: ${l[1].toFixed(0)}`; } catch(e){}
         });
 
-        // 7. وظائف التصدير (Excel, CSV, Image+Meta)
         function getDrawnDataArray() {
             var data = [];
             drawnItems.eachLayer(function(layer) {
-                var shapeData = { Type: "Unknown", Lat: "", Lng: "", MetricValue: "" };
+                var shapeData = { Type: "Unknown", Lat: "", Lng: "", X_Lambert: "", Y_Lambert: "", MetricValue: "" };
                 if (layer instanceof L.Marker) {
-                    shapeData.Type = "Point"; shapeData.Lat = layer.getLatLng().lat.toFixed(6); shapeData.Lng = layer.getLatLng().lng.toFixed(6);
+                    shapeData.Type = "Point"; 
+                    shapeData.Lat = layer.getLatLng().lat.toFixed(6); 
+                    shapeData.Lng = layer.getLatLng().lng.toFixed(6);
+                    let l = proj4("EPSG:4326", "EPSG:26191", [layer.getLatLng().lng, layer.getLatLng().lat]);
+                    shapeData.X_Lambert = l[0].toFixed(2); shapeData.Y_Lambert = l[1].toFixed(2);
                 } else if (layer instanceof L.Polygon) {
                     shapeData.Type = "Polygon"; shapeData.MetricValue = (L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]) / 10000).toFixed(4) + " Ha";
                 } else if (layer instanceof L.Polyline) {
@@ -307,7 +359,6 @@
         function downloadFile(n, c, t) { var b = new Blob([c], {type: t}); var a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = n; a.click(); }
         function toKML(g){return `<?xml version="1.0"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document>${g.features.map(f=>{return `<Placemark><name>Feature</name>${f.geometry.type==="Point"?`<Point><coordinates>${f.geometry.coordinates[0]},${f.geometry.coordinates[1]}</coordinates></Point>`:f.geometry.type==="LineString"?`<LineString><coordinates>${f.geometry.coordinates.map(p=>p[0]+","+p[1]).join(" ")}</coordinates></LineString>`:`<Polygon><outerBoundaryIs><LinearRing><coordinates>${f.geometry.coordinates[0].map(p=>p[0]+","+p[1]).join(" ")}</coordinates></LinearRing></outerBoundaryIs></Polygon>`}</Placemark>`}).join("")}</Document></kml>`;}
         
-        // مسح الخريطة
         function clearMap() { drawnItems.clearLayers(); selectedPolyline = null; document.getElementById('btn-profile').style.display = 'none'; document.getElementById('chart-container').style.display = 'none'; document.getElementById('stats').innerHTML = "تم المسح."; }
         function locateUser() { map.locate({setView: true, maxZoom: 15}); }
     </script>

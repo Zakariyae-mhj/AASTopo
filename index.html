@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AASTopo - أداة التحليل الطبوغرافي</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    
+    <style>
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        #map { height: 100vh; width: 100%; z-index: 1; }
+        
+        /* تصميم الشريط الجانبي */
+        #sidebar {
+            position: absolute; top: 10px; right: 10px; width: 300px;
+            background: rgba(255, 255, 255, 0.95); padding: 15px;
+            border-radius: 8px; box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            z-index: 1000; max-height: 90vh; overflow-y: auto;
+        }
+        h1 { color: #2c3e50; font-size: 24px; margin-top: 0; text-align: center; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        h2 { font-size: 16px; color: #7f8c8d; margin-bottom: 5px; }
+        
+        /* الأزرار */
+        .btn-group { display: flex; gap: 5px; margin-bottom: 15px; }
+        button {
+            flex: 1; padding: 8px; border: none; border-radius: 4px;
+            cursor: pointer; background-color: #3498db; color: white;
+            font-weight: bold; transition: 0.3s;
+        }
+        button:hover { background-color: #2980b9; }
+        button.export-btn { background-color: #27ae60; }
+        button.export-btn:hover { background-color: #219150; }
+
+        /* شريط الإحداثيات السفلي */
+        #coords-bar {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: rgba(0, 0, 0, 0.8); color: #fff;
+            padding: 5px 15px; font-size: 14px; z-index: 1000;
+            display: flex; justify-content: space-between; direction: ltr;
+        }
+        .stat-item { background: #f1f2f6; padding: 10px; margin-top: 5px; border-radius: 4px; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <div id="sidebar">
+        <h1>📐 AASTopo</h1>
+        <p style="text-align: center; font-size: 12px; color: #666;">طور بواسطة: زكريا</p>
+        
+        <h2>أدوات التحكم</h2>
+        <div class="btn-group">
+            <button onclick="locateUser()">📍 موقعي</button>
+            <button onclick="clearMap()" style="background-color: #e74c3c;">🗑️ مسح الكل</button>
+        </div>
+
+        <h2>تصدير البيانات</h2>
+        <div class="btn-group">
+            <button class="export-btn" onclick="downloadData('geojson')">GeoJSON</button>
+            <button class="export-btn" onclick="downloadData('kml')">KML</button>
+            <button class="export-btn" onclick="downloadData('csv')">CSV</button>
+        </div>
+
+        <h2>إحصائيات الرسم</h2>
+        <div id="stats" class="stat-item">
+            ارسم عنصراً لعرض المساحة والمسافة.
+        </div>
+        
+        <div style="margin-top: 20px; font-size: 12px; color: #888;">
+            * يدعم الإحداثيات: WGS84 و Lambert Zone 1 (Maroc Nord)
+        </div>
+    </div>
+
+    <div id="map"></div>
+    
+    <div id="coords-bar">
+        <span id="metric-coords">X: 000000 | Y: 000000 (Lambert I)</span>
+        <span id="geo-coords">Lat: 0.00 | Lng: 0.00</span>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
+    <script src="https://unpkg.com/@mapbox/togeojson@0.16.0/togeojson.js"></script>
+    <script src="https://unpkg.com/leaflet-geometryutil"></script>
+
+    <script>
+        // 1. إعداد الخريطة
+        var map = L.map('map').setView([33.3, -5.4], 6); // مركز المغرب
+
+        // 2. طبقات الخرائط (التميز: إضافة صور الأقمار الاصطناعية)
+        var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' });
+        var satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '© Esri' });
+
+        var baseMaps = {
+            "خريطة طرقية": osm,
+            "صور جوية (Satellite)": satellite
+        };
+
+        osm.addTo(map); // الافتراضي
+        L.control.layers(baseMaps).addTo(map);
+
+        // 3. تعريف نظام إحداثيات لامبير 1 (المغرب - المنطقة الشمالية)
+        // ملاحظة: لتحويل دقيق جداً يجب إضافة باقي المناطق (2,3,4) لاحقاً
+        proj4.defs("EPSG:26191", "+proj=lcc +lat_1=33.3 +lat_0=33.3 +lon_0=-5.4 +k_0=0.999625769 +x_0=500000 +y_0=300000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs");
+
+        // 4. أدوات الرسم
+        var drawnItems = new L.FeatureGroup();
+        map.addLayer(drawnItems);
+
+        var drawControl = new L.Control.Draw({
+            edit: { featureGroup: drawnItems },
+            draw: {
+                polygon: { allowIntersection: false, showArea: true },
+                polyline: { shapeOptions: { color: '#f357a1' } },
+                rectangle: false,
+                circle: false,
+                marker: true
+            }
+        });
+        map.addControl(drawControl);
+
+        // 5. التعامل مع الرسم (حساب المساحات والمسافات)
+        map.on(L.Draw.Event.CREATED, function (e) {
+            var layer = e.layer;
+            drawnItems.addLayer(layer);
+            calculateStats(layer, e.layerType);
+        });
+
+        function calculateStats(layer, type) {
+            var content = "";
+            if (type === 'polyline') {
+                var latlngs = layer.getLatLngs();
+                var distance = 0;
+                for (var i = 0; i < latlngs.length - 1; i++) {
+                    distance += latlngs[i].distanceTo(latlngs[i + 1]);
+                }
+                content = `📏 الطول: ${(distance / 1000).toFixed(3)} كم (${distance.toFixed(2)} م)`;
+            } else if (type === 'polygon') {
+                var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
+                content = `📐 المساحة: ${(area / 10000).toFixed(4)} هكتار (${area.toFixed(2)} م²)`;
+            } else if (type === 'marker') {
+                var pos = layer.getLatLng();
+                content = `📍 النقطة: ${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)}`;
+            }
+            document.getElementById('stats').innerHTML = content;
+        }
+
+        // 6. عرض الإحداثيات الحية (Geo + Lambert)
+        map.on('mousemove', function(e) {
+            var lat = e.latlng.lat;
+            var lng = e.latlng.lng;
+
+            // تحديث الجغرافي
+            document.getElementById('geo-coords').innerText = `Lat: ${lat.toFixed(5)} | Lng: ${lng.toFixed(5)}`;
+
+            // تحويل إلى لامبير (Zone 1 كمثال)
+            try {
+                var lambert = proj4("EPSG:4326", "EPSG:26191", [lng, lat]);
+                document.getElementById('metric-coords').innerText = `X: ${lambert[0].toFixed(2)} | Y: ${lambert[1].toFixed(2)} (Lambert I)`;
+            } catch(err) {
+                console.log("Error in projection");
+            }
+        });
+
+        // 7. وظائف الأزرار
+        function locateUser() {
+            map.locate({setView: true, maxZoom: 16});
+        }
+        
+        function clearMap() {
+            drawnItems.clearLayers();
+            document.getElementById('stats').innerHTML = "تم مسح الخريطة.";
+        }
+
+        // 8. وظيفة التصدير (Export)
+        function downloadData(format) {
+            var data = drawnItems.toGeoJSON();
+            if (data.features.length === 0) {
+                alert("المرجو رسم شيء أولاً لتصديره!");
+                return;
+            }
+
+            var content = "";
+            var filename = "aastopo_data." + format;
+            var type = "text/plain";
+
+            if (format === 'geojson') {
+                content = JSON.stringify(data);
+                type = "application/json";
+            } else if (format === 'kml') {
+                // تحويل بسيط لـ KML (للمضلعات والنقاط)
+                content = toKML(data); 
+                type = "application/xml";
+            } else if (format === 'csv') {
+                // تصدير بسيط للنقاط
+                content = "Type,Latitude,Longitude\n";
+                data.features.forEach(f => {
+                    if(f.geometry.type === 'Point') {
+                        content += `Point,${f.geometry.coordinates[1]},${f.geometry.coordinates[0]}\n`;
+                    }
+                });
+            }
+
+            var blob = new Blob([content], {type: type});
+            var a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = filename;
+            a.click();
+        }
+
+        // دالة مساعدة مبسطة جداً لتحويل GeoJSON إلى KML
+        function toKML(geojson) {
+            let kml = `<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document>`;
+            geojson.features.forEach(f => {
+                kml += `<Placemark><name>Feature</name>`;
+                if (f.geometry.type === "Point") {
+                    kml += `<Point><coordinates>${f.geometry.coordinates[0]},${f.geometry.coordinates[1]}</coordinates></Point>`;
+                } else if (f.geometry.type === "Polygon") {
+                    kml += `<Polygon><outerBoundaryIs><LinearRing><coordinates>`;
+                    f.geometry.coordinates[0].forEach(c => { kml += `${c[0]},${c[1]} `; });
+                    kml += `</coordinates></LinearRing></outerBoundaryIs></Polygon>`;
+                }
+                kml += `</Placemark>`;
+            });
+            kml += `</Document></kml>`;
+            return kml;
+        }
+
+    </script>
+</body>
+</html>

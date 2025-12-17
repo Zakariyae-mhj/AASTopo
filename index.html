@@ -66,20 +66,15 @@
         select, input { width: 100%; padding: 8px; margin-bottom: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
         .coord-input { width: 45%; }
         .stat-item { background: #e8f6f3; padding: 8px; margin-top: 10px; border-radius: 6px; font-size: 12px; border: 1px solid #d1f2eb; color: #16a085; }
-        
-        .map-label { 
-            background: rgba(255, 255, 255, 0.8); border: 1px solid #333; color: #000; 
-            font-weight: bold; font-size: 12px; padding: 2px 5px; border-radius: 3px; 
-            white-space: nowrap; box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
-        }
+        .map-label { background: rgba(255, 255, 255, 0.8); border: 1px solid #333; color: #000; font-weight: bold; font-size: 12px; padding: 2px 5px; border-radius: 3px; white-space: nowrap; box-shadow: 1px 1px 3px rgba(0,0,0,0.3); }
         .leaflet-popup-content b { color: #2ecc71; }
         .z-loading { color: #e67e22; font-size: 11px; }
         .z-value { color: #8e44ad; font-weight: bold; font-size: 14px; }
-
         .freehand-btn { background: #d35400; color: white; }
         .freehand-active { background: #e74c3c !important; border: 2px solid #c0392b; animation: pulse 1s infinite; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); } 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); } }
 
+        /* Auth & Modal */
         #auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #2c3e50, #000000); z-index: 10000; display: flex; justify-content: center; align-items: center; flex-direction: column; color: white; overflow-y: auto; padding: 20px; box-sizing: border-box; }
         .auth-box { background: white; color: #333; padding: 25px; border-radius: 12px; width: 400px; max-width: 100%; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.6); margin: auto; }
         .auth-box h2 { color: #2ecc71; margin-bottom: 15px; font-size: 20px; }
@@ -89,22 +84,14 @@
         #auth-error { color: #e74c3c; font-size: 13px; margin-bottom: 10px; display: none; background: #fadbd8; padding: 5px; border-radius: 4px; }
         .signup-only { display: none; }
         #logout-btn { background: #c0392b; color: white; margin-top: 20px; width: 100%; }
-        
         #sv-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2999; }
         #sv-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; height: 80%; background: #fff; z-index: 3000; border-radius: 8px; flex-direction: column; }
         #sv-header { background: #2c3e50; color: #fff; padding: 10px; display: flex; justify-content: space-between; height: 40px; align-items: center; }
         #sv-iframe { width: 100%; height: calc(100% - 40px); border: none; }
         .close-sv-btn { background: #e74c3c; color: white; padding: 5px 10px; border-radius: 4px; font-size: 12px; }
-
-        #name-modal-overlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7); z-index: 5000;
-            justify-content: center; align-items: center;
-        }
-        #name-modal {
-            background: #fff; padding: 20px; border-radius: 10px; width: 300px; text-align: center;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-        }
+        
+        #name-modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 5000; justify-content: center; align-items: center; }
+        #name-modal { background: #fff; padding: 20px; border-radius: 10px; width: 300px; text-align: center; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
         #name-modal h3 { margin-top: 0; color: #2c3e50; }
         #feature-name-input { width: 100%; padding: 10px; border: 2px solid #2ecc71; border-radius: 5px; margin-bottom: 10px; font-size: 16px; box-sizing: border-box;}
         #save-name-btn { background: #27ae60; color: white; width: 100%; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
@@ -215,7 +202,7 @@
             </div>
         </div>
 
-        <h2>📥 تصدير (مع الأسماء)</h2>
+        <h2>📥 تصدير</h2>
         <button style="background: #2c3e50; width: 100%; margin-bottom: 5px;" onclick="takeScreenshotAndMetadata()">📷 صورة + إحداثيات</button>
         <div class="btn-group">
             <button class="dxf-btn" onclick="downloadDXF()">DXF</button>
@@ -373,15 +360,8 @@
         map.on('mousemove touchmove', function(e) { if (!isFreehand || !freehandPolyline) return; var latlng = e.latlng; if(e.type === 'touchmove') { var touch = e.originalEvent.touches[0]; latlng = map.mouseEventToLatLng(touch); } freehandPolyline.addLatLng(latlng); });
         map.on('mouseup touchend', function() { if (!isFreehand || !freehandPolyline) return; finishDrawing(freehandPolyline); freehandPolyline = null; });
 
-        // === 🟢 نظام التسمية (Naming System) ===
         let currentLayerToName = null;
-
-        function finishDrawing(layer) {
-            currentLayerToName = layer;
-            document.getElementById('name-modal-overlay').style.display = 'flex';
-            document.getElementById('feature-name-input').focus();
-        }
-
+        function finishDrawing(layer) { currentLayerToName = layer; document.getElementById('name-modal-overlay').style.display = 'flex'; document.getElementById('feature-name-input').focus(); }
         function saveFeatureName() {
             let name = document.getElementById('feature-name-input').value;
             if(!name) name = "عنصر بدون اسم";
@@ -394,7 +374,6 @@
             document.getElementById('feature-name-input').value = "";
             currentLayerToName = null;
         }
-
         map.on(L.Draw.Event.CREATED, function(e) { finishDrawing(e.layer); });
 
         function attachPopup(layer) {
@@ -406,9 +385,7 @@
                     let p = proj4("EPSG:4326", currentZone, [ll.lng, ll.lat]);
                     content += `<b>📍 نقطة</b><br>Lat: ${ll.lat.toFixed(5)}<br>Lng: ${ll.lng.toFixed(5)}<br>X: ${p[0].toFixed(0)} | Y: ${p[1].toFixed(0)}<br><span class="z-loading">⏳ جاري جلب Z...</span>`;
                     layer.bindPopup(content).openPopup();
-                    fetch(`https://api.open-meteo.com/v1/elevation?latitude=${ll.lat}&longitude=${ll.lng}`).then(r=>r.json()).then(d=>{
-                        if(d.elevation) layer.setPopupContent(content.replace('<span class="z-loading">⏳ جاري جلب Z...</span>', `<span class="z-value">Z: ${d.elevation[0]} m</span>`));
-                    });
+                    fetch(`https://api.open-meteo.com/v1/elevation?latitude=${ll.lat}&longitude=${ll.lng}`).then(r=>r.json()).then(d=>{if(d.elevation) layer.setPopupContent(content.replace('<span class="z-loading">⏳ جاري جلب Z...</span>', `<span class="z-value">Z: ${d.elevation[0]} m</span>`));});
                 } catch(e) {}
             } else if (layer instanceof L.Polyline && !(layer instanceof L.Polygon)) {
                 let d = 0, ll = layer.getLatLngs(); if(Array.isArray(ll[0]) && !ll[0].lat) ll = ll.flat(); 
@@ -421,7 +398,6 @@
                 layer.bindPopup(content).openPopup();
             }
         }
-
         map.on(L.Draw.Event.EDITED, function(e) { e.layers.eachLayer(function(layer) { attachPopup(layer); }); });
         map.on(L.Draw.Event.DELETED, function() { selectedPolyline=null; lastSelectedLayer=null; document.getElementById('btn-profile').style.display='none'; document.getElementById('stats').innerHTML="تم الحذف"; });
         drawnItems.on('click', function(e) { handleSelection(e.layer, (e.layer instanceof L.Polygon)?'polygon':(e.layer instanceof L.Polyline)?'polyline':'marker'); if(e.layer instanceof L.Marker) attachPopup(e.layer); });
@@ -520,20 +496,42 @@
                 }; r.readAsText(i.files[0]);
             }
         }
+        // === 🟢 وظيفة DXF المحسنة (مع الأسماء) ===
         function downloadDXF(){
             if(!drawnItems.getLayers().length) return alert("فارغ");
             let d="0\nSECTION\n2\nHEADER\n9\n$ACADVER\n1\nAC1009\n0\nENDSEC\n0\nSECTION\n2\nENTITIES\n";
             drawnItems.eachLayer(l=>{
                 if(l.feature && l.feature.geometry.type==='GeometryCollection') return;
-                if(l instanceof L.Marker) { try{let p=proj4("EPSG:4326",currentZone,[l.getLatLng().lng,l.getLatLng().lat]); d+=`0\nPOINT\n8\nPoints\n10\n${p[0]}\n20\n${p[1]}\n30\n0.0\n`;}catch(e){} }
+                let name = l.customName || "Element";
+                
+                // نقطة (Point) + اسم (Text)
+                if(l instanceof L.Marker) { 
+                    try{
+                        let p=proj4("EPSG:4326",currentZone,[l.getLatLng().lng,l.getLatLng().lat]); 
+                        d+=`0\nPOINT\n8\nPoints\n10\n${p[0]}\n20\n${p[1]}\n30\n0.0\n`;
+                        d+=`0\nTEXT\n8\nLabels\n10\n${p[0]+2}\n20\n${p[1]+2}\n30\n0.0\n40\n10.0\n1\n${name}\n`;
+                    }catch(e){} 
+                }
+                // خط أو مضلع (Polyline/Polygon)
                 else if(l instanceof L.Polyline||l instanceof L.Polygon) {
                     let ll=l.getLatLngs(); if(Array.isArray(ll[0])&&!ll[0].lat) ll=ll.flat();
-                    d+=`0\nLWPOLYLINE\n8\nPolygons\n90\n${ll.length}\n70\n${(l instanceof L.Polygon?1:0)}\n`;
-                    ll.forEach(p=>{let c=proj4("EPSG:4326",currentZone,[p.lng,p.lat]); d+=`10\n${c[0]}\n20\n${c[1]}\n`;});
+                    let closed = (l instanceof L.Polygon) ? 1 : 0;
+                    
+                    d+=`0\nLWPOLYLINE\n8\nGeometry\n90\n${ll.length}\n70\n${closed}\n`;
+                    let firstP = null;
+                    ll.forEach((p, index)=>{
+                        let c=proj4("EPSG:4326",currentZone,[p.lng,p.lat]); 
+                        d+=`10\n${c[0]}\n20\n${c[1]}\n`;
+                        if(index===0) firstP = c;
+                    });
+                    // إضافة الاسم عند بداية الخط/المضلع
+                    if(firstP) d+=`0\nTEXT\n8\nLabels\n10\n${firstP[0]}\n20\n${firstP[1]}\n30\n0.0\n40\n10.0\n1\n${name}\n`;
                 }
             });
-            d+="0\nENDSEC\n0\nEOF"; downloadFile("zastopo.dxf",d,"application/dxf");
+            d+="0\nENDSEC\n0\nEOF"; 
+            downloadFile("ZASTopo_Pro.dxf",d,"application/dxf");
         }
+
         function downloadProfileImage(){var a=document.createElement('a');a.download='profile.png';a.href=document.getElementById('elevationChart').toDataURL();a.click();}
         function calcStats(l,t){ if(t==='polyline'){var d=0,ll=l.getLatLngs();for(var i=0;i<ll.length-1;i++)d+=ll[i].distanceTo(ll[i+1]);document.getElementById('stats').innerHTML=`📏 ${(d/1000).toFixed(3)} كم`;} else if(t==='polygon') document.getElementById('stats').innerHTML=`📐 ${(L.GeometryUtil.geodesicArea(l.getLatLngs()[0])/10000).toFixed(4)} هكتار`; else document.getElementById('stats').innerHTML="📍 عنصر"; }
         map.on('mousemove',e=>{ try{var p=proj4("EPSG:4326",currentZone,[e.latlng.lng,e.latlng.lat]); document.getElementById('metric-coords').innerText=`X:${p[0].toFixed(0)} Y:${p[1].toFixed(0)}`; document.getElementById('geo-coords').innerText=`Lat:${e.latlng.lat.toFixed(5)} Lng:${e.latlng.lng.toFixed(5)}`;}catch(x){} });
@@ -548,14 +546,12 @@
         function clearMap() { drawnItems.clearLayers(); selectedPolyline=null; lastSelectedLayer=null; document.getElementById('btn-profile').style.display='none'; document.getElementById('chart-container').style.display='none'; document.getElementById('stats').innerHTML="تم المسح"; }
         function locateUser() { map.locate({setView:true, maxZoom:15}); if(window.innerWidth<=768) toggleSidebar(); }
 
-        // === 🟢 دالة EXCEL المحسنة (مع الاسم + Z) ===
         async function downloadExcel() {
             document.getElementById('stats').innerHTML = "جاري التصدير...";
             var data = [];
             var layers = drawnItems.getLayers();
             
             for (const l of layers) {
-                // إضافة العمود الأول: الاسم
                 let row = { Name: l.customName || "بدون اسم", Type: "Unknown" };
                 
                 if (l instanceof L.Marker) {
@@ -571,19 +567,10 @@
                     let lats = sample.map(p => p.lat).join(','); let lngs = sample.map(p => p.lng).join(',');
                     if(l instanceof L.Polygon) {
                         row.Area_Ha = (L.GeometryUtil.geodesicArea(l.getLatLngs()[0])/10000).toFixed(4);
-                        
-                        // إضافة إحداثيات المركز والمحيط للمضلع
+                        // إضافة المركز والإحداثيات المحيطة
                         let center = l.getBounds().getCenter();
-                        let centerProj = proj4("EPSG:4326", currentZone, [center.lng, center.lat]);
-                        row.Center_X = centerProj[0].toFixed(2);
-                        row.Center_Y = centerProj[1].toFixed(2);
-                        
-                        // سلسلة الإحداثيات الكاملة
-                        let boundary = latlngs.map(p => {
-                            let xy = proj4("EPSG:4326", currentZone, [p.lng, p.lat]);
-                            return `(${xy[0].toFixed(0)},${xy[1].toFixed(0)})`;
-                        }).join(" - ");
-                        row.Boundary_Coords = boundary;
+                        let cp = proj4("EPSG:4326", currentZone, [center.lng, center.lat]);
+                        row.Center_X = cp[0].toFixed(2); row.Center_Y = cp[1].toFixed(2);
                     }
                     else { let d=0; for(var i=0;i<latlngs.length-1;i++)d+=latlngs[i].distanceTo(latlngs[i+1]); row.Length_m = d.toFixed(2); }
                     try { let res = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lats}&longitude=${lngs}`); let json = await res.json(); if(json.elevation) { row.Avg_Z = (json.elevation.reduce((a, b) => a + b, 0)/json.elevation.length).toFixed(1); row.Min_Z = Math.min(...json.elevation); row.Max_Z = Math.max(...json.elevation); } } catch(e) { row.Avg_Z = "N/A"; }

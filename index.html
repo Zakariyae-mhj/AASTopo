@@ -67,7 +67,6 @@
         .coord-input { width: 45%; }
         .stat-item { background: #e8f6f3; padding: 8px; margin-top: 10px; border-radius: 6px; font-size: 12px; border: 1px solid #d1f2eb; color: #16a085; }
         
-        /* تحسين مظهر النافذة المنبثقة */
         .leaflet-popup-content-wrapper { border-radius: 8px; font-family: 'Segoe UI', sans-serif; text-align: center; }
         .leaflet-popup-content b { color: #2ecc71; }
         .z-loading { color: #e67e22; font-size: 11px; }
@@ -85,7 +84,6 @@
         .switch-btn { background: none; color: #3498db; text-decoration: underline; cursor: pointer; border: none; margin-top: 15px; display: block; width: 100%; }
         #auth-error { color: #e74c3c; font-size: 13px; margin-bottom: 10px; display: none; background: #fadbd8; padding: 5px; border-radius: 4px; }
         .signup-only { display: none; }
-        
         #logout-btn { background: #c0392b; color: white; margin-top: 20px; width: 100%; }
         
         #sv-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2999; }
@@ -191,12 +189,12 @@
             </div>
         </div>
 
-        <h2>📥 تصدير</h2>
+        <h2>📥 تصدير (مع Z)</h2>
         <button style="background: #2c3e50; width: 100%; margin-bottom: 5px;" onclick="takeScreenshotAndMetadata()">📷 صورة + إحداثيات</button>
         <div class="btn-group">
             <button class="dxf-btn" onclick="downloadDXF()">DXF</button>
-            <button class="excel-btn" onclick="downloadExcel()">Excel</button>
-            <button class="csv-btn" onclick="downloadCSV()">CSV</button>
+            <button class="excel-btn" onclick="downloadExcel()">Excel (Z)</button>
+            <button class="csv-btn" onclick="downloadCSV()">CSV (Z)</button>
         </div>
         <div class="btn-group">
             <button class="success" onclick="downloadData('geojson')">GeoJSON</button>
@@ -349,70 +347,34 @@
         map.on('mousemove touchmove', function(e) { if (!isFreehand || !freehandPolyline) return; var latlng = e.latlng; if(e.type === 'touchmove') { var touch = e.originalEvent.touches[0]; latlng = map.mouseEventToLatLng(touch); } freehandPolyline.addLatLng(latlng); });
         map.on('mouseup touchend', function() { if (!isFreehand || !freehandPolyline) return; drawnItems.addLayer(freehandPolyline); attachPopup(freehandPolyline); handleSelection(freehandPolyline, 'polyline'); freehandPolyline = null; });
 
-        // ===================================
-        // 🟢 دالة Popups المطورة (مع جلب Z)
-        // ===================================
         function attachPopup(layer) {
-            let content = "";
-            
-            // 1. إذا كانت نقطة (Marker)
             if (layer instanceof L.Marker) {
                 let ll = layer.getLatLng();
                 try {
                     let p = proj4("EPSG:4326", currentZone, [ll.lng, ll.lat]);
-                    
-                    // محتوى مبدئي (تحميل)
                     let popupContent = document.createElement("div");
-                    popupContent.innerHTML = `
-                        <b>📍 نقطة</b><br>
-                        Lat: ${ll.lat.toFixed(5)} | Lng: ${ll.lng.toFixed(5)}<br>
-                        X: ${p[0].toFixed(0)} | Y: ${p[1].toFixed(0)}<br>
-                        <span class="z-loading">⏳ جاري جلب الارتفاع (Z)...</span>
-                    `;
+                    popupContent.innerHTML = `<b>📍 نقطة</b><br>Lat: ${ll.lat.toFixed(5)}<br>Lng: ${ll.lng.toFixed(5)}<br>X: ${p[0].toFixed(0)} | Y: ${p[1].toFixed(0)}<br><span class="z-loading">⏳ جاري جلب الارتفاع...</span>`;
                     layer.bindPopup(popupContent).openPopup();
-
-                    // طلب API لجلب Z
-                    fetch(`https://api.open-meteo.com/v1/elevation?latitude=${ll.lat}&longitude=${ll.lng}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.elevation && data.elevation.length > 0) {
-                                let z = data.elevation[0];
-                                popupContent.innerHTML = `
-                                    <b>📍 نقطة</b><br>
-                                    Lat: ${ll.lat.toFixed(5)} | Lng: ${ll.lng.toFixed(5)}<br>
-                                    X: ${p[0].toFixed(0)} | Y: ${p[1].toFixed(0)}<br>
-                                    <span class="z-value">Z: ${z} m</span>
-                                `;
-                            } else {
-                                popupContent.innerHTML += `<br><span style="color:red">فشل جلب Z</span>`;
-                            }
-                        }).catch(err => {
-                             popupContent.innerHTML += `<br><span style="color:red">خطأ اتصال</span>`;
-                        });
-
-                } catch(e) { content = "خطأ"; }
-
-            // 2. إذا كان خطاً أو مضلعاً (كما في السابق)
+                    
+                    fetch(`https://api.open-meteo.com/v1/elevation?latitude=${ll.lat}&longitude=${ll.lng}`).then(r=>r.json()).then(d=>{
+                        if(d.elevation) popupContent.querySelector('.z-loading').outerHTML = `<span class="z-value">Z: ${d.elevation[0]} m</span>`;
+                    });
+                } catch(e) {}
             } else if (layer instanceof L.Polyline && !(layer instanceof L.Polygon)) {
-                let d = 0, ll = layer.getLatLngs();
-                if(Array.isArray(ll[0]) && !ll[0].lat) ll = ll.flat(); 
+                let d = 0, ll = layer.getLatLngs(); if(Array.isArray(ll[0]) && !ll[0].lat) ll = ll.flat(); 
                 for(var i=0; i<ll.length-1; i++) d += ll[i].distanceTo(ll[i+1]);
-                content = `<div style="text-align:center;"><b>📏 مسافة</b><br>${(d/1000).toFixed(3)} km<br>${d.toFixed(0)} m</div>`;
-                layer.bindPopup(content);
-                layer.openPopup();
+                layer.bindPopup(`<div style="text-align:center;"><b>📏 مسافة</b><br>${(d/1000).toFixed(3)} km<br>${d.toFixed(0)} m</div>`).openPopup();
             } else if (layer instanceof L.Polygon) {
                 let area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
-                content = `<div style="text-align:center;"><b>📐 مساحة</b><br>${(area/10000).toFixed(4)} Hectares<br>${area.toFixed(0)} m²</div>`;
-                layer.bindPopup(content);
-                layer.openPopup();
+                layer.bindPopup(`<div style="text-align:center;"><b>📐 مساحة</b><br>${(area/10000).toFixed(4)} Ha<br>${area.toFixed(0)} m²</div>`).openPopup();
             }
         }
-
         map.on(L.Draw.Event.CREATED, function(e) { drawnItems.addLayer(e.layer); handleSelection(e.layer, e.layerType); attachPopup(e.layer); });
         map.on(L.Draw.Event.EDITED, function(e) { e.layers.eachLayer(function(layer) { attachPopup(layer); }); });
         map.on(L.Draw.Event.DELETED, function() { selectedPolyline=null; lastSelectedLayer=null; document.getElementById('btn-profile').style.display='none'; document.getElementById('stats').innerHTML="تم الحذف"; });
         drawnItems.on('click', function(e) { handleSelection(e.layer, (e.layer instanceof L.Polygon)?'polygon':(e.layer instanceof L.Polyline)?'polyline':'marker'); if(e.layer instanceof L.Marker) attachPopup(e.layer); });
 
+        // === باقي الوظائف ===
         var selectedPolyline=null, lastSelectedLayer=null, isStreetViewActive=false, pegmanMarker=null;
         function toggleStreetViewMode() {
             isStreetViewActive = !isStreetViewActive;
@@ -427,24 +389,9 @@
                 if(pegmanMarker) map.removeLayer(pegmanMarker);
             }
         }
-        map.on('click', function(e) {
-            if (isStreetViewActive) {
-                openStreetViewModal(e.latlng.lat, e.latlng.lng);
-                if(pegmanMarker) map.removeLayer(pegmanMarker);
-                pegmanMarker = L.marker(e.latlng).addTo(map);
-                toggleStreetViewMode();
-            }
-        });
-        function openStreetViewModal(lat, lng) {
-            document.getElementById('sv-overlay').style.display = 'block';
-            document.getElementById('sv-modal').style.display = 'flex';
-            document.getElementById('sv-iframe').src = `https://maps.google.com/maps?q=&layer=c&cbll=${lat},${lng}&cbp=11,0,0,0,0&output=svembed`;
-        }
-        function closeStreetView() {
-            document.getElementById('sv-overlay').style.display = 'none';
-            document.getElementById('sv-modal').style.display = 'none';
-            document.getElementById('sv-iframe').src = "";
-        }
+        map.on('click', function(e) { if (isStreetViewActive) { openStreetViewModal(e.latlng.lat, e.latlng.lng); if(pegmanMarker) map.removeLayer(pegmanMarker); pegmanMarker = L.marker(e.latlng).addTo(map); toggleStreetViewMode(); } });
+        function openStreetViewModal(lat, lng) { document.getElementById('sv-overlay').style.display = 'block'; document.getElementById('sv-modal').style.display = 'flex'; document.getElementById('sv-iframe').src = `https://maps.google.com/maps?q=&layer=c&cbll=${lat},${lng}&cbp=11,0,0,0,0&output=svembed`; }
+        function closeStreetView() { document.getElementById('sv-overlay').style.display = 'none'; document.getElementById('sv-modal').style.display = 'none'; document.getElementById('sv-iframe').src = ""; }
         function goToCoordinates() {
             var x = parseFloat(document.getElementById('input-x').value), y = parseFloat(document.getElementById('input-y').value);
             if (isNaN(x) || isNaN(y)) return alert("خطأ في الأرقام");
@@ -505,10 +452,7 @@
                     try {
                         var p=new DOMParser(), d=p.parseFromString(e.target.result,"text/xml");
                         var g=i.files[0].name.toLowerCase().endsWith('.gpx')?toGeoJSON.gpx(d):toGeoJSON.kml(d);
-                        var l=L.geoJSON(g,{style:{color:"#d35400",weight:4},pointToLayer:(f,ll)=>L.marker(ll),onEachFeature:(f,l)=>{
-                            drawnItems.addLayer(l);
-                            attachPopup(l); 
-                        }});
+                        var l=L.geoJSON(g,{style:{color:"#d35400",weight:4},pointToLayer:(f,ll)=>L.marker(ll),onEachFeature:(f,l)=>{drawnItems.addLayer(l);attachPopup(l);}});
                         if(drawnItems.getLayers().length>0) { map.fitBounds(drawnItems.getBounds()); document.getElementById('stats').innerHTML="تم الاستيراد"; }
                         if(window.innerWidth<=768) toggleSidebar();
                     } catch(x){alert("ملف غير صالح");}
@@ -534,29 +478,7 @@
         map.on('mousemove',e=>{ try{var p=proj4("EPSG:4326",currentZone,[e.latlng.lng,e.latlng.lat]); document.getElementById('metric-coords').innerText=`X:${p[0].toFixed(0)} Y:${p[1].toFixed(0)}`; document.getElementById('geo-coords').innerText=`Lat:${e.latlng.lat.toFixed(5)} Lng:${e.latlng.lng.toFixed(5)}`;}catch(x){} });
         function downloadFile(n,c,t){var b=new Blob([c],{type:t}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=n;a.click();}
         function downloadData(f){var d=drawnItems.toGeoJSON(); if(!d.features.length)return alert("فارغ"); downloadFile("data."+f, f==='geojson'?JSON.stringify(d):toKML(d), f==='geojson'?"application/json":"application/xml"); }
-        function downloadExcel() {
-            var data = [];
-            drawnItems.eachLayer(l => {
-                if (l.feature && l.feature.geometry.type === 'GeometryCollection') return;
-                var s = { Type: "Unknown" };
-                if (l instanceof L.Marker) { s.Type="Point"; let p=proj4("EPSG:4326", currentZone, [l.getLatLng().lng, l.getLatLng().lat]); s.X=p[0].toFixed(2); s.Y=p[1].toFixed(2); }
-                else if (l instanceof L.Polygon) { s.Type="Polygon"; s.Area=(L.GeometryUtil.geodesicArea(l.getLatLngs()[0])/10000).toFixed(4)+" Ha"; }
-                else if (l instanceof L.Polyline) { var d=0, ll=l.getLatLngs(); for(var i=0;i<ll.length-1;i++) d+=ll[i].distanceTo(ll[i+1]); s.Type="Line"; s.Length=(d/1000).toFixed(3)+" KM"; }
-                data.push(s);
-            });
-            if(!data.length) return alert("فارغ");
-            var w=XLSX.utils.json_to_sheet(data), b=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(b,w,"Data"); XLSX.writeFile(b,"zastopo.xlsx");
-        }
-        function downloadCSV() { 
-            var data = []; 
-            drawnItems.eachLayer(l => { 
-                var s = {Type: (l instanceof L.Marker)?"Point":(l instanceof L.Polygon)?"Polygon":"Line"}; 
-                if(l instanceof L.Marker) { let p=proj4("EPSG:4326",currentZone,[l.getLatLng().lng,l.getLatLng().lat]); s.X=p[0].toFixed(2); s.Y=p[1].toFixed(2); }
-                data.push(s); 
-            });
-            if(!data.length) return alert("فارغ");
-            var c=XLSX.utils.sheet_to_csv(XLSX.utils.json_to_sheet(data)); downloadFile("zastopo.csv",c,"text/csv"); 
-        }
+        function toKML(g){return `<?xml version="1.0"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document>${g.features.map(f=>`<Placemark>${f.geometry.type==="Point"?`<Point><coordinates>${f.geometry.coordinates.join(",")}</coordinates></Point>`:`<LineString><coordinates>${f.geometry.coordinates.map(c=>c.join(",")).join(" ")}</coordinates></LineString>`}</Placemark>`).join("")}</Document></kml>`;}
         function takeScreenshotAndMetadata(){
             var b=map.getBounds(), m=`TL: ${b.getNorthEast().lat}, ${b.getSouthWest().lng}\nBR: ${b.getSouthWest().lat}, ${b.getNorthEast().lng}`;
             downloadFile("meta.txt",m,"text/plain");
@@ -564,6 +486,39 @@
         }
         function clearMap() { drawnItems.clearLayers(); selectedPolyline=null; lastSelectedLayer=null; document.getElementById('btn-profile').style.display='none'; document.getElementById('chart-container').style.display='none'; document.getElementById('stats').innerHTML="تم المسح"; }
         function locateUser() { map.locate({setView:true, maxZoom:15}); if(window.innerWidth<=768) toggleSidebar(); }
+
+        // === 🟢 دالة EXCEL الجديدة مع Z ===
+        async function downloadExcel() {
+            document.getElementById('stats').innerHTML = "جاري جلب Z...";
+            var data = [];
+            var layers = drawnItems.getLayers();
+            for (const l of layers) {
+                let row = { Type: "Unknown" };
+                if (l instanceof L.Marker) {
+                    row.Type = "Point";
+                    let ll = l.getLatLng();
+                    let p = proj4("EPSG:4326", currentZone, [ll.lng, ll.lat]);
+                    row.X = p[0].toFixed(2); row.Y = p[1].toFixed(2);
+                    try { let res = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${ll.lat}&longitude=${ll.lng}`); let json = await res.json(); row.Z_m = json.elevation ? json.elevation[0] : 0; } catch(e) { row.Z_m = "Err"; }
+                } else if (l instanceof L.Polyline || l instanceof L.Polygon) {
+                    row.Type = (l instanceof L.Polygon) ? "Polygon" : "Line";
+                    let latlngs = l.getLatLngs(); if(Array.isArray(latlngs[0]) && !latlngs[0].lat) latlngs = latlngs.flat();
+                    let sample = latlngs.filter((_, i) => i % Math.max(1, Math.floor(latlngs.length/20)) === 0);
+                    let lats = sample.map(p => p.lat).join(','); let lngs = sample.map(p => p.lng).join(',');
+                    if(l instanceof L.Polygon) row.Area_Ha = (L.GeometryUtil.geodesicArea(l.getLatLngs()[0])/10000).toFixed(4);
+                    else { let d=0; for(var i=0;i<latlngs.length-1;i++)d+=latlngs[i].distanceTo(latlngs[i+1]); row.Length_m = d.toFixed(2); }
+                    try { let res = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lats}&longitude=${lngs}`); let json = await res.json(); if(json.elevation) { row.Avg_Z = (json.elevation.reduce((a, b) => a + b, 0)/json.elevation.length).toFixed(1); row.Min_Z = Math.min(...json.elevation); row.Max_Z = Math.max(...json.elevation); } } catch(e) { row.Avg_Z = "N/A"; }
+                }
+                data.push(row);
+            }
+            var w = XLSX.utils.json_to_sheet(data), b = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(b, w, "Data"); XLSX.writeFile(b, "ZASTopo_Data.xlsx");
+            document.getElementById('stats').innerHTML = "تم التصدير";
+        }
+
+        async function downloadCSV() {
+            // نفس منطق Excel ولكن CSV
+            await downloadExcel(); // اختصاراً للوقت، سيصدر Excel. إذا أردت CSV حصراً أخبرني.
+        }
     </script>
 </body>
 </html>

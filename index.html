@@ -33,15 +33,8 @@
             .leaflet-draw { display: block !important; margin-top: 50px !important; }
         }
 
-        #menu-toggle-btn {
-            display: none; position: absolute; top: 20px; right: 20px; z-index: 3000 !important;
-            background: #2ecc71; color: white; border: none;
-            width: 45px; height: 45px; border-radius: 50%;
-            font-size: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            cursor: pointer; align-items: center; justify-content: center;
-        }
+        #menu-toggle-btn { display: none; position: absolute; top: 20px; right: 20px; z-index: 3000 !important; background: #2ecc71; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; font-size: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; align-items: center; justify-content: center; }
         @media (max-width: 768px) { #menu-toggle-btn { display: flex !important; } }
-
         .close-sidebar-btn { display: none; background: none; border: none; color: #e74c3c; font-size: 24px; cursor: pointer; position: absolute; left: 15px; top: 15px; }
         @media (max-width: 768px) { .close-sidebar-btn { display: block; } }
 
@@ -66,6 +59,12 @@
         select, input { width: 100%; padding: 8px; margin-bottom: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
         .coord-input { width: 45%; }
         .stat-item { background: #e8f6f3; padding: 8px; margin-top: 10px; border-radius: 6px; font-size: 12px; border: 1px solid #d1f2eb; color: #16a085; }
+        
+        /* مؤشر حالة الحفظ */
+        #save-status { text-align: center; font-size: 11px; margin-bottom: 10px; color: #7f8c8d; font-weight: bold; height: 20px; }
+        .saved-ok { color: #27ae60 !important; }
+        .saving-now { color: #e67e22 !important; }
+
         .map-label { background: rgba(255, 255, 255, 0.8); border: 1px solid #333; color: #000; font-weight: bold; font-size: 12px; padding: 2px 5px; border-radius: 3px; white-space: nowrap; box-shadow: 1px 1px 3px rgba(0,0,0,0.3); }
         .leaflet-popup-content b { color: #2ecc71; }
         .z-loading { color: #e67e22; font-size: 11px; }
@@ -74,7 +73,6 @@
         .freehand-active { background: #e74c3c !important; border: 2px solid #c0392b; animation: pulse 1s infinite; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); } 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); } }
 
-        /* Auth & Modal */
         #auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #2c3e50, #000000); z-index: 10000; display: flex; justify-content: center; align-items: center; flex-direction: column; color: white; overflow-y: auto; padding: 20px; box-sizing: border-box; }
         .auth-box { background: white; color: #333; padding: 25px; border-radius: 12px; width: 400px; max-width: 100%; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.6); margin: auto; }
         .auth-box h2 { color: #2ecc71; margin-bottom: 15px; font-size: 20px; }
@@ -84,6 +82,7 @@
         #auth-error { color: #e74c3c; font-size: 13px; margin-bottom: 10px; display: none; background: #fadbd8; padding: 5px; border-radius: 4px; }
         .signup-only { display: none; }
         #logout-btn { background: #c0392b; color: white; margin-top: 20px; width: 100%; }
+        
         #sv-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2999; }
         #sv-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; height: 80%; background: #fff; z-index: 3000; border-radius: 8px; flex-direction: column; }
         #sv-header { background: #2c3e50; color: #fff; padding: 10px; display: flex; justify-content: space-between; height: 40px; align-items: center; }
@@ -157,6 +156,8 @@
             <div class="univ-info">شعبة الجغرافيا، جامعة محمد الأول - وجدة</div>
         </div>
 
+        <div id="save-status"></div>
+
         <h2>⚙️ الإعدادات</h2>
         <select id="lambert-zone" onchange="updateProjection()">
             <option value="EPSG:26191" selected>Lambert Zone I (North)</option>
@@ -226,7 +227,8 @@
 
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-analytics-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script> <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-analytics-compat.js"></script>
+    
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
@@ -252,17 +254,103 @@
             firebase.initializeApp(firebaseConfig);
             const analytics = firebase.analytics();
         } catch(e) { console.error("Firebase Config Error:", e); }
+        
         const auth = firebase.auth();
+        const db = firebase.firestore(); // تفعيل قاعدة البيانات
 
         let isLoginMode = true;
+        
+        // === منطق استرجاع البيانات عند الدخول ===
         auth.onAuthStateChanged((user) => {
             if (user) {
                 document.getElementById('auth-overlay').style.display = 'none';
                 if(user.displayName) document.querySelector('.dev-name').innerText = "مرحباً: " + user.displayName;
+                // تحميل رسومات المستخدم
+                loadUserDrawings(user.uid);
             } else {
                 document.getElementById('auth-overlay').style.display = 'flex';
+                drawnItems.clearLayers(); // مسح الخريطة عند الخروج
             }
         });
+
+        // === ☁️ دوال الحفظ والاسترجاع السحابي ===
+        
+        function saveUserDrawings() {
+            const user = auth.currentUser;
+            if (!user) return;
+
+            const statusEl = document.getElementById('save-status');
+            statusEl.innerText = "جاري الحفظ... ☁️";
+            statusEl.className = "saving-now";
+
+            // تحويل الطبقات إلى GeoJSON مع الحفاظ على الأسماء
+            const geojson = drawnItems.toGeoJSON();
+            // نضيف الاسم الخاص لكل عنصر في الخصائص (Properties)
+            drawnItems.eachLayer((layer) => {
+                const id = layer._leaflet_id; // معرف مؤقت
+                // البحث عن الـ Feature المقابل في GeoJSON وتحديث اسمه
+                // (Leaflet toGeoJSON قد لا يرتبهم بنفس الطريقة، لذا نعتمد على إضافة الاسم عند التحميل)
+            });
+            
+            // الطريقة الأضمن: إعادة بناء GeoJSON مع الأسماء المخصصة
+            const features = [];
+            drawnItems.eachLayer(layer => {
+                let json = layer.toGeoJSON();
+                json.properties.customName = layer.customName || ""; // حفظ الاسم
+                features.push(json);
+            });
+            const dataToSave = { type: "FeatureCollection", features: features };
+
+            db.collection('users').doc(user.uid).set({
+                drawings: JSON.stringify(dataToSave),
+                lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+            })
+            .then(() => {
+                statusEl.innerText = "تم الحفظ في السحابة ✅";
+                statusEl.className = "saved-ok";
+                setTimeout(() => { statusEl.innerText = ""; }, 3000);
+            })
+            .catch((error) => {
+                statusEl.innerText = "خطأ في الحفظ ❌";
+                console.error("Error saving:", error);
+            });
+        }
+
+        function loadUserDrawings(uid) {
+            const statusEl = document.getElementById('save-status');
+            statusEl.innerText = "جاري استرجاع بياناتك... 📥";
+            
+            db.collection('users').doc(uid).get().then((doc) => {
+                if (doc.exists && doc.data().drawings) {
+                    const geojsonData = JSON.parse(doc.data().drawings);
+                    L.geoJSON(geojsonData, {
+                        onEachFeature: function (feature, layer) {
+                            // استرجاع الاسم
+                            if (feature.properties && feature.properties.customName) {
+                                layer.customName = feature.properties.customName;
+                                layer.bindTooltip(layer.customName, {permanent: true, direction: "center", className: "map-label"});
+                            }
+                            drawnItems.addLayer(layer);
+                            attachPopup(layer);
+                        }
+                    });
+                    if(drawnItems.getLayers().length > 0) {
+                        map.fitBounds(drawnItems.getBounds());
+                    }
+                    statusEl.innerText = "تم تحميل بياناتك بنجاح ✅";
+                } else {
+                    statusEl.innerText = "أهلاً بك، ابدأ الرسم الآن 🎨";
+                }
+                setTimeout(() => { statusEl.innerText = ""; }, 3000);
+            }).catch((error) => {
+                console.error("Error loading:", error);
+            });
+        }
+
+        // === ربط أحداث الرسم بالحفظ التلقائي ===
+        // يتم الحفظ عند: الإنشاء، التعديل، الحذف، وتسمية العنصر
+        
+        // ... (باقي كود المصادقة والخرائط كما هو، مع تحديثات بسيطة) ...
 
         function toggleAuthMode() {
             isLoginMode = !isLoginMode;
@@ -373,8 +461,22 @@
             document.getElementById('name-modal-overlay').style.display = 'none';
             document.getElementById('feature-name-input').value = "";
             currentLayerToName = null;
+            
+            saveUserDrawings(); // 🟢 حفظ تلقائي بعد التسمية
         }
+        
+        // ربط الحفظ بالأحداث
         map.on(L.Draw.Event.CREATED, function(e) { finishDrawing(e.layer); });
+        map.on(L.Draw.Event.EDITED, function(e) { 
+            e.layers.eachLayer(function(layer) { attachPopup(layer); });
+            saveUserDrawings(); // 🟢 حفظ تلقائي بعد التعديل
+        });
+        map.on(L.Draw.Event.DELETED, function() { 
+            selectedPolyline=null; lastSelectedLayer=null; 
+            document.getElementById('btn-profile').style.display='none'; 
+            document.getElementById('stats').innerHTML="تم الحذف"; 
+            saveUserDrawings(); // 🟢 حفظ تلقائي بعد الحذف
+        });
 
         function attachPopup(layer) {
             let name = layer.customName || "عنصر";
@@ -398,9 +500,6 @@
                 layer.bindPopup(content).openPopup();
             }
         }
-        map.on(L.Draw.Event.EDITED, function(e) { e.layers.eachLayer(function(layer) { attachPopup(layer); }); });
-        map.on(L.Draw.Event.DELETED, function() { selectedPolyline=null; lastSelectedLayer=null; document.getElementById('btn-profile').style.display='none'; document.getElementById('stats').innerHTML="تم الحذف"; });
-        drawnItems.on('click', function(e) { handleSelection(e.layer, (e.layer instanceof L.Polygon)?'polygon':(e.layer instanceof L.Polyline)?'polyline':'marker'); if(e.layer instanceof L.Marker) attachPopup(e.layer); });
 
         var selectedPolyline=null, lastSelectedLayer=null, isStreetViewActive=false, pegmanMarker=null;
         function toggleStreetViewMode() {
@@ -475,6 +574,7 @@
                 var baseName = lastSelectedLayer.customName || "عنصر";
                 buf.eachLayer(l => { l.customName = "Buffer: " + baseName; l.bindTooltip(l.customName, {permanent:true, className:'map-label'}); drawnItems.addLayer(l); });
                 document.getElementById('stats').innerHTML="تم الإنشاء"; 
+                saveUserDrawings(); // 🟢 حفظ بعد النطاق
             } catch(e){alert("خطأ");}
         }
         function loadFile(i) {
@@ -490,21 +590,18 @@
                             drawnItems.addLayer(l);
                             attachPopup(l);
                         }});
-                        if(drawnItems.getLayers().length>0) { map.fitBounds(drawnItems.getBounds()); document.getElementById('stats').innerHTML="تم الاستيراد"; }
+                        if(drawnItems.getLayers().length>0) { map.fitBounds(drawnItems.getBounds()); document.getElementById('stats').innerHTML="تم الاستيراد"; saveUserDrawings(); }
                         if(window.innerWidth<=768) toggleSidebar();
                     } catch(x){alert("ملف غير صالح");}
                 }; r.readAsText(i.files[0]);
             }
         }
-        // === 🟢 وظيفة DXF المحسنة (مع الأسماء) ===
         function downloadDXF(){
             if(!drawnItems.getLayers().length) return alert("فارغ");
             let d="0\nSECTION\n2\nHEADER\n9\n$ACADVER\n1\nAC1009\n0\nENDSEC\n0\nSECTION\n2\nENTITIES\n";
             drawnItems.eachLayer(l=>{
                 if(l.feature && l.feature.geometry.type==='GeometryCollection') return;
                 let name = l.customName || "Element";
-                
-                // نقطة (Point) + اسم (Text)
                 if(l instanceof L.Marker) { 
                     try{
                         let p=proj4("EPSG:4326",currentZone,[l.getLatLng().lng,l.getLatLng().lat]); 
@@ -512,11 +609,9 @@
                         d+=`0\nTEXT\n8\nLabels\n10\n${p[0]+2}\n20\n${p[1]+2}\n30\n0.0\n40\n10.0\n1\n${name}\n`;
                     }catch(e){} 
                 }
-                // خط أو مضلع (Polyline/Polygon)
                 else if(l instanceof L.Polyline||l instanceof L.Polygon) {
                     let ll=l.getLatLngs(); if(Array.isArray(ll[0])&&!ll[0].lat) ll=ll.flat();
                     let closed = (l instanceof L.Polygon) ? 1 : 0;
-                    
                     d+=`0\nLWPOLYLINE\n8\nGeometry\n90\n${ll.length}\n70\n${closed}\n`;
                     let firstP = null;
                     ll.forEach((p, index)=>{
@@ -524,14 +619,12 @@
                         d+=`10\n${c[0]}\n20\n${c[1]}\n`;
                         if(index===0) firstP = c;
                     });
-                    // إضافة الاسم عند بداية الخط/المضلع
                     if(firstP) d+=`0\nTEXT\n8\nLabels\n10\n${firstP[0]}\n20\n${firstP[1]}\n30\n0.0\n40\n10.0\n1\n${name}\n`;
                 }
             });
             d+="0\nENDSEC\n0\nEOF"; 
             downloadFile("ZASTopo_Pro.dxf",d,"application/dxf");
         }
-
         function downloadProfileImage(){var a=document.createElement('a');a.download='profile.png';a.href=document.getElementById('elevationChart').toDataURL();a.click();}
         function calcStats(l,t){ if(t==='polyline'){var d=0,ll=l.getLatLngs();for(var i=0;i<ll.length-1;i++)d+=ll[i].distanceTo(ll[i+1]);document.getElementById('stats').innerHTML=`📏 ${(d/1000).toFixed(3)} كم`;} else if(t==='polygon') document.getElementById('stats').innerHTML=`📐 ${(L.GeometryUtil.geodesicArea(l.getLatLngs()[0])/10000).toFixed(4)} هكتار`; else document.getElementById('stats').innerHTML="📍 عنصر"; }
         map.on('mousemove',e=>{ try{var p=proj4("EPSG:4326",currentZone,[e.latlng.lng,e.latlng.lat]); document.getElementById('metric-coords').innerText=`X:${p[0].toFixed(0)} Y:${p[1].toFixed(0)}`; document.getElementById('geo-coords').innerText=`Lat:${e.latlng.lat.toFixed(5)} Lng:${e.latlng.lng.toFixed(5)}`;}catch(x){} });
@@ -543,17 +636,15 @@
             downloadFile("meta.txt",m,"text/plain");
             setTimeout(()=>snapshoter.takeScreen('image').then(i=>{var a=document.createElement('a'); a.download="map.jpg"; a.href=i; a.click();}),500);
         }
-        function clearMap() { drawnItems.clearLayers(); selectedPolyline=null; lastSelectedLayer=null; document.getElementById('btn-profile').style.display='none'; document.getElementById('chart-container').style.display='none'; document.getElementById('stats').innerHTML="تم المسح"; }
+        function clearMap() { drawnItems.clearLayers(); selectedPolyline=null; lastSelectedLayer=null; document.getElementById('btn-profile').style.display='none'; document.getElementById('chart-container').style.display='none'; document.getElementById('stats').innerHTML="تم المسح"; saveUserDrawings(); }
         function locateUser() { map.locate({setView:true, maxZoom:15}); if(window.innerWidth<=768) toggleSidebar(); }
 
         async function downloadExcel() {
             document.getElementById('stats').innerHTML = "جاري التصدير...";
             var data = [];
             var layers = drawnItems.getLayers();
-            
             for (const l of layers) {
                 let row = { Name: l.customName || "بدون اسم", Type: "Unknown" };
-                
                 if (l instanceof L.Marker) {
                     row.Type = "Point";
                     let ll = l.getLatLng();
@@ -567,7 +658,6 @@
                     let lats = sample.map(p => p.lat).join(','); let lngs = sample.map(p => p.lng).join(',');
                     if(l instanceof L.Polygon) {
                         row.Area_Ha = (L.GeometryUtil.geodesicArea(l.getLatLngs()[0])/10000).toFixed(4);
-                        // إضافة المركز والإحداثيات المحيطة
                         let center = l.getBounds().getCenter();
                         let cp = proj4("EPSG:4326", currentZone, [center.lng, center.lat]);
                         row.Center_X = cp[0].toFixed(2); row.Center_Y = cp[1].toFixed(2);
@@ -580,7 +670,6 @@
             var w = XLSX.utils.json_to_sheet(data), b = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(b, w, "Data"); XLSX.writeFile(b, "ZASTopo_Pro_Data.xlsx");
             document.getElementById('stats').innerHTML = "تم التصدير";
         }
-
         async function downloadCSV() { await downloadExcel(); }
     </script>
 </body>

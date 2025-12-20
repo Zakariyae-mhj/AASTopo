@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ZASTopo Pro | Système d'Information Géographique</title>
+    <title>ZASTopo Pro | نظام المعلومات الجغرافية</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
@@ -84,7 +84,6 @@
         #auth-error { color: #e74c3c; font-size: 13px; margin-bottom: 10px; display: none; background: #fadbd8; padding: 5px; border-radius: 4px; }
         .signup-only { display: none; }
         #logout-btn { background: #c0392b; color: white; margin-top: 20px; width: 100%; }
-        
         #sv-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2999; }
         #sv-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; height: 80%; background: #fff; z-index: 3000; border-radius: 8px; flex-direction: column; }
         #sv-header { background: #2c3e50; color: #fff; padding: 10px; display: flex; justify-content: space-between; height: 40px; align-items: center; }
@@ -169,13 +168,22 @@
 
         <div id="save-status">جاهز</div>
 
-        <h2>⚙️ الإعدادات</h2>
+        <h2>⚙️ الإعدادات (Sytème de Coordonnées)</h2>
         <select id="lambert-zone" onchange="updateProjection()">
-            <option value="EPSG:26191" selected>Lambert Zone I (North)</option>
-            <option value="EPSG:26192">Lambert Zone II (Center)</option>
-            <option value="EPSG:26194">Lambert Zone III (South)</option>
-            <option value="EPSG:26195">Lambert Zone IV (Deep South)</option>
+            <optgroup label="المغرب (Maroc - Merchich)">
+                <option value="EPSG:26191" selected>Lambert Zone I (Nord)</option>
+                <option value="EPSG:26192">Lambert Zone II (Centre)</option>
+                <option value="EPSG:26194">Lambert Zone III (Sud)</option>
+                <option value="EPSG:26195">Lambert Zone IV (Grand Sud)</option>
+            </optgroup>
+            <optgroup label="الجزائر (Algérie - Nord Sahara 1959)">
+                <option value="EPSG:3059">Nord Sahara / UTM Zone 29N</option>
+                <option value="EPSG:3060">Nord Sahara / UTM Zone 30N</option>
+                <option value="EPSG:3061">Nord Sahara / UTM Zone 31N</option>
+                <option value="EPSG:3062">Nord Sahara / UTM Zone 32N</option>
+            </optgroup>
         </select>
+        
         <div style="display: flex; gap: 5px; margin-bottom: 5px;">
             <input type="text" id="input-x" class="coord-input" placeholder="X / Lat">
             <input type="text" id="input-y" class="coord-input" placeholder="Y / Lng">
@@ -238,8 +246,8 @@
 
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script> <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-analytics-compat.js"></script>
-    
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-analytics-compat.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
@@ -254,7 +262,7 @@
         const firebaseConfig = {
             apiKey: "AIzaSyBHjDSoCDrZAh9KIW1LI4H6XxIdeB8YnFw",
             authDomain: "rusle-462022.firebaseapp.com",
-            databaseURL: "https://rusle-462022-default-rtdb.firebaseio.com", // رابط القاعدة الجديدة
+            databaseURL: "https://rusle-462022-default-rtdb.firebaseio.com",
             projectId: "rusle-462022",
             storageBucket: "rusle-462022.firebasestorage.app",
             messagingSenderId: "106974487623",
@@ -262,11 +270,16 @@
             measurementId: "G-YVJL1T2VXM"
         };
 
-        // 1. تشغيل الخريطة فوراً لتجنب البطء
+        // 1. التعريفات الجغرافية (المغرب + الجزائر)
         proj4.defs("EPSG:26191", "+proj=lcc +lat_1=33.3 +lat_0=33.3 +lon_0=-5.4 +k_0=0.999625769 +x_0=500000 +y_0=300000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs");
         proj4.defs("EPSG:26192", "+proj=lcc +lat_1=29.7 +lat_0=29.7 +lon_0=-5.4 +k_0=0.999615596 +x_0=500000 +y_0=300000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs");
         proj4.defs("EPSG:26194", "+proj=lcc +lat_1=26.1 +lat_0=26.1 +lon_0=-5.4 +k_0=0.999616304 +x_0=500000 +y_0=400000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs");
         proj4.defs("EPSG:26195", "+proj=lcc +lat_1=22.5 +lat_0=22.5 +lon_0=-5.4 +k_0=0.999616437 +x_0=500000 +y_0=500000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs");
+        // الجزائر (Nord Sahara 1959)
+        proj4.defs("EPSG:3059", "+proj=utm +zone=29 +ellps=clrk80 +towgs84=-186,-93,310,0,0,0,0 +units=m +no_defs");
+        proj4.defs("EPSG:3060", "+proj=utm +zone=30 +ellps=clrk80 +towgs84=-186,-93,310,0,0,0,0 +units=m +no_defs");
+        proj4.defs("EPSG:3061", "+proj=utm +zone=31 +ellps=clrk80 +towgs84=-186,-93,310,0,0,0,0 +units=m +no_defs");
+        proj4.defs("EPSG:3062", "+proj=utm +zone=32 +ellps=clrk80 +towgs84=-186,-93,310,0,0,0,0 +units=m +no_defs");
 
         var currentZone="EPSG:26191", currentZoneName="Lambert I";
         function updateProjection(){
@@ -293,43 +306,48 @@
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
         map.on('click', function() { if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('active'); });
 
-        // 2. تهيئة Firebase بعد ذلك
+        // 2. تهيئة Firebase
         try {
             firebase.initializeApp(firebaseConfig);
             const analytics = firebase.analytics();
         } catch(e) { console.error("Firebase Config Error:", e); }
         
-        const auth = firebase.auth();
-        const db = firebase.database(); // استخدام Realtime Database
+        let auth, db;
+        try {
+            auth = firebase.auth();
+            db = firebase.database();
+        } catch(e) { console.error("DB Init Error:", e); document.getElementById('stats').innerText = "خطأ قاعدة بيانات"; }
 
         let isLoginMode = true;
         
-        auth.onAuthStateChanged((user) => {
-            if (user) {
-                document.getElementById('auth-overlay').style.display = 'none';
-                if(user.displayName) document.querySelector('.dev-name').innerText = "مرحباً: " + user.displayName;
-                loadUserDrawings(user.uid);
-            } else {
-                document.getElementById('auth-overlay').style.display = 'flex';
-                drawnItems.clearLayers();
-            }
-        });
+        if(auth) {
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    document.getElementById('auth-overlay').style.display = 'none';
+                    if(user.displayName) document.querySelector('.dev-name').innerText = "مرحباً: " + user.displayName;
+                    loadUserDrawings(user.uid);
+                } else {
+                    document.getElementById('auth-overlay').style.display = 'flex';
+                    drawnItems.clearLayers();
+                }
+            });
+        }
 
-        // === 🚀 نظام الحفظ السريع (Realtime Database) ===
+        // === نظام الحفظ الذكي (Debouncing) ===
         let saveTimeout;
         function scheduleAutoSave() {
             const statusEl = document.getElementById('save-status');
-            statusEl.innerText = "جاري الحفظ... (انتظر)";
+            statusEl.innerText = "جاري الحفظ...";
             statusEl.className = "saving-now";
             clearTimeout(saveTimeout);
             saveTimeout = setTimeout(() => { saveUserDrawings(); }, 3000);
         }
 
         function saveUserDrawings() {
+            if (!auth || !db) return;
             const user = auth.currentUser;
             if (!user) return;
             const statusEl = document.getElementById('save-status');
-            
             const features = [];
             drawnItems.eachLayer(layer => {
                 let json = layer.toGeoJSON();
@@ -338,25 +356,22 @@
                 features.push(json);
             });
             const dataToSave = { type: "FeatureCollection", features: features };
-
-            // استخدام set في Realtime Database
             db.ref('users/' + user.uid).set({
                 drawings: JSON.stringify(dataToSave),
                 timestamp: Date.now()
             }, (error) => {
-                if (error) {
-                    statusEl.innerText = "خطأ في الحفظ ❌";
-                } else {
-                    statusEl.innerText = "تم الحفظ السحابي ✅";
-                    statusEl.className = "saved-ok";
-                    setTimeout(() => { statusEl.innerText = "جاهز"; statusEl.className = ""; }, 3000);
+                if (error) { statusEl.innerText = "خطأ في الحفظ"; } 
+                else { 
+                    statusEl.innerText = "تم الحفظ ✅"; 
+                    statusEl.className = "saved-ok"; 
+                    setTimeout(() => { statusEl.innerText = "جاهز"; statusEl.className = ""; }, 3000); 
                 }
             });
         }
 
         function loadUserDrawings(uid) {
+            if (!db) return;
             document.getElementById('loading-overlay').style.display = 'flex';
-            
             db.ref('users/' + uid).once('value').then((snapshot) => {
                 const data = snapshot.val();
                 if (data && data.drawings) {
@@ -375,9 +390,6 @@
                     if(drawnItems.getLayers().length > 0) map.fitBounds(drawnItems.getBounds());
                 }
                 document.getElementById('loading-overlay').style.display = 'none';
-            }).catch((error) => {
-                console.error("Error loading:", error);
-                document.getElementById('loading-overlay').style.display = 'none';
             });
         }
 
@@ -393,7 +405,6 @@
             document.getElementById('name-modal-overlay').style.display = 'flex'; 
             document.getElementById('feature-name-input').focus(); 
         }
-        
         function saveFeatureName() {
             let name = document.getElementById('feature-name-input').value;
             let notes = document.getElementById('feature-notes-input').value;
@@ -409,7 +420,7 @@
             scheduleAutoSave();
         }
 
-        // ... (باقي الكود السابق: toggleAuthMode, handleAuth, attachPopup, رسم, تصدير...)
+        // ... (باقي الدوال كما هي: toggleAuthMode, handleAuth, Freehand, etc.)
         function toggleAuthMode() {
             isLoginMode = !isLoginMode;
             const signupFields = document.querySelectorAll('.signup-only');

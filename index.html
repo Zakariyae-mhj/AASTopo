@@ -222,8 +222,8 @@
         </button>
 
         <div class="btn-group">
-            <input type="file" id="file-input" accept=".kml,.gpx" style="display: none;" onchange="loadFile(this)">
-            <button class="import-btn" onclick="document.getElementById('file-input').click()">📂 استيراد (KML/GPX)</button>
+            <input type="file" id="file-input" accept=".kml,.gpx,.dxf" style="display: none;" onchange="loadFile(this)">
+            <button class="import-btn" onclick="document.getElementById('file-input').click()">📂 استيراد (KML/GPX/DXF)</button>
         </div>
         <div class="btn-group" style="align-items: center;">
             <input type="number" id="buffer-distance" placeholder="متر" value="50" style="width: 60px;">
@@ -274,6 +274,7 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dxf-parser@1.1.2/dist/dxf-parser.min.js"></script>
 
     <script>
         const firebaseConfig = {
@@ -287,35 +288,30 @@
             measurementId: "G-YVJL1T2VXM"
         };
 
-        // 1. التعريفات الجغرافية الشاملة
-        // المغرب
-        proj4.defs("EPSG:26191", "+proj=lcc +lat_1=33.3 +lat_0=33.3 +lon_0=-5.4 +k_0=0.999625769 +x_0=500000 +y_0=300000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs");
-        proj4.defs("EPSG:26192", "+proj=lcc +lat_1=29.7 +lat_0=29.7 +lon_0=-5.4 +k_0=0.999615596 +x_0=500000 +y_0=300000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs");
-        proj4.defs("EPSG:26194", "+proj=lcc +lat_1=26.1 +lat_0=26.1 +lon_0=-5.4 +k_0=0.999616304 +x_0=500000 +y_0=400000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs");
-        proj4.defs("EPSG:26195", "+proj=lcc +lat_1=22.5 +lat_0=22.5 +lon_0=-5.4 +k_0=0.999616437 +x_0=500000 +y_0=500000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs");
-        
-        // الجزائر (Nord Sahara 1959)
-        proj4.defs("EPSG:3059", "+proj=utm +zone=29 +ellps=clrk80 +towgs84=-186,-93,310,0,0,0,0 +units=m +no_defs");
-        proj4.defs("EPSG:3060", "+proj=utm +zone=30 +ellps=clrk80 +towgs84=-186,-93,310,0,0,0,0 +units=m +no_defs");
-        proj4.defs("EPSG:3061", "+proj=utm +zone=31 +ellps=clrk80 +towgs84=-186,-93,310,0,0,0,0 +units=m +no_defs");
-        proj4.defs("EPSG:3062", "+proj=utm +zone=32 +ellps=clrk80 +towgs84=-186,-93,310,0,0,0,0 +units=m +no_defs");
-
-        // تونس (Carthage)
-        proj4.defs("EPSG:22332", "+proj=utm +zone=32 +ellps=clrk80ign +towgs84=-263,6,431,0,0,0,0 +units=m +no_defs");
-
-        // ليبيا (WGS84 UTM)
-        proj4.defs("EPSG:32632", "+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs");
-        proj4.defs("EPSG:32633", "+proj=utm +zone=33 +datum=WGS84 +units=m +no_defs");
-        proj4.defs("EPSG:32634", "+proj=utm +zone=34 +datum=WGS84 +units=m +no_defs");
-
-        // موريتانيا (WGS84 UTM)
-        proj4.defs("EPSG:32628", "+proj=utm +zone=28 +datum=WGS84 +units=m +no_defs");
-        proj4.defs("EPSG:32629", "+proj=utm +zone=29 +datum=WGS84 +units=m +no_defs");
-
-        // مصر (Egypt 1907)
-        proj4.defs("EPSG:22992", "+proj=tmerc +lat_0=30 +lon_0=31 +k=1 +x_0=615000 +y_0=810000 +ellps=helmert +towgs84=-130,110,-13,0,0,0,0 +units=m +no_defs");
-        proj4.defs("EPSG:22993", "+proj=tmerc +lat_0=30 +lon_0=31 +k=1 +x_0=300000 +y_0=1100000 +ellps=helmert +towgs84=-130,110,-13,0,0,0,0 +units=m +no_defs");
-        proj4.defs("EPSG:22994", "+proj=tmerc +lat_0=30 +lon_0=31 +k=1 +x_0=1100000 +y_0=1100000 +ellps=helmert +towgs84=-130,110,-13,0,0,0,0 +units=m +no_defs");
+        // 1. التعريفات الجغرافية
+        proj4.defs([
+            ["EPSG:26191", "+proj=lcc +lat_1=33.3 +lat_0=33.3 +lon_0=-5.4 +k_0=0.999625769 +x_0=500000 +y_0=300000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"],
+            ["EPSG:26192", "+proj=lcc +lat_1=29.7 +lat_0=29.7 +lon_0=-5.4 +k_0=0.999615596 +x_0=500000 +y_0=300000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"],
+            ["EPSG:26194", "+proj=lcc +lat_1=26.1 +lat_0=26.1 +lon_0=-5.4 +k_0=0.999616304 +x_0=500000 +y_0=400000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"],
+            ["EPSG:26195", "+proj=lcc +lat_1=22.5 +lat_0=22.5 +lon_0=-5.4 +k_0=0.999616437 +x_0=500000 +y_0=500000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"],
+            // الجزائر
+            ["EPSG:3059", "+proj=utm +zone=29 +ellps=clrk80 +towgs84=-186,-93,310,0,0,0,0 +units=m +no_defs"],
+            ["EPSG:3060", "+proj=utm +zone=30 +ellps=clrk80 +towgs84=-186,-93,310,0,0,0,0 +units=m +no_defs"],
+            ["EPSG:3061", "+proj=utm +zone=31 +ellps=clrk80 +towgs84=-186,-93,310,0,0,0,0 +units=m +no_defs"],
+            ["EPSG:3062", "+proj=utm +zone=32 +ellps=clrk80 +towgs84=-186,-93,310,0,0,0,0 +units=m +no_defs"],
+            // تونس
+            ["EPSG:22332", "+proj=utm +zone=32 +ellps=clrk80ign +towgs84=-263,6,431,0,0,0,0 +units=m +no_defs"],
+            // ليبيا وموريتانيا
+            ["EPSG:32628", "+proj=utm +zone=28 +datum=WGS84 +units=m +no_defs"],
+            ["EPSG:32629", "+proj=utm +zone=29 +datum=WGS84 +units=m +no_defs"],
+            ["EPSG:32632", "+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs"],
+            ["EPSG:32633", "+proj=utm +zone=33 +datum=WGS84 +units=m +no_defs"],
+            ["EPSG:32634", "+proj=utm +zone=34 +datum=WGS84 +units=m +no_defs"],
+            // مصر
+            ["EPSG:22992", "+proj=tmerc +lat_0=30 +lon_0=31 +k=1 +x_0=615000 +y_0=810000 +ellps=helmert +towgs84=-130,110,-13,0,0,0,0 +units=m +no_defs"],
+            ["EPSG:22993", "+proj=tmerc +lat_0=30 +lon_0=31 +k=1 +x_0=300000 +y_0=1100000 +ellps=helmert +towgs84=-130,110,-13,0,0,0,0 +units=m +no_defs"],
+            ["EPSG:22994", "+proj=tmerc +lat_0=30 +lon_0=31 +k=1 +x_0=1100000 +y_0=1100000 +ellps=helmert +towgs84=-130,110,-13,0,0,0,0 +units=m +no_defs"]
+        ]);
 
         var currentZone="EPSG:26191", currentZoneName="Lambert I";
         function updateProjection(){
@@ -342,7 +338,6 @@
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
         map.on('click', function() { if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('active'); });
 
-        // 2. تهيئة Firebase
         try {
             firebase.initializeApp(firebaseConfig);
             const analytics = firebase.analytics();
@@ -355,7 +350,6 @@
         } catch(e) { console.error("DB Init Error:", e); document.getElementById('stats').innerText = "خطأ قاعدة بيانات"; }
 
         let isLoginMode = true;
-        
         if(auth) {
             auth.onAuthStateChanged((user) => {
                 if (user) {
@@ -369,7 +363,6 @@
             });
         }
 
-        // === نظام الحفظ الذكي (Debouncing) ===
         let saveTimeout;
         function scheduleAutoSave() {
             const statusEl = document.getElementById('save-status');
@@ -622,22 +615,70 @@
                 scheduleAutoSave(); 
             } catch(e){alert("خطأ");}
         }
+        // دالة DXF المحدثة للعمل مع ملفات الأوتوكاد
         function loadFile(i) {
             if(i.files[0]) {
                 var r=new FileReader();
                 r.onload=function(e) {
                     try {
-                        var p=new DOMParser(), d=p.parseFromString(e.target.result,"text/xml");
-                        var g=i.files[0].name.toLowerCase().endsWith('.gpx')?toGeoJSON.gpx(d):toGeoJSON.kml(d);
-                        var l=L.geoJSON(g,{style:{color:"#d35400",weight:4},pointToLayer:(f,ll)=>L.marker(ll),onEachFeature:(f,l)=>{
-                            l.customName = f.properties.name || "مستورد";
-                            l.bindTooltip(l.customName, {permanent:true, className:'map-label'});
-                            drawnItems.addLayer(l);
-                            attachPopup(l);
-                        }});
-                        if(drawnItems.getLayers().length>0) { map.fitBounds(drawnItems.getBounds()); document.getElementById('stats').innerHTML="تم الاستيراد"; scheduleAutoSave(); }
+                        let filename = i.files[0].name.toLowerCase();
+                        if(filename.endsWith('.dxf')) {
+                            // قراءة ملف DXF
+                            var parser = new DxfParser();
+                            var dxf = parser.parseSync(e.target.result);
+                            dxf.entities.forEach(entity => {
+                                let layer;
+                                if(entity.type === 'POINT' || entity.type === 'INSERT') { // INSERT للبلوكات
+                                    let x = entity.position.x; let y = entity.position.y;
+                                    try {
+                                        let l = proj4(currentZone, "EPSG:4326", [x, y]);
+                                        layer = L.marker([l[1], l[0]]);
+                                    } catch(err){}
+                                } else if(entity.type === 'LWPOLYLINE' || entity.type === 'POLYLINE') {
+                                    let latlngs = [];
+                                    entity.vertices.forEach(v => {
+                                        try {
+                                            let l = proj4(currentZone, "EPSG:4326", [v.x, v.y]);
+                                            latlngs.push([l[1], l[0]]);
+                                        } catch(err){}
+                                    });
+                                    if(latlngs.length > 0) {
+                                        layer = (entity.shape || entity.closed) ? L.polygon(latlngs, {color: '#e74c3c'}) : L.polyline(latlngs, {color: '#e74c3c'});
+                                    }
+                                } else if(entity.type === 'LINE') {
+                                    let latlngs = [];
+                                    entity.vertices.forEach(v => {
+                                        try {
+                                            let l = proj4(currentZone, "EPSG:4326", [v.x, v.y]);
+                                            latlngs.push([l[1], l[0]]);
+                                        } catch(err){}
+                                    });
+                                    if(latlngs.length > 0) layer = L.polyline(latlngs, {color: '#e74c3c'});
+                                }
+
+                                if(layer) {
+                                    layer.customName = "DXF Import"; // تسمية افتراضية
+                                    drawnItems.addLayer(layer);
+                                    attachPopup(layer);
+                                }
+                            });
+                            map.fitBounds(drawnItems.getBounds());
+                            document.getElementById('stats').innerHTML="تم استيراد DXF";
+                            scheduleAutoSave();
+                        } else {
+                            // قراءة KML/GPX
+                            var p=new DOMParser(), d=p.parseFromString(e.target.result,"text/xml");
+                            var g=filename.endsWith('.gpx')?toGeoJSON.gpx(d):toGeoJSON.kml(d);
+                            var l=L.geoJSON(g,{style:{color:"#d35400",weight:4},pointToLayer:(f,ll)=>L.marker(ll),onEachFeature:(f,l)=>{
+                                l.customName = f.properties.name || "مستورد";
+                                l.bindTooltip(l.customName, {permanent:true, className:'map-label'});
+                                drawnItems.addLayer(l);
+                                attachPopup(l);
+                            }});
+                            if(drawnItems.getLayers().length>0) { map.fitBounds(drawnItems.getBounds()); document.getElementById('stats').innerHTML="تم الاستيراد"; scheduleAutoSave(); }
+                        }
                         if(window.innerWidth<=768) toggleSidebar();
-                    } catch(x){alert("ملف غير صالح");}
+                    } catch(x){ console.log(x); alert("ملف غير صالح");}
                 }; r.readAsText(i.files[0]);
             }
         }

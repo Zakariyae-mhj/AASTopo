@@ -394,6 +394,7 @@
             });
         }
 
+        // === 🟢 دالة التحميل المحدثة لإخفاء "DXF Import" ===
         function loadUserDrawings(uid) {
             if (!db) return;
             document.getElementById('loading-overlay').style.display = 'flex';
@@ -404,9 +405,14 @@
                     L.geoJSON(geojsonData, {
                         onEachFeature: function (feature, layer) {
                             if (feature.properties) {
-                                layer.customName = feature.properties.customName;
+                                let name = feature.properties.customName;
+                                layer.customName = name;
                                 layer.customNotes = feature.properties.customNotes;
-                                if(layer.customName) layer.bindTooltip(layer.customName, {permanent: true, direction: "center", className: "map-label"});
+                                
+                                // 🟢 الشرط: إذا كان الاسم ليس "DXF Import" وليس فارغاً، أظهر اللافتة
+                                if(name && name !== "DXF Import" && name.trim() !== "") {
+                                    layer.bindTooltip(name, {permanent: true, direction: "center", className: "map-label"});
+                                }
                             }
                             drawnItems.addLayer(layer);
                             attachPopup(layer);
@@ -430,23 +436,77 @@
             document.getElementById('name-modal-overlay').style.display = 'flex'; 
             document.getElementById('feature-name-input').focus(); 
         }
+        
         function saveFeatureName() {
             let name = document.getElementById('feature-name-input').value;
             let notes = document.getElementById('feature-notes-input').value;
-            if(!name) name = "عنصر بدون اسم";
+            
+            // 🟢 إذا لم يكتب المستخدم اسماً، اتركه فارغاً ولا تسميه "عنصر"
+            if(!name) name = ""; 
+            
             currentLayerToName.customName = name;
             currentLayerToName.customNotes = notes;
-            currentLayerToName.bindTooltip(name, {permanent: true, direction: "center", className: "map-label"}).openTooltip();
+            
+            // فقط إذا كان هناك اسم، أضف اللافتة
+            if(name !== "") {
+                currentLayerToName.bindTooltip(name, {permanent: true, direction: "center", className: "map-label"}).openTooltip();
+            }
+            
             drawnItems.addLayer(currentLayerToName);
             attachPopup(currentLayerToName);
             handleSelection(currentLayerToName, (currentLayerToName instanceof L.Polygon)?'polygon':(currentLayerToName instanceof L.Polyline)?'polyline':'marker');
             document.getElementById('name-modal-overlay').style.display = 'none';
             currentLayerToName = null;
             
-            // 🟢 الحفظ الفوري
+            // حفظ فوري
             saveUserDrawings();
         }
 
+        // === 🟢 تعديل دالة الاستيراد لإلغاء التسمية الافتراضية ===
+        function loadFile(i) {
+            if(i.files[0]) {
+                var r=new FileReader();
+                r.onload=function(e) {
+                    try {
+                        let filename = i.files[0].name.toLowerCase();
+                        if(filename.endsWith('.dxf')) {
+                            var parser = new DxfParser();
+                            var dxf = parser.parseSync(e.target.result);
+                            dxf.entities.forEach(entity => {
+                                let layer;
+                                // ... (نفس منطق قراءة الإحداثيات) ...
+                                if(entity.type === 'POINT' || entity.type === 'INSERT') { let x = entity.position.x; let y = entity.position.y; try { let l = proj4(currentZone, "EPSG:4326", [x, y]); layer = L.marker([l[1], l[0]]); } catch(err){} } 
+                                else if(entity.type === 'LWPOLYLINE' || entity.type === 'POLYLINE') { let latlngs = []; entity.vertices.forEach(v => { try { let l = proj4(currentZone, "EPSG:4326", [v.x, v.y]); latlngs.push([l[1], l[0]]); } catch(err){} }); if(latlngs.length > 0) { layer = (entity.shape || entity.closed) ? L.polygon(latlngs, {color: '#e74c3c'}) : L.polyline(latlngs, {color: '#e74c3c'}); } } 
+                                else if(entity.type === 'LINE') { let latlngs = []; entity.vertices.forEach(v => { try { let l = proj4(currentZone, "EPSG:4326", [v.x, v.y]); latlngs.push([l[1], l[0]]); } catch(err){} }); if(latlngs.length > 0) layer = L.polyline(latlngs, {color: '#e74c3c'}); }
+
+                                if(layer) {
+                                    layer.customName = ""; // 🟢 لا تسمية افتراضية
+                                    drawnItems.addLayer(layer);
+                                    attachPopup(layer);
+                                }
+                            });
+                            map.fitBounds(drawnItems.getBounds());
+                            document.getElementById('stats').innerHTML="تم استيراد DXF";
+                            saveUserDrawings(); // حفظ فوري
+                        } else {
+                            // KML/GPX
+                            var p=new DOMParser(), d=p.parseFromString(e.target.result,"text/xml");
+                            var g=filename.endsWith('.gpx')?toGeoJSON.gpx(d):toGeoJSON.kml(d);
+                            var l=L.geoJSON(g,{style:{color:"#d35400",weight:4},pointToLayer:(f,ll)=>L.marker(ll),onEachFeature:(f,l)=>{
+                                l.customName = f.properties.name || ""; // الاسم من الملف أو فارغ
+                                if(l.customName) l.bindTooltip(l.customName, {permanent:true, className:'map-label'});
+                                drawnItems.addLayer(l);
+                                attachPopup(l);
+                            }});
+                            if(drawnItems.getLayers().length>0) { map.fitBounds(drawnItems.getBounds()); document.getElementById('stats').innerHTML="تم الاستيراد"; saveUserDrawings(); }
+                        }
+                        if(window.innerWidth<=768) toggleSidebar();
+                    } catch(x){ console.log(x); alert("ملف غير صالح");}
+                }; r.readAsText(i.files[0]);
+            }
+        }
+
+        // ... (باقي الوظائف: toggleAuthMode, handleAuth, Freehand, downloadDXF, etc. كما هي)
         function toggleAuthMode() {
             isLoginMode = !isLoginMode;
             const signupFields = document.querySelectorAll('.signup-only');
@@ -612,73 +672,6 @@
                 document.getElementById('stats').innerHTML="تم الإنشاء"; 
                 scheduleAutoSave(); 
             } catch(e){alert("خطأ");}
-        }
-        // دالة DXF المحدثة (بدون أسماء)
-        function loadFile(i) {
-            if(i.files[0]) {
-                var r=new FileReader();
-                r.onload=function(e) {
-                    try {
-                        let filename = i.files[0].name.toLowerCase();
-                        if(filename.endsWith('.dxf')) {
-                            // قراءة ملف DXF
-                            var parser = new DxfParser();
-                            var dxf = parser.parseSync(e.target.result);
-                            dxf.entities.forEach(entity => {
-                                let layer;
-                                if(entity.type === 'POINT' || entity.type === 'INSERT') { // INSERT للبلوكات
-                                    let x = entity.position.x; let y = entity.position.y;
-                                    try {
-                                        let l = proj4(currentZone, "EPSG:4326", [x, y]);
-                                        layer = L.marker([l[1], l[0]]);
-                                    } catch(err){}
-                                } else if(entity.type === 'LWPOLYLINE' || entity.type === 'POLYLINE') {
-                                    let latlngs = [];
-                                    entity.vertices.forEach(v => {
-                                        try {
-                                            let l = proj4(currentZone, "EPSG:4326", [v.x, v.y]);
-                                            latlngs.push([l[1], l[0]]);
-                                        } catch(err){}
-                                    });
-                                    if(latlngs.length > 0) {
-                                        layer = (entity.shape || entity.closed) ? L.polygon(latlngs, {color: '#e74c3c'}) : L.polyline(latlngs, {color: '#e74c3c'});
-                                    }
-                                } else if(entity.type === 'LINE') {
-                                    let latlngs = [];
-                                    entity.vertices.forEach(v => {
-                                        try {
-                                            let l = proj4(currentZone, "EPSG:4326", [v.x, v.y]);
-                                            latlngs.push([l[1], l[0]]);
-                                        } catch(err){}
-                                    });
-                                    if(latlngs.length > 0) layer = L.polyline(latlngs, {color: '#e74c3c'});
-                                }
-
-                                if(layer) {
-                                    layer.customName = "DXF Import"; // تسمية افتراضية
-                                    drawnItems.addLayer(layer);
-                                    attachPopup(layer);
-                                }
-                            });
-                            map.fitBounds(drawnItems.getBounds());
-                            document.getElementById('stats').innerHTML="تم استيراد DXF";
-                            scheduleAutoSave();
-                        } else {
-                            // قراءة KML/GPX
-                            var p=new DOMParser(), d=p.parseFromString(e.target.result,"text/xml");
-                            var g=filename.endsWith('.gpx')?toGeoJSON.gpx(d):toGeoJSON.kml(d);
-                            var l=L.geoJSON(g,{style:{color:"#d35400",weight:4},pointToLayer:(f,ll)=>L.marker(ll),onEachFeature:(f,l)=>{
-                                l.customName = f.properties.name || "مستورد";
-                                l.bindTooltip(l.customName, {permanent:true, className:'map-label'});
-                                drawnItems.addLayer(l);
-                                attachPopup(l);
-                            }});
-                            if(drawnItems.getLayers().length>0) { map.fitBounds(drawnItems.getBounds()); document.getElementById('stats').innerHTML="تم الاستيراد"; scheduleAutoSave(); }
-                        }
-                        if(window.innerWidth<=768) toggleSidebar();
-                    } catch(x){ console.log(x); alert("ملف غير صالح");}
-                }; r.readAsText(i.files[0]);
-            }
         }
         function downloadDXF(){
             if(!drawnItems.getLayers().length) return alert("فارغ");

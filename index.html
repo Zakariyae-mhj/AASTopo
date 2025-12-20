@@ -288,26 +288,21 @@
             measurementId: "G-YVJL1T2VXM"
         };
 
-        // 1. التعريفات الجغرافية
         proj4.defs([
             ["EPSG:26191", "+proj=lcc +lat_1=33.3 +lat_0=33.3 +lon_0=-5.4 +k_0=0.999625769 +x_0=500000 +y_0=300000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"],
             ["EPSG:26192", "+proj=lcc +lat_1=29.7 +lat_0=29.7 +lon_0=-5.4 +k_0=0.999615596 +x_0=500000 +y_0=300000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"],
             ["EPSG:26194", "+proj=lcc +lat_1=26.1 +lat_0=26.1 +lon_0=-5.4 +k_0=0.999616304 +x_0=500000 +y_0=400000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"],
             ["EPSG:26195", "+proj=lcc +lat_1=22.5 +lat_0=22.5 +lon_0=-5.4 +k_0=0.999616437 +x_0=500000 +y_0=500000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"],
-            // الجزائر
             ["EPSG:3059", "+proj=utm +zone=29 +ellps=clrk80 +towgs84=-186,-93,310,0,0,0,0 +units=m +no_defs"],
             ["EPSG:3060", "+proj=utm +zone=30 +ellps=clrk80 +towgs84=-186,-93,310,0,0,0,0 +units=m +no_defs"],
             ["EPSG:3061", "+proj=utm +zone=31 +ellps=clrk80 +towgs84=-186,-93,310,0,0,0,0 +units=m +no_defs"],
             ["EPSG:3062", "+proj=utm +zone=32 +ellps=clrk80 +towgs84=-186,-93,310,0,0,0,0 +units=m +no_defs"],
-            // تونس
             ["EPSG:22332", "+proj=utm +zone=32 +ellps=clrk80ign +towgs84=-263,6,431,0,0,0,0 +units=m +no_defs"],
-            // ليبيا وموريتانيا
             ["EPSG:32628", "+proj=utm +zone=28 +datum=WGS84 +units=m +no_defs"],
             ["EPSG:32629", "+proj=utm +zone=29 +datum=WGS84 +units=m +no_defs"],
             ["EPSG:32632", "+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs"],
             ["EPSG:32633", "+proj=utm +zone=33 +datum=WGS84 +units=m +no_defs"],
             ["EPSG:32634", "+proj=utm +zone=34 +datum=WGS84 +units=m +no_defs"],
-            // مصر
             ["EPSG:22992", "+proj=tmerc +lat_0=30 +lon_0=31 +k=1 +x_0=615000 +y_0=810000 +ellps=helmert +towgs84=-130,110,-13,0,0,0,0 +units=m +no_defs"],
             ["EPSG:22993", "+proj=tmerc +lat_0=30 +lon_0=31 +k=1 +x_0=300000 +y_0=1100000 +ellps=helmert +towgs84=-130,110,-13,0,0,0,0 +units=m +no_defs"],
             ["EPSG:22994", "+proj=tmerc +lat_0=30 +lon_0=31 +k=1 +x_0=1100000 +y_0=1100000 +ellps=helmert +towgs84=-130,110,-13,0,0,0,0 +units=m +no_defs"]
@@ -350,6 +345,7 @@
         } catch(e) { console.error("DB Init Error:", e); document.getElementById('stats').innerText = "خطأ قاعدة بيانات"; }
 
         let isLoginMode = true;
+        
         if(auth) {
             auth.onAuthStateChanged((user) => {
                 if (user) {
@@ -692,7 +688,6 @@
                     try{
                         let p=proj4("EPSG:4326",currentZone,[l.getLatLng().lng,l.getLatLng().lat]); 
                         d+=`0\nPOINT\n8\nPoints\n10\n${p[0]}\n20\n${p[1]}\n30\n0.0\n`;
-                        d+=`0\nTEXT\n8\nLabels\n10\n${p[0]+2}\n20\n${p[1]+2}\n30\n0.0\n40\n10.0\n1\n${name}\n`;
                     }catch(e){} 
                 }
                 else if(l instanceof L.Polyline||l instanceof L.Polygon) {
@@ -705,7 +700,6 @@
                         d+=`10\n${c[0]}\n20\n${c[1]}\n`;
                         if(index===0) firstP = c;
                     });
-                    if(firstP) d+=`0\nTEXT\n8\nLabels\n10\n${firstP[0]}\n20\n${firstP[1]}\n30\n0.0\n40\n10.0\n1\n${name}\n`;
                 }
             });
             d+="0\nENDSEC\n0\nEOF"; downloadFile("ZASTopo_Pro.dxf",d,"application/dxf");
@@ -746,6 +740,11 @@
                         let center = l.getBounds().getCenter();
                         let cp = proj4("EPSG:4326", currentZone, [center.lng, center.lat]);
                         row.Center_X = cp[0].toFixed(2); row.Center_Y = cp[1].toFixed(2);
+                        let boundary = latlngs.map(p => {
+                            let xy = proj4("EPSG:4326", currentZone, [p.lng, p.lat]);
+                            return `(${xy[0].toFixed(0)},${xy[1].toFixed(0)})`;
+                        }).join(" - ");
+                        row.Boundary_Coords = boundary;
                     }
                     else { let d=0; for(var i=0;i<latlngs.length-1;i++)d+=latlngs[i].distanceTo(latlngs[i+1]); row.Length_m = d.toFixed(2); }
                     try { let res = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lats}&longitude=${lngs}`); let json = await res.json(); if(json.elevation) { row.Avg_Z = (json.elevation.reduce((a, b) => a + b, 0)/json.elevation.length).toFixed(1); row.Min_Z = Math.min(...json.elevation); row.Max_Z = Math.max(...json.elevation); } } catch(e) { row.Avg_Z = "N/A"; }

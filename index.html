@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ZASTopo Pro | نظام المعلومات الجغرافية</title>
+    <title>ZASTopo Pro | منصة شمال إفريقيا</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
@@ -168,19 +168,36 @@
 
         <div id="save-status">جاهز</div>
 
-        <h2>⚙️ الإعدادات (Sytème de Coordonnées)</h2>
+        <h2>⚙️ الإعدادات (نظام الإحداثيات)</h2>
         <select id="lambert-zone" onchange="updateProjection()">
-            <optgroup label="المغرب (Maroc - Merchich)">
-                <option value="EPSG:26191" selected>Lambert Zone I (Nord)</option>
-                <option value="EPSG:26192">Lambert Zone II (Centre)</option>
-                <option value="EPSG:26194">Lambert Zone III (Sud)</option>
-                <option value="EPSG:26195">Lambert Zone IV (Grand Sud)</option>
+            <optgroup label="🇲🇦 المغرب (Merchich)">
+                <option value="EPSG:26191" selected>Zone I (Nord)</option>
+                <option value="EPSG:26192">Zone II (Centre)</option>
+                <option value="EPSG:26194">Zone III (Sud)</option>
+                <option value="EPSG:26195">Zone IV (Grand Sud)</option>
             </optgroup>
-            <optgroup label="الجزائر (Algérie - Nord Sahara 1959)">
-                <option value="EPSG:3059">Nord Sahara / UTM Zone 29N</option>
-                <option value="EPSG:3060">Nord Sahara / UTM Zone 30N</option>
-                <option value="EPSG:3061">Nord Sahara / UTM Zone 31N</option>
-                <option value="EPSG:3062">Nord Sahara / UTM Zone 32N</option>
+            <optgroup label="🇩🇿 الجزائر (Nord Sahara)">
+                <option value="EPSG:3059">UTM Zone 29N</option>
+                <option value="EPSG:3060">UTM Zone 30N</option>
+                <option value="EPSG:3061">UTM Zone 31N</option>
+                <option value="EPSG:3062">UTM Zone 32N</option>
+            </optgroup>
+            <optgroup label="🇹🇳 تونس (Carthage)">
+                <option value="EPSG:22332">UTM Zone 32N</option>
+            </optgroup>
+            <optgroup label="🇱🇾 ليبيا (WGS 84)">
+                <option value="EPSG:32632">UTM Zone 32N</option>
+                <option value="EPSG:32633">UTM Zone 33N</option>
+                <option value="EPSG:32634">UTM Zone 34N</option>
+            </optgroup>
+            <optgroup label="🇲🇷 موريتانيا (WGS 84)">
+                <option value="EPSG:32628">UTM Zone 28N</option>
+                <option value="EPSG:32629">UTM Zone 29N</option>
+            </optgroup>
+            <optgroup label="🇪🇬 مصر (Egypt 1907)">
+                <option value="EPSG:22992">Red Belt (Cairo/Delta)</option>
+                <option value="EPSG:22993">Purple Belt (South)</option>
+                <option value="EPSG:22994">Blue Belt (Sinai/Red Sea)</option>
             </optgroup>
         </select>
         
@@ -270,21 +287,40 @@
             measurementId: "G-YVJL1T2VXM"
         };
 
-        // 1. التعريفات الجغرافية (المغرب + الجزائر)
+        // 1. التعريفات الجغرافية الشاملة
+        // المغرب
         proj4.defs("EPSG:26191", "+proj=lcc +lat_1=33.3 +lat_0=33.3 +lon_0=-5.4 +k_0=0.999625769 +x_0=500000 +y_0=300000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs");
         proj4.defs("EPSG:26192", "+proj=lcc +lat_1=29.7 +lat_0=29.7 +lon_0=-5.4 +k_0=0.999615596 +x_0=500000 +y_0=300000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs");
         proj4.defs("EPSG:26194", "+proj=lcc +lat_1=26.1 +lat_0=26.1 +lon_0=-5.4 +k_0=0.999616304 +x_0=500000 +y_0=400000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs");
         proj4.defs("EPSG:26195", "+proj=lcc +lat_1=22.5 +lat_0=22.5 +lon_0=-5.4 +k_0=0.999616437 +x_0=500000 +y_0=500000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs");
+        
         // الجزائر (Nord Sahara 1959)
         proj4.defs("EPSG:3059", "+proj=utm +zone=29 +ellps=clrk80 +towgs84=-186,-93,310,0,0,0,0 +units=m +no_defs");
         proj4.defs("EPSG:3060", "+proj=utm +zone=30 +ellps=clrk80 +towgs84=-186,-93,310,0,0,0,0 +units=m +no_defs");
         proj4.defs("EPSG:3061", "+proj=utm +zone=31 +ellps=clrk80 +towgs84=-186,-93,310,0,0,0,0 +units=m +no_defs");
         proj4.defs("EPSG:3062", "+proj=utm +zone=32 +ellps=clrk80 +towgs84=-186,-93,310,0,0,0,0 +units=m +no_defs");
 
+        // تونس (Carthage)
+        proj4.defs("EPSG:22332", "+proj=utm +zone=32 +ellps=clrk80ign +towgs84=-263,6,431,0,0,0,0 +units=m +no_defs");
+
+        // ليبيا (WGS84 UTM)
+        proj4.defs("EPSG:32632", "+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs");
+        proj4.defs("EPSG:32633", "+proj=utm +zone=33 +datum=WGS84 +units=m +no_defs");
+        proj4.defs("EPSG:32634", "+proj=utm +zone=34 +datum=WGS84 +units=m +no_defs");
+
+        // موريتانيا (WGS84 UTM)
+        proj4.defs("EPSG:32628", "+proj=utm +zone=28 +datum=WGS84 +units=m +no_defs");
+        proj4.defs("EPSG:32629", "+proj=utm +zone=29 +datum=WGS84 +units=m +no_defs");
+
+        // مصر (Egypt 1907)
+        proj4.defs("EPSG:22992", "+proj=tmerc +lat_0=30 +lon_0=31 +k=1 +x_0=615000 +y_0=810000 +ellps=helmert +towgs84=-130,110,-13,0,0,0,0 +units=m +no_defs");
+        proj4.defs("EPSG:22993", "+proj=tmerc +lat_0=30 +lon_0=31 +k=1 +x_0=300000 +y_0=1100000 +ellps=helmert +towgs84=-130,110,-13,0,0,0,0 +units=m +no_defs");
+        proj4.defs("EPSG:22994", "+proj=tmerc +lat_0=30 +lon_0=31 +k=1 +x_0=1100000 +y_0=1100000 +ellps=helmert +towgs84=-130,110,-13,0,0,0,0 +units=m +no_defs");
+
         var currentZone="EPSG:26191", currentZoneName="Lambert I";
         function updateProjection(){
             var s=document.getElementById('lambert-zone');
-            currentZone=s.value; currentZoneName=s.options[s.selectedIndex].text.split('(')[0].trim();
+            currentZone=s.value; currentZoneName=s.options[s.selectedIndex].text;
             document.getElementById('stats').innerHTML="تم التغيير: "+currentZoneName;
         }
 
@@ -420,7 +456,6 @@
             scheduleAutoSave();
         }
 
-        // ... (باقي الدوال كما هي: toggleAuthMode, handleAuth, Freehand, etc.)
         function toggleAuthMode() {
             isLoginMode = !isLoginMode;
             const signupFields = document.querySelectorAll('.signup-only');

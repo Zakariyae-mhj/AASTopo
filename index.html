@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ZASTopo Pro | V58 (Street View Fixed)</title>
-    
+    <title>ZASTopo Pro | منصة الخرائط الطبوغرافية</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -601,7 +600,8 @@
         function locateUser() { map.locate({setView:true, maxZoom:15}); }
         function clearMap() { drawnItems.clearLayers(); saveUserDrawings(); }
         function createBuffer() { if(drawnItems.getLayers().length === 0) return alert("حدد شكلاً"); let layer = drawnItems.getLayers()[drawnItems.getLayers().length - 1]; let dist = parseFloat(document.getElementById('buffer-val').value); try { let buffered = turf.buffer(layer.toGeoJSON(), dist, {units: 'meters'}); let bufLayer = L.geoJSON(buffered, {style:{color:'red', dashArray:'5,5'}}); bufLayer.eachLayer(l => { l.customName = "Buffer "+dist; drawnItems.addLayer(l); attachPopup(l); }); saveUserDrawings(); } catch(e) { alert("خطأ"); } }
-        function activateStreetView(){ alert("انقر للخريطة"); map.once('click', e => { document.getElementById('sv-overlay').style.display='flex'; document.getElementById('sv-iframe').src=`maps.google.com/0{e.latlng.lat},${e.latlng.lng}&cbp=11,0,0,0,0&output=svembed`; }); }
+        // 🟢 تم إصلاح رابط Street View هنا
+        function activateStreetView(){ alert("انقر للخريطة"); map.once('click', e => { document.getElementById('sv-overlay').style.display='flex'; document.getElementById('sv-iframe').src=`https://www.google.com/maps?layer=c&cbll=${e.latlng.lat},${e.latlng.lng}&output=svembed`; }); }
         function closeStreetView(){ document.getElementById('sv-overlay').style.display='none'; document.getElementById('sv-iframe').src=""; }
         function downloadExcel() { let d=[]; drawnItems.eachLayer(l=>{ d.push({Name:l.customName, Notes:l.customNotes}); }); let w=XLSX.utils.json_to_sheet(d), b=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(b,w,"Data"); XLSX.writeFile(b,"Data.xlsx"); }
         function downloadDXF() { let d="0\nSECTION\n2\nHEADER\n9\n$ACADVER\n1\nAC1009\n0\nENDSEC\n0\nSECTION\n2\nENTITIES\n"; drawnItems.eachLayer(l=>{ if(l instanceof L.Marker) { try{let p=proj4("EPSG:4326",currentZone,[l.getLatLng().lng,l.getLatLng().lat]); d+=`0\nPOINT\n8\nPoints\n10\n${p[0]}\n20\n${p[1]}\n30\n0.0\n`;}catch(e){} } }); d+="0\nENDSEC\n0\nEOF"; let b=new Blob([d],{type:'application/dxf'}); let a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download="export.dxf"; a.click(); }

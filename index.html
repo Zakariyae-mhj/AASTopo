@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ZASTopo Pro | V51</title>
+    <title>ZASTopo Pro | V52 (Speed Edition)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -23,7 +23,7 @@
         .dock-item::after { content: attr(data-tooltip); position: absolute; right: 55px; background: #1e293b; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; opacity: 0; pointer-events: none; transition: 0.2s; visibility: hidden; white-space: nowrap; font-family: 'Cairo'; }
         .dock-item:hover::after { opacity: 1; visibility: visible; right: 50px; }
 
-        /* القائمة اليسرى (الممحاة) */
+        /* القائمة اليسرى */
         .left-dock { position: absolute; top: 50%; transform: translateY(-50%); left: 15px; display: flex; flex-direction: column; gap: 10px; z-index: 2000; }
         .eraser-btn { background: white; color: #ef4444; border: 2px solid white; }
         .eraser-btn:hover { background: #fee2e2; }
@@ -40,11 +40,11 @@
         .tool-btn:hover { background: #eff6ff; border-color: var(--primary); color: var(--primary); }
         .tool-input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 6px; font-family: inherit; box-sizing: border-box; font-size: 12px; }
 
-        /* زر الإيقاف الأحمر */
+        /* زر الإيقاف */
         #stop-drawing-btn { background: #fee2e2; color: #ef4444; border-color: #fca5a5; display: none; justify-content: center; font-weight: bold; animation: pulseRed 2s infinite; margin-bottom: 10px; }
         @keyframes pulseRed { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
-        /* Chart - البنفسجي */
+        /* Chart */
         #chart-container { display: none; position: absolute; bottom: 40px; left: 60px; width: 550px; height: 320px; background: rgba(255,255,255,0.98); border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); z-index: 2500; padding: 15px; border: 1px solid #ccc; }
         canvas { width: 100% !important; height: 260px !important; }
         .close-chart { position: absolute; top: 10px; right: 10px; background: #8e44ad; color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 12px; display:flex; align-items:center; justify-content:center; }
@@ -67,12 +67,6 @@
         .val-highlight { color: #d97706; font-weight: bold; font-size: 14px; border: 1px solid #fcd34d; background: #fffbeb; padding: 2px 5px; border-radius: 4px; display: inline-block; margin-top: 3px; }
         .feature-title { font-weight: bold; color: #1e293b; font-size: 15px; border-bottom: 2px solid #eee; padding-bottom: 5px; margin-bottom: 5px; }
 
-        /* Street View */
-        #sv-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; justify-content: center; align-items: center; }
-        #sv-modal { width: 90%; height: 80%; background: white; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; position: relative; }
-        #sv-close { position: absolute; top: 10px; right: 10px; background: red; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px; z-index: 10; font-family: 'Cairo'; }
-        #sv-iframe { width: 100%; height: 100%; border: none; }
-
         /* Others */
         #save-status { position: absolute; bottom: 10px; right: 10px; font-size: 11px; font-weight: bold; color: #2ecc71; background: rgba(255,255,255,0.8); padding: 2px 8px; border-radius: 4px; z-index: 1000; }
         #search-bar { position: absolute; top: 15px; right: 15px; z-index: 1000; width: 220px; background: white; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; padding: 4px; align-items: center; transition: 0.3s; }
@@ -80,6 +74,11 @@
         #search-bar button { width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--primary); color: white; cursor: pointer; }
         #bottom-bar { position: absolute; bottom: 10px; left: 10px; background: rgba(255,255,255,0.9); padding: 4px 12px; border-radius: 20px; font-size: 11px; z-index: 1000; font-family: monospace; dir: ltr; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .eraser-cursor { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="red"><path d="M16.24 3.56l4.95 4.94c.78.79.78 2.05 0 2.84L12 20.53a4.008 4.008 0 0 1-5.66 0L2.81 17a4.008 4.008 0 0 1 0-5.66l9.19-9.19c.78-.78 2.05-.78 2.84 0l1.4 1.41zM4.22 15.58l3.54 3.53c.78.79 2.05.79 2.83 0L12 17.71l-6.37-6.36-1.41 1.41a2.003 2.003 0 0 0 0 2.82z"/></svg>'), auto !important; }
+        
+        #sv-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; justify-content: center; align-items: center; }
+        #sv-modal { width: 90%; height: 80%; background: white; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; position: relative; }
+        #sv-close { position: absolute; top: 10px; right: 10px; background: red; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px; z-index: 10; font-family: 'Cairo'; }
+        #sv-iframe { width: 100%; height: 100%; border: none; }
 
         .credits-text { font-size: 11px; color: #64748b; line-height: 1.6; border-top: 1px solid #eee; margin-top: 10px; padding-top: 10px; text-align: center; }
         .credits-text strong { color: #1e293b; display: block; margin-bottom: 2px; }
@@ -100,7 +99,7 @@
 
     <div id="chart-container">
         <button class="close-chart" onclick="document.getElementById('chart-container').style.display='none'">X</button>
-        <div id="chart-loader">جاري معالجة التضاريس... ⏳</div>
+        <div id="chart-loader">جاري المعالجة السريعة... 🚀</div>
         <canvas id="elevationChart"></canvas>
         <button class="tool-btn" style="margin-top:5px; padding:4px;" onclick="downloadChart()">تحميل المبيان</button>
     </div>
@@ -251,7 +250,7 @@
     </div>
 
     <div id="layers-panel" class="panel">
-        <h3>نظام الإحداثيات</h3>
+        <h3><i class="fas fa-globe"></i> نظام الإحداثيات</h3>
         <select id="lambert-zone" class="tool-input" onchange="updateProjection()">
             <optgroup label="🇲🇦 المغرب"><option value="EPSG:26191">Zone I</option><option value="EPSG:26192">Zone II</option></optgroup>
             <optgroup label="🇩🇿 الجزائر"><option value="EPSG:3060">UTM Z30</option></optgroup>
@@ -267,7 +266,7 @@
     </div>
 
     <div id="draw-panel" class="panel">
-        <h3>أدوات الرسم</h3>
+        <h3><i class="fas fa-pencil-ruler"></i> أدوات الرسم</h3>
         <button id="stop-drawing-btn" class="tool-btn" onclick="stopContinuousDraw()">🛑 إنهاء الرسم (Terminé)</button>
         <button class="tool-btn" onclick="startContinuousDraw('marker')"><i class="fas fa-map-marker-alt"></i> نقاط (Points)</button>
         <button class="tool-btn" onclick="startContinuousDraw('polyline')"><i class="fas fa-route"></i> خطوط (Lines)</button>
@@ -282,7 +281,7 @@
     </div>
 
     <div id="data-panel" class="panel">
-        <h3>استيراد / تصدير</h3>
+        <h3><i class="fas fa-file-export"></i> استيراد / تصدير</h3>
         <input type="file" id="file-input" accept=".kml,.gpx,.dxf" style="display:none;" onchange="loadFile(this)">
         <button class="tool-btn" onclick="document.getElementById('file-input').click()">📂 استيراد ملف</button>
         <hr style="border-top:1px solid #eee;">
@@ -324,7 +323,6 @@
         var drawControl = new L.Control.Draw({ edit: { featureGroup: drawnItems }, draw: false }); 
         map.addControl(drawControl);
 
-        // Eraser
         let isEraserActive = false;
         function toggleEraser() {
             isEraserActive = !isEraserActive;
@@ -347,9 +345,9 @@
             saveUserDrawings();
         }
 
-        // Continuous Draw
         let activeDrawHandler = null;
         let currentDrawType = null;
+
         function startContinuousDraw(type) {
             if(isEraserActive) toggleEraser(); 
             if(activeDrawHandler) activeDrawHandler.disable();
@@ -360,12 +358,14 @@
             else if(type === 'polygon') activeDrawHandler = new L.Draw.Polygon(map);
             if(activeDrawHandler) activeDrawHandler.enable();
         }
+
         function stopContinuousDraw() {
             if(activeDrawHandler) activeDrawHandler.disable();
             activeDrawHandler = null;
             currentDrawType = null;
             document.getElementById('stop-drawing-btn').style.display = 'none';
         }
+
         let currentLayer = null;
         map.on(L.Draw.Event.CREATED, function(e) {
             currentLayer = e.layer;
@@ -375,6 +375,7 @@
             document.getElementById('name-modal-overlay').style.display = 'flex';
             document.getElementById('feature-name-input').focus();
         });
+
         function saveFeatureName() {
             let name = document.getElementById('feature-name-input').value;
             let notes = document.getElementById('feature-notes-input').value;
@@ -421,53 +422,51 @@
             }
         }
 
-        // === 🟢 Profile Chart (Dynamic Sampling) ===
+        // === 🟢 Profile Chart (High Speed Algorithm) ===
         async function generateRealProfile() {
             let line = null;
             drawnItems.eachLayer(l => { if(l instanceof L.Polyline && !(l instanceof L.Polygon)) line = l; });
-            if(!line) return alert("ارسم خطاً (Polyline) أولاً");
+            if(!line) return alert("ارسم خطاً أولاً");
             
             document.getElementById('chart-container').style.display = 'block';
             document.getElementById('chart-loader').style.display = 'block';
 
             let latlngs = line.getLatLngs(); if(Array.isArray(latlngs[0])) latlngs = latlngs.flat();
             
-            // 🟢 حساب طول الخط
-            let totalDistance = 0;
-            for(let i=0; i<latlngs.length-1; i++) totalDistance += latlngs[i].distanceTo(latlngs[i+1]);
-
-            // 🟢 تحديد كثافة النقاط بناءً على الطول (Dynamic Step)
-            // إذا كان الخط قصيراً (< 10km): خذ نقطة كل 20 متر
-            // إذا كان طويلاً: زد المسافة لتقليل عدد النقاط عن 250
-            let stepSize = Math.max(20, totalDistance / 200); 
-
-            let samples = [];
-            for (let i = 0; i < latlngs.length - 1; i++) {
-                let start = latlngs[i];
-                let end = latlngs[i+1];
-                let dist = start.distanceTo(end);
-                
-                let segmentSteps = Math.floor(dist / stepSize);
-                samples.push(start);
-
-                for (let j = 1; j <= segmentSteps; j++) {
-                    let factor = j / (segmentSteps + 1);
-                    samples.push(L.latLng(
-                        start.lat + (end.lat - start.lat) * factor,
-                        start.lng + (end.lng - start.lng) * factor
-                    ));
+            // 🟢 V51: خوارزمية ذكية لاختيار النقاط (Smart Sampling)
+            // الهدف: لا نتجاوز 150 نقطة مهما كان الطول للحفاظ على السرعة
+            
+            let totalPoints = latlngs.length;
+            let finalPoints = [];
+            
+            if (totalPoints < 150) {
+                // إذا النقاط قليلة (خط مستقيم)، نقوم بالتكثيف
+                for (let i = 0; i < latlngs.length - 1; i++) {
+                    let start = latlngs[i];
+                    let end = latlngs[i+1];
+                    let dist = start.distanceTo(end);
+                    // نقطة كل 20 متر
+                    let steps = Math.max(1, Math.floor(dist / 20)); 
+                    for (let j = 0; j < steps; j++) {
+                        let f = j/steps;
+                        finalPoints.push(L.latLng(start.lat + (end.lat-start.lat)*f, start.lng + (end.lng-start.lng)*f));
+                    }
                 }
+                finalPoints.push(latlngs[latlngs.length-1]);
+            } else {
+                // إذا النقاط كثيرة (خط متعرج)، نقوم بالفلترة
+                let step = Math.ceil(totalPoints / 150);
+                finalPoints = latlngs.filter((_, i) => i % step === 0);
             }
-            samples.push(latlngs[latlngs.length - 1]);
-
-            // فلترة نهائية إذا تجاوز العدد (حماية)
-            if (samples.length > 250) {
-                let factor = Math.ceil(samples.length / 250);
-                samples = samples.filter((_, i) => i % factor === 0);
+            
+            // حماية قصوى: لا تزيد عن 150 نقطة مطلقاً
+            if(finalPoints.length > 150) {
+                let s = Math.ceil(finalPoints.length/150);
+                finalPoints = finalPoints.filter((_,i)=>i%s===0);
             }
 
-            let lats = samples.map(p=>p.lat.toFixed(4)).join(',');
-            let lngs = samples.map(p=>p.lng.toFixed(4)).join(',');
+            let lats = finalPoints.map(p=>p.lat.toFixed(5)).join(',');
+            let lngs = finalPoints.map(p=>p.lng.toFixed(5)).join(',');
 
             try {
                 let res = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lats}&longitude=${lngs}`);
@@ -479,11 +478,11 @@
                     let ctx = document.getElementById('elevationChart').getContext('2d');
                     if(window.myChart) window.myChart.destroy();
                     
-                    let labels = [0];
-                    let currentDist = 0;
-                    for(let i=1; i<samples.length; i++) {
-                        currentDist += samples[i-1].distanceTo(samples[i]);
-                        labels.push((currentDist/1000).toFixed(2));
+                    let labels = [];
+                    let d = 0;
+                    for(let i=0; i<finalPoints.length; i++) {
+                        if(i>0) d += finalPoints[i-1].distanceTo(finalPoints[i]);
+                        labels.push((d/1000).toFixed(2));
                     }
 
                     window.myChart = new Chart(ctx, {
@@ -491,14 +490,14 @@
                         data: {
                             labels: labels,
                             datasets: [{
-                                label: 'الارتفاع (م)',
+                                label: 'الارتفاع (متر)',
                                 data: data.elevation,
-                                borderColor: '#8e44ad', // Purple
+                                borderColor: '#8e44ad',
                                 borderWidth: 2,
                                 pointRadius: 0, 
                                 tension: 0.3,
                                 fill: true,
-                                backgroundColor: 'rgba(142, 68, 173, 0.3)'
+                                backgroundColor: 'rgba(142, 68, 173, 0.4)'
                             }]
                         },
                         options: {
@@ -512,7 +511,7 @@
                     });
                 }
             } catch(e) { 
-                document.getElementById('chart-loader').innerText = "خطأ في الاتصال";
+                document.getElementById('chart-loader').innerText = "فشل الاتصال";
             }
         }
 

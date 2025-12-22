@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ZASTopo Pro | V56 (Comprehensive Final)</title>
+    <title>ZASTopo Pro | V57 (Final+Auth Logo)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -39,10 +39,10 @@
         /* ستايل اللوغو داخل لوحة الملف الشخصي */
         .profile-panel-logo {
             display: block;
-            margin: 0 auto 15px auto; /* توسيط أفقي ومسافة من الأسفل */
-            height: 70px; /* حجم بارز */
+            margin: 0 auto 15px auto; 
+            height: 70px; 
             width: auto;
-            filter: drop-shadow(0 3px 5px rgba(0,0,0,0.2)); /* ظل خفيف */
+            filter: drop-shadow(0 3px 5px rgba(0,0,0,0.2)); 
         }
 
         .tool-btn { display: flex; align-items: center; gap: 8px; width: 100%; padding: 9px; margin-bottom: 6px; border: 1px solid #e2e8f0; border-radius: 8px; background: white; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 600; transition: 0.2s; }
@@ -61,6 +61,16 @@
         /* Auth */
         #auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #0f172a, #1e293b); z-index: 9999; display: flex; justify-content: center; align-items: center; }
         .auth-card { background: white; padding: 30px; border-radius: 20px; width: 380px; text-align: center; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
+        
+        /* 🟢 ستايل اللوغو في واجهة الدخول */
+        .auth-logo-header {
+            display: block;
+            margin: 0 auto 10px auto; /* توسيط */
+            height: 60px; /* حجم مناسب */
+            width: auto;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
+        }
+
         .auth-input { width: 100%; padding: 12px; margin-bottom: 10px; border: 2px solid #f1f5f9; border-radius: 8px; box-sizing: border-box; font-family: inherit; }
         .auth-btn { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
         .signup-only { display: none; }
@@ -120,7 +130,9 @@
 
     <div id="auth-overlay">
         <div class="auth-card">
-            <h1 style="color:var(--primary); margin:0 0 10px 0;">ZASTopo Pro</h1>
+            <img src="https://i.imgur.com/rP6Yotb.png" alt="ZASTopo Pro Logo" class="auth-logo-header">
+            <h1 style="color:var(--primary); margin:10px 0 20px 0; font-size: 24px;">ZASTopo Pro</h1>
+            
             <form onsubmit="handleAuth(event)">
                 <div class="signup-only">
                     <input type="text" id="fname" class="auth-input" placeholder="الاسم الشخصي">
@@ -346,28 +358,25 @@
         try { firebase.initializeApp(firebaseConfig); } catch(e){}
         const auth = firebase.auth(); const db = firebase.database();
 
-        // 🟢 تعريفات كافة الإسقاطات المحلية الجديدة (Proj4 Definitions)
+        // تعريفات كافة الإسقاطات المحلية
         proj4.defs([
-            ["EPSG:26191", "+proj=lcc +lat_1=33.3 +lat_0=33.3 +lon_0=-5.4 +k_0=0.999625769 +x_0=500000 +y_0=300000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"], // MA Zone 1
-            ["EPSG:26192", "+proj=lcc +lat_1=29.7 +lat_0=29.7 +lon_0=-5.4 +k_0=0.999615596 +x_0=500000 +y_0=300000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"], // MA Zone 2
-            ["EPSG:26193", "+proj=lcc +lat_1=26.1 +lat_0=26.1 +lon_0=-5.4 +k_0=0.999616304 +x_0=1200000 +y_0=400000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"], // MA Zone 3
-            ["EPSG:26194", "+proj=lcc +lat_1=22.5 +lat_0=22.5 +lon_0=-5.4 +k_0=0.999616437 +x_0=1500000 +y_0=400000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"], // MA Zone 4
-            ["EPSG:26195", "+proj=lcc +lat_1=33.3 +lat_0=33.3 +lon_0=-5.4 +k_0=0.999625769 +x_0=500000 +y_0=300000 +ellps=clrk80ign +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"], // MA Merchich
-
-            ["EPSG:32629", "+proj=utm +zone=29 +datum=WGS84 +units=m +no_defs"], // UTM 29N (DZ, MR)
-            ["EPSG:32630", "+proj=utm +zone=30 +datum=WGS84 +units=m +no_defs"], // UTM 30N (DZ)
-            ["EPSG:32631", "+proj=utm +zone=31 +datum=WGS84 +units=m +no_defs"], // UTM 31N (DZ)
-            ["EPSG:32632", "+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs"], // UTM 32N (DZ, TN, LY)
-            ["EPSG:32633", "+proj=utm +zone=33 +datum=WGS84 +units=m +no_defs"], // UTM 33N (LY)
-            ["EPSG:32634", "+proj=utm +zone=34 +datum=WGS84 +units=m +no_defs"], // UTM 34N (LY)
-            ["EPSG:32628", "+proj=utm +zone=28 +datum=WGS84 +units=m +no_defs"], // UTM 28N (MR)
-
-            ["EPSG:22332", "+proj=utm +zone=32 +ellps=clrk80ign +towgs84=-263,6,431,0,0,0,0 +units=m +no_defs"], // TN Carthage
-
-            ["EPSG:22991", "+proj=tmerc +lat_0=30 +lon_0=27 +k=1 +x_0=300000 +y_0=0 +a=6378200 +b=6356818.17 +towgs84=-130,110,-13,0,0,0,0 +units=m +no_defs"], // EG Purple
-            ["EPSG:22992", "+proj=tmerc +lat_0=30 +lon_0=31 +k=1 +x_0=615000 +y_0=810000 +a=6378200 +b=6356818.17 +towgs84=-130,110,-13,0,0,0,0 +units=m +no_defs"], // EG Red
-            ["EPSG:22993", "+proj=tmerc +lat_0=30 +lon_0=35 +k=1 +x_0=300000 +y_0=0 +a=6378200 +b=6356818.17 +towgs84=-130,110,-13,0,0,0,0 +units=m +no_defs"], // EG Green
-            ["EPSG:22994", "+proj=tmerc +lat_0=30 +lon_0=39 +k=1 +x_0=300000 +y_0=0 +a=6378200 +b=6356818.17 +towgs84=-130,110,-13,0,0,0,0 +units=m +no_defs"]  // EG Blue
+            ["EPSG:26191", "+proj=lcc +lat_1=33.3 +lat_0=33.3 +lon_0=-5.4 +k_0=0.999625769 +x_0=500000 +y_0=300000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"],
+            ["EPSG:26192", "+proj=lcc +lat_1=29.7 +lat_0=29.7 +lon_0=-5.4 +k_0=0.999615596 +x_0=500000 +y_0=300000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"],
+            ["EPSG:26193", "+proj=lcc +lat_1=26.1 +lat_0=26.1 +lon_0=-5.4 +k_0=0.999616304 +x_0=1200000 +y_0=400000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"],
+            ["EPSG:26194", "+proj=lcc +lat_1=22.5 +lat_0=22.5 +lon_0=-5.4 +k_0=0.999616437 +x_0=1500000 +y_0=400000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"],
+            ["EPSG:26195", "+proj=lcc +lat_1=33.3 +lat_0=33.3 +lon_0=-5.4 +k_0=0.999625769 +x_0=500000 +y_0=300000 +ellps=clrk80ign +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"],
+            ["EPSG:32629", "+proj=utm +zone=29 +datum=WGS84 +units=m +no_defs"],
+            ["EPSG:32630", "+proj=utm +zone=30 +datum=WGS84 +units=m +no_defs"],
+            ["EPSG:32631", "+proj=utm +zone=31 +datum=WGS84 +units=m +no_defs"],
+            ["EPSG:32632", "+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs"],
+            ["EPSG:32633", "+proj=utm +zone=33 +datum=WGS84 +units=m +no_defs"],
+            ["EPSG:32634", "+proj=utm +zone=34 +datum=WGS84 +units=m +no_defs"],
+            ["EPSG:32628", "+proj=utm +zone=28 +datum=WGS84 +units=m +no_defs"],
+            ["EPSG:22332", "+proj=utm +zone=32 +ellps=clrk80ign +towgs84=-263,6,431,0,0,0,0 +units=m +no_defs"],
+            ["EPSG:22991", "+proj=tmerc +lat_0=30 +lon_0=27 +k=1 +x_0=300000 +y_0=0 +a=6378200 +b=6356818.17 +towgs84=-130,110,-13,0,0,0,0 +units=m +no_defs"],
+            ["EPSG:22992", "+proj=tmerc +lat_0=30 +lon_0=31 +k=1 +x_0=615000 +y_0=810000 +a=6378200 +b=6356818.17 +towgs84=-130,110,-13,0,0,0,0 +units=m +no_defs"],
+            ["EPSG:22993", "+proj=tmerc +lat_0=30 +lon_0=35 +k=1 +x_0=300000 +y_0=0 +a=6378200 +b=6356818.17 +towgs84=-130,110,-13,0,0,0,0 +units=m +no_defs"],
+            ["EPSG:22994", "+proj=tmerc +lat_0=30 +lon_0=39 +k=1 +x_0=300000 +y_0=0 +a=6378200 +b=6356818.17 +towgs84=-130,110,-13,0,0,0,0 +units=m +no_defs"]
         ]);
 
         var currentZone = "EPSG:26191";

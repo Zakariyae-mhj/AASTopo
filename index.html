@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ZASTopo Pro | V53 (Stable)</title>
+    <title>ZASTopo Pro | Final</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -14,6 +14,21 @@
         :root { --primary: #2563eb; --glass: rgba(255, 255, 255, 0.95); --shadow: 0 8px 32px rgba(0,0,0,0.15); }
         body { margin: 0; font-family: 'Cairo', sans-serif; overflow: hidden; background: #0f172a; }
         #map { height: 100vh; width: 100%; z-index: 1; }
+
+        /* === ستايل اللوغو === */
+        .app-logo {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 2000;
+            height: 70px; /* حجم مناسب للوغو الدائري */
+            width: auto;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); /* ظل ليبرز */
+            transition: 0.3s;
+        }
+        @media (max-width: 768px) {
+             .app-logo { height: 50px; top: 15px; left: 15px; }
+        }
 
         /* القائمة اليمنى */
         .dock-container { position: absolute; top: 50%; transform: translateY(-50%); right: 15px; display: flex; flex-direction: column; gap: 12px; z-index: 2000; pointer-events: none; }
@@ -85,6 +100,8 @@
 </head>
 <body>
 
+    <img src="https://i.imgur.com/rP6Yotb.png" alt="ZASTopo Pro Logo" class="app-logo">
+
     <div id="save-status">جاهز</div>
 
     <div id="sv-overlay">
@@ -112,8 +129,7 @@
 
     <div id="auth-overlay">
         <div class="auth-card">
-            <h1 style="color:var(--primary); margin:0 0 10px 0;">ZASTopo Pro</h1>
-            <form onsubmit="handleAuth(event)">
+            <form onsubmit="handleAuth(event)" style="margin-top: 20px;">
                 <div class="signup-only">
                     <input type="text" id="fname" class="auth-input" placeholder="الاسم الشخصي">
                     <input type="text" id="lname" class="auth-input" placeholder="الاسم العائلي">
@@ -191,6 +207,10 @@
                             <option value="menoufia">جامعة المنوفية</option>
                             <option value="suez">جامعة قناة السويس</option>
                             <option value="azhar">جامعة الأزهر</option>
+                            <option value="benisuef">جامعة بني سويف</option>
+                            <option value="fayoum">جامعة الفيوم</option>
+                            <option value="sohag">جامعة سوهاج</option>
+                            <option value="aswan">جامعة أسوان</option>
                         </optgroup>
                     </select>
                 </div>
@@ -312,7 +332,7 @@
         L.control.scale({position: 'bottomright'}).addTo(map);
         L.tileLayer('https://{s}.google.com/vt/lyrs=y&gl=MA&hl=ar&x={x}&y={y}&z={z}',{maxZoom:22,subdomains:['mt0','mt1','mt2','mt3']}).addTo(map);
         var drawnItems = new L.FeatureGroup(); map.addLayer(drawnItems);
-        var snapshoter = L.simpleMapScreenshoter({ hideElementsWithSelectors: ['.dock-container', '.panel', '#search-bar', '.left-dock'] }).addTo(map);
+        var snapshoter = L.simpleMapScreenshoter({ hideElementsWithSelectors: ['.dock-container', '.panel', '#search-bar', '.left-dock', '.app-logo'] }).addTo(map);
         var drawControl = new L.Control.Draw({ edit: { featureGroup: drawnItems }, draw: false }); 
         map.addControl(drawControl);
 
@@ -428,15 +448,12 @@
             let totalPoints = latlngs.length;
             let samples = [];
             
-            // إذا كان الخط طويلاً جداً، خذ عينة كل X نقطة
             if (totalPoints > 100) {
                 let step = Math.ceil(totalPoints / 100);
                 for(let i=0; i<totalPoints; i+=step) samples.push(latlngs[i]);
             } else {
-                // إذا كان الخط قصيراً (نقطتين مثلاً)، قم بتكثيفه (Interpolate) ليصل إلى 100 نقطة
                 for(let i=0; i<latlngs.length-1; i++) {
                     samples.push(latlngs[i]);
-                    // إذا كان الخط مكوناً من نقطتين فقط، أضف 50 نقطة بينهما
                     if(totalPoints < 5) {
                         let p1 = latlngs[i]; let p2 = latlngs[i+1];
                         for(let k=1; k<20; k++) {
@@ -447,7 +464,6 @@
                 samples.push(latlngs[latlngs.length-1]);
             }
             
-            // Limit again just in case
             if(samples.length > 100) samples = samples.slice(0, 100);
 
             let lats = samples.map(p=>p.lat.toFixed(4)).join(',');
@@ -500,7 +516,7 @@
 
         // Auth
         let isLoginMode = true;
-        function toggleAuthMode() { isLoginMode = !isLoginMode; document.querySelectorAll('.signup-only').forEach(e => e.style.display = isLoginMode ? 'none' : 'block'); document.getElementById('auth-title').innerText = isLoginMode ? 'تسجيل الدخول' : 'إنشاء حساب'; document.getElementById('submit-btn').innerText = isLoginMode ? 'دخول' : 'إنشاء حساب'; }
+        function toggleAuthMode() { isLoginMode = !isLoginMode; document.querySelectorAll('.signup-only').forEach(e => e.style.display = isLoginMode ? 'none' : 'block'); document.getElementById('submit-btn').innerText = isLoginMode ? 'دخول' : 'إنشاء حساب'; }
         function handleAuth(e) {
             e.preventDefault();
             const email = document.getElementById('email').value;

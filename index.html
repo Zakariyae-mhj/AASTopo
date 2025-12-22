@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ZASTopo Pro | Final</title>
+    <title>ZASTopo Pro | V55 (Footer Logo)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -15,21 +15,6 @@
         body { margin: 0; font-family: 'Cairo', sans-serif; overflow: hidden; background: #0f172a; }
         #map { height: 100vh; width: 100%; z-index: 1; }
 
-        /* === ستايل اللوغو === */
-        .app-logo {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 2000;
-            height: 70px; /* حجم مناسب للوغو الدائري */
-            width: auto;
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); /* ظل ليبرز */
-            transition: 0.3s;
-        }
-        @media (max-width: 768px) {
-             .app-logo { height: 50px; top: 15px; left: 15px; }
-        }
-
         /* القائمة اليمنى */
         .dock-container { position: absolute; top: 50%; transform: translateY(-50%); right: 15px; display: flex; flex-direction: column; gap: 12px; z-index: 2000; pointer-events: none; }
         .dock-group { display: flex; flex-direction: column; gap: 8px; pointer-events: auto; background: rgba(255,255,255,0.15); padding: 6px; border-radius: 16px; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2); }
@@ -38,7 +23,7 @@
         .dock-item::after { content: attr(data-tooltip); position: absolute; right: 55px; background: #1e293b; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; opacity: 0; pointer-events: none; transition: 0.2s; visibility: hidden; white-space: nowrap; font-family: 'Cairo'; }
         .dock-item:hover::after { opacity: 1; visibility: visible; right: 50px; }
 
-        /* القائمة اليسرى (الممحاة) */
+        /* القائمة اليسرى */
         .left-dock { position: absolute; top: 50%; transform: translateY(-50%); left: 15px; display: flex; flex-direction: column; gap: 10px; z-index: 2000; }
         .eraser-btn { background: white; color: #ef4444; border: 2px solid white; }
         .eraser-btn:hover { background: #fee2e2; }
@@ -55,7 +40,6 @@
         .tool-btn:hover { background: #eff6ff; border-color: var(--primary); color: var(--primary); }
         .tool-input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 6px; font-family: inherit; box-sizing: border-box; font-size: 12px; }
 
-        /* زر الإيقاف الأحمر */
         #stop-drawing-btn { background: #fee2e2; color: #ef4444; border-color: #fca5a5; display: none; justify-content: center; font-weight: bold; animation: pulseRed 2s infinite; margin-bottom: 10px; }
         @keyframes pulseRed { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
@@ -65,12 +49,23 @@
         .close-chart { position: absolute; top: 10px; right: 10px; background: #8e44ad; color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 12px; display:flex; align-items:center; justify-content:center; }
         #chart-loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 14px; font-weight: bold; color: #8e44ad; display: none; }
 
-        /* Auth */
+        /* === Auth & Logo === */
         #auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #0f172a, #1e293b); z-index: 9999; display: flex; justify-content: center; align-items: center; }
-        .auth-card { background: white; padding: 30px; border-radius: 20px; width: 380px; text-align: center; max-height: 90vh; overflow-y: auto; }
+        .auth-card { background: white; padding: 30px; border-radius: 20px; width: 380px; text-align: center; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
         .auth-input { width: 100%; padding: 12px; margin-bottom: 10px; border: 2px solid #f1f5f9; border-radius: 8px; box-sizing: border-box; font-family: inherit; }
         .auth-btn { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
         .signup-only { display: none; }
+
+        /* ستايل اللوغو في أسفل نافذة الدخول */
+        .auth-logo-footer {
+            display: block;
+            margin: 25px auto 0 auto; /* توسيط مع مسافة علوية */
+            height: 35px; /* تصغير الحجم */
+            width: auto;
+            opacity: 0.5; /* شفافية */
+            transition: 0.3s;
+        }
+        .auth-logo-footer:hover { opacity: 1; }
 
         /* Modal & Popup */
         #name-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 5000; display: none; justify-content: center; align-items: center; }
@@ -100,8 +95,6 @@
 </head>
 <body>
 
-    <img src="https://i.imgur.com/rP6Yotb.png" alt="ZASTopo Pro Logo" class="app-logo">
-
     <div id="save-status">جاهز</div>
 
     <div id="sv-overlay">
@@ -129,7 +122,8 @@
 
     <div id="auth-overlay">
         <div class="auth-card">
-            <form onsubmit="handleAuth(event)" style="margin-top: 20px;">
+            <h1 style="color:var(--primary); margin:0 0 10px 0;">ZASTopo Pro</h1>
+            <form onsubmit="handleAuth(event)">
                 <div class="signup-only">
                     <input type="text" id="fname" class="auth-input" placeholder="الاسم الشخصي">
                     <input type="text" id="lname" class="auth-input" placeholder="الاسم العائلي">
@@ -222,6 +216,8 @@
                 <button type="submit" class="auth-btn" id="submit-btn">تسجيل الدخول</button>
             </form>
             <p style="font-size:13px; color:#64748b; margin-top:15px; cursor:pointer; text-decoration:underline;" onclick="toggleAuthMode()" id="toggle-msg">ليس لديك حساب؟ أنشئ حساباً جديداً</p>
+            
+            <img src="https://i.imgur.com/rP6Yotb.png" alt="ZASTopo Pro Logo" class="auth-logo-footer">
         </div>
     </div>
 

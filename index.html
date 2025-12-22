@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ZASTopo Pro | V49</title>
+    <title>ZASTopo Pro | V50</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -31,7 +31,7 @@
         .clear-btn { background: #1e293b; color: white; }
         
         /* اللوحات */
-        .panel { position: absolute; top: 20px; right: 80px; width: 300px; background: var(--glass); backdrop-filter: blur(12px); border-radius: 16px; padding: 15px; box-shadow: var(--shadow); z-index: 2000; display: none; max-height: 85vh; overflow-y: auto; animation: slideIn 0.3s; }
+        .panel { position: absolute; top: 20px; right: 80px; width: 300px; background: var(--glass); backdrop-filter: blur(12px); border-radius: 16px; padding: 15px; box-shadow: var(--shadow); z-index: 2000; display: none; max-height: 85vh; overflow-y: auto; animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
         @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         .panel.active { display: block; }
         .panel h3 { margin: 0 0 12px 0; font-size: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; color: #1e293b; }
@@ -47,8 +47,8 @@
         /* Chart */
         #chart-container { display: none; position: absolute; bottom: 40px; left: 60px; width: 500px; height: 320px; background: rgba(255,255,255,0.98); border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); z-index: 2500; padding: 15px; border: 1px solid #ccc; }
         canvas { width: 100% !important; height: 250px !important; }
-        .close-chart { position: absolute; top: 10px; right: 10px; background: #ef4444; color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 12px; }
-        #chart-loader { font-size: 12px; color: #2563eb; text-align: center; margin-top: 50px; display: none; }
+        .close-chart { position: absolute; top: 10px; right: 10px; background: #ef4444; color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 12px; display:flex; align-items:center; justify-content:center; }
+        #chart-loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 14px; font-weight: bold; color: var(--primary); display: none; }
 
         /* Auth */
         #auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #0f172a, #1e293b); z-index: 9999; display: flex; justify-content: center; align-items: center; }
@@ -81,6 +81,11 @@
         #bottom-bar { position: absolute; bottom: 10px; left: 10px; background: rgba(255,255,255,0.9); padding: 4px 12px; border-radius: 20px; font-size: 11px; z-index: 1000; font-family: monospace; dir: ltr; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .eraser-cursor { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="red"><path d="M16.24 3.56l4.95 4.94c.78.79.78 2.05 0 2.84L12 20.53a4.008 4.008 0 0 1-5.66 0L2.81 17a4.008 4.008 0 0 1 0-5.66l9.19-9.19c.78-.78 2.05-.78 2.84 0l1.4 1.41zM4.22 15.58l3.54 3.53c.78.79 2.05.79 2.83 0L12 17.71l-6.37-6.36-1.41 1.41a2.003 2.003 0 0 0 0 2.82z"/></svg>'), auto !important; }
 
+        /* Credits */
+        .user-info-card { text-align: center; padding: 10px; }
+        .credits-text { font-size: 11px; color: #64748b; line-height: 1.6; border-top: 1px solid #eee; margin-top: 10px; padding-top: 10px; }
+        .credits-text strong { color: #1e293b; display: block; margin-bottom: 2px; }
+
         @media (max-width: 768px) { .dock-container { right: 10px; } .panel { right: 65px; width: 250px; } #search-bar { width: 200px; right: 10px; } .left-dock { left: 10px; } #chart-container { left: 5%; width: 90%; } }
     </style>
 </head>
@@ -97,7 +102,7 @@
 
     <div id="chart-container">
         <button class="close-chart" onclick="document.getElementById('chart-container').style.display='none'">X</button>
-        <div id="chart-loader">جاري جلب البيانات ورسم المقطع...</div>
+        <div id="chart-loader">جاري معالجة البيانات ورسم المقطع... ⏳</div>
         <canvas id="elevationChart"></canvas>
         <button class="tool-btn" style="margin-top:5px; padding:4px;" onclick="downloadChart()">تحميل المبيان</button>
     </div>
@@ -134,24 +139,23 @@
                             <option value="chouaib">جامعة شعيب الدكالي - الجديدة</option>
                             <option value="sultan">جامعة السلطان مولاي سليمان - بني ملال</option>
                             <option value="aui">جامعة الأخوين - إفران</option>
-                            <option value="uir">الجامعة الدولية - الرباط</option>
                         </optgroup>
                         <optgroup label="🇩🇿 الجزائر">
-                            <option value="usthb">جامعة هواري بومدين (USTHB)</option>
-                            <option value="alger1">جامعة الجزائر 1 (بن يوسف بن خدة)</option>
-                            <option value="alger2">جامعة الجزائر 2 (أبو القاسم سعد الله)</option>
-                            <option value="alger3">جامعة الجزائر 3 (إبراهيم سلطان شيبوط)</option>
-                            <option value="oran1">جامعة وهران 1 (أحمد بن بلة)</option>
-                            <option value="oran2">جامعة وهران 2 (محمد بن أحمد)</option>
-                            <option value="const1">جامعة قسنطينة 1 (منتوري)</option>
-                            <option value="const2">جامعة قسنطينة 2 (عبد الحميد مهري)</option>
-                            <option value="const3">جامعة قسنطينة 3 (صالح بوبنيدر)</option>
-                            <option value="tlemcen">جامعة تلمسان (أبو بكر بلقايد)</option>
-                            <option value="annaba">جامعة عنابة (باجي مختار)</option>
-                            <option value="batna">جامعة باتنة 1 (الحاج لخضر)</option>
-                            <option value="setif">جامعة سطيف 1 (فرحات عباس)</option>
-                            <option value="biskra">جامعة بسكرة (محمد خيضر)</option>
-                            <option value="blida">جامعة البليدة 1 (سعد دحلب)</option>
+                            <option value="usthb">جامعة هواري بومدين - الجزائر</option>
+                            <option value="alger1">جامعة الجزائر 1</option>
+                            <option value="alger2">جامعة الجزائر 2</option>
+                            <option value="oran1">جامعة وهران 1</option>
+                            <option value="oran2">جامعة وهران 2</option>
+                            <option value="const1">جامعة قسنطينة 1</option>
+                            <option value="const2">جامعة قسنطينة 2</option>
+                            <option value="tlemcen">جامعة تلمسان</option>
+                            <option value="annaba">جامعة عنابة</option>
+                            <option value="batna">جامعة باتنة 1</option>
+                            <option value="setif">جامعة سطيف 1</option>
+                            <option value="biskra">جامعة بسكرة</option>
+                            <option value="blida">جامعة البليدة 1</option>
+                            <option value="djelfa">جامعة الجلفة</option>
+                            <option value="ouargla">جامعة ورقلة</option>
                         </optgroup>
                         <optgroup label="🇹🇳 تونس">
                             <option value="utm">جامعة تونس المنار</option>
@@ -171,9 +175,10 @@
                             <option value="uob">جامعة بنغازي</option>
                             <option value="misurata">جامعة مصراتة</option>
                             <option value="sebha">جامعة سبها</option>
-                            <option value="omar">جامعة عمر المختار (البيضاء)</option>
+                            <option value="omar">جامعة عمر المختار</option>
                             <option value="zawiya">جامعة الزاوية</option>
                             <option value="sirte">جامعة سرت</option>
+                            <option value="tobruk">جامعة طبرق</option>
                         </optgroup>
                         <optgroup label="🇲🇷 موريتانيا">
                             <option value="una">جامعة نواكشوط العصرية</option>
@@ -192,10 +197,11 @@
                             <option value="menoufia">جامعة المنوفية</option>
                             <option value="suez">جامعة قناة السويس</option>
                             <option value="azhar">جامعة الأزهر</option>
-                            <option value="auc">الجامعة الأمريكية بالقاهرة</option>
-                            <option value="guc">الجامعة الألمانية بالقاهرة</option>
+                            <option value="benisuef">جامعة بني سويف</option>
+                            <option value="fayoum">جامعة الفيوم</option>
+                            <option value="sohag">جامعة سوهاج</option>
+                            <option value="aswan">جامعة أسوان</option>
                         </optgroup>
-                        <option value="other">مؤسسة أخرى</option>
                     </select>
                 </div>
                 <input type="email" id="email" class="auth-input" placeholder="البريد الإلكتروني" required>
@@ -264,13 +270,10 @@
 
     <div id="draw-panel" class="panel">
         <h3><i class="fas fa-pencil-ruler"></i> أدوات الرسم</h3>
-        
         <button id="stop-drawing-btn" class="tool-btn" onclick="stopContinuousDraw()">🛑 إنهاء الرسم (Terminé)</button>
-
         <button class="tool-btn" onclick="startContinuousDraw('marker')"><i class="fas fa-map-marker-alt"></i> نقاط (Points)</button>
         <button class="tool-btn" onclick="startContinuousDraw('polyline')"><i class="fas fa-route"></i> خطوط (Lines)</button>
         <button class="tool-btn" onclick="startContinuousDraw('polygon')"><i class="fas fa-draw-polygon"></i> مساحات (Polygons)</button>
-        
         <hr>
         <button class="tool-btn" onclick="activateStreetView()"><i class="fas fa-street-view"></i> Street View</button>
         <div style="display:flex; gap:5px; margin-top:5px;">
@@ -422,54 +425,47 @@
             }
         }
 
-        // Profile Chart Fix
+        // === 🟢 Profile Chart Fix (Strict Sampling) ===
         async function generateRealProfile() {
             let line = null;
             drawnItems.eachLayer(l => { if(l instanceof L.Polyline && !(l instanceof L.Polygon)) line = l; });
-            if(!line) return alert("المرجو رسم خط (Polyline) أولاً");
+            if(!line) return alert("ارسم خطاً أولاً");
             
+            // Show Chart Immediately
             document.getElementById('chart-container').style.display = 'block';
-            document.getElementById('chart-loader').style.display = 'block'; // Show loader
-            document.getElementById('chart-loader').innerText = "جاري جلب بيانات الارتفاع...";
-
+            document.getElementById('chart-loader').style.display = 'block';
+            
             let latlngs = line.getLatLngs(); if(Array.isArray(latlngs[0])) latlngs = latlngs.flat();
             
-            // Advanced Sampling
-            let points = [];
-            for(let i=0; i<latlngs.length-1; i++) {
-                points.push(latlngs[i]);
-                let d = latlngs[i].distanceTo(latlngs[i+1]);
-                if(d > 50) { // Interpolate every 50m for smoother graph
-                    let steps = Math.floor(d/50);
-                    for(let j=1; j<=steps; j++) {
-                        points.push(L.latLng(
-                            latlngs[i].lat + (latlngs[i+1].lat - latlngs[i].lat)*(j/(steps+1)),
-                            latlngs[i].lng + (latlngs[i+1].lng - latlngs[i].lng)*(j/(steps+1))
-                        ));
-                    }
+            // STRICT SAMPLING (Max 100 points)
+            let totalPoints = latlngs.length;
+            let samples = [];
+            
+            if (totalPoints <= 100) {
+                samples = latlngs;
+            } else {
+                let step = Math.ceil(totalPoints / 100);
+                for(let i=0; i<totalPoints; i+=step) {
+                    samples.push(latlngs[i]);
                 }
             }
-            points.push(latlngs[latlngs.length-1]);
-            
-            // Limit request size
-            if(points.length > 200) { let s=Math.ceil(points.length/200); points = points.filter((_,i)=>i%s===0); }
 
-            let lats = points.map(p=>p.lat.toFixed(5)).join(',');
-            let lngs = points.map(p=>p.lng.toFixed(5)).join(',');
+            let lats = samples.map(p=>p.lat.toFixed(5)).join(',');
+            let lngs = samples.map(p=>p.lng.toFixed(5)).join(',');
 
             try {
                 let res = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lats}&longitude=${lngs}`);
                 let data = await res.json();
                 
-                document.getElementById('chart-loader').style.display = 'none'; // Hide loader
+                document.getElementById('chart-loader').style.display = 'none';
 
                 if(data.elevation) {
                     let ctx = document.getElementById('elevationChart').getContext('2d');
                     if(window.myChart) window.myChart.destroy();
                     
-                    let labels = points.map((p, i) => {
+                    let labels = samples.map((p, i) => {
                         if(i===0) return 0;
-                        return (points[0].distanceTo(p)/1000).toFixed(2); // Distance in km
+                        return (samples[0].distanceTo(p)/1000).toFixed(2);
                     });
 
                     window.myChart = new Chart(ctx, {
@@ -488,10 +484,7 @@
                             }]
                         },
                         options: {
-                            scales: { 
-                                y: { title: {display:true, text:'الارتفاع (m)'} },
-                                x: { title: {display:true, text:'المسافة (km)'}, ticks: { maxTicksLimit: 10 } }
-                            },
+                            scales: { y: { beginAtZero: false, title:{display:true, text:'الارتفاع (m)'} }, x:{title:{display:true, text:'المسافة (km)'}, ticks:{maxTicksLimit:10}} },
                             responsive: true, maintainAspectRatio: false,
                             interaction: { intersect: false, mode: 'index' },
                         }
@@ -499,14 +492,11 @@
                 }
             } catch(e) { 
                 document.getElementById('chart-loader').innerText = "فشل الاتصال";
-                alert("فشل الاتصال بسيرفر الارتفاعات"); 
             }
         }
 
-        // Auth
         let isLoginMode = true;
-        function toggleAuthMode() { isLoginMode = !isLoginMode; document.querySelectorAll('.signup-only').forEach(e => e.style.display = isLoginMode ? 'none' : 'block'); document.getElementById('auth-title').innerText = isLoginMode ? 'تسجيل الدخول' : 'إنشاء حساب'; document.getElementById('submit-btn').innerText = isLoginMode ? 'دخول' : 'إنشاء حساب'; }
-        
+        function toggleAuthMode() { isLoginMode = !isLoginMode; document.querySelectorAll('.signup-only').forEach(e => e.style.display = isLoginMode ? 'none' : 'block'); document.getElementById('submit-btn').innerText = isLoginMode ? 'دخول' : 'إنشاء حساب'; }
         function handleAuth(e) {
             e.preventDefault();
             const email = document.getElementById('email').value;
@@ -516,11 +506,10 @@
             } else {
                 const fname = document.getElementById('fname').value;
                 const lname = document.getElementById('lname').value;
-                const univ = document.getElementById('university').value;
-                if(!fname || !lname || !univ) return alert("املأ البيانات");
+                if(!fname || !lname) return alert("الاسم مطلوب");
                 auth.createUserWithEmailAndPassword(email, pass).then(cred => {
                     return cred.user.updateProfile({ displayName: fname + " " + lname });
-                }).then(() => { alert("تم"); location.reload(); }).catch(e => alert("خطأ: " + e.message));
+                }).then(() => { alert("تم الإنشاء"); location.reload(); }).catch(e => alert("خطأ: " + e.message));
             }
         }
         function logoutUser() { auth.signOut().then(() => location.reload()); }
@@ -532,7 +521,6 @@
         function togglePanel(id) { document.querySelectorAll('.panel').forEach(p=>{if(p.id===id)p.classList.toggle('active');else p.classList.remove('active');}); }
         function saveUserDrawings() { if(!auth.currentUser) return; let f=[]; drawnItems.eachLayer(l=>{let j=l.toGeoJSON(); j.properties.customName=l.customName||""; j.properties.customNotes=l.customNotes||""; f.push(j);}); db.ref('users/'+auth.currentUser.uid).set({drawings:JSON.stringify({type:"FeatureCollection",features:f})}); document.getElementById('save-status').innerText="تم الحفظ"; setTimeout(()=>document.getElementById('save-status').innerText="جاهز",2000); }
         function loadUserDrawings(uid) { db.ref('users/'+uid).once('value').then(s=>{ let d=s.val(); if(d&&d.drawings) L.geoJSON(JSON.parse(d.drawings),{onEachFeature:(f,l)=>{l.customName=f.properties.customName; drawnItems.addLayer(l); attachPopup(l); l.on('click', eraserHandler);}}); }); }
-        
         map.on(L.Draw.Event.EDITED, () => { saveUserDrawings(); }); map.on(L.Draw.Event.DELETED, () => { saveUserDrawings(); });
         function updateProjection() { currentZone=document.getElementById('lambert-zone').value; }
         function searchPlace() { let q=document.getElementById('search-input').value; fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}`).then(r=>r.json()).then(d=>{if(d.length) map.setView([d[0].lat,d[0].lon],13);}); }

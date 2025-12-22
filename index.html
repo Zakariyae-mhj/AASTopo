@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ZASTopo Pro | V55 (Footer Logo)</title>
+    <title>ZASTopo Pro | V56 (Comprehensive Final)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -36,6 +36,15 @@
         .panel.active { display: block; }
         .panel h3 { margin: 0 0 12px 0; font-size: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; color: #1e293b; }
         
+        /* ستايل اللوغو داخل لوحة الملف الشخصي */
+        .profile-panel-logo {
+            display: block;
+            margin: 0 auto 15px auto; /* توسيط أفقي ومسافة من الأسفل */
+            height: 70px; /* حجم بارز */
+            width: auto;
+            filter: drop-shadow(0 3px 5px rgba(0,0,0,0.2)); /* ظل خفيف */
+        }
+
         .tool-btn { display: flex; align-items: center; gap: 8px; width: 100%; padding: 9px; margin-bottom: 6px; border: 1px solid #e2e8f0; border-radius: 8px; background: white; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 600; transition: 0.2s; }
         .tool-btn:hover { background: #eff6ff; border-color: var(--primary); color: var(--primary); }
         .tool-input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 6px; font-family: inherit; box-sizing: border-box; font-size: 12px; }
@@ -49,23 +58,12 @@
         .close-chart { position: absolute; top: 10px; right: 10px; background: #8e44ad; color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 12px; display:flex; align-items:center; justify-content:center; }
         #chart-loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 14px; font-weight: bold; color: #8e44ad; display: none; }
 
-        /* === Auth & Logo === */
+        /* Auth */
         #auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #0f172a, #1e293b); z-index: 9999; display: flex; justify-content: center; align-items: center; }
         .auth-card { background: white; padding: 30px; border-radius: 20px; width: 380px; text-align: center; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
         .auth-input { width: 100%; padding: 12px; margin-bottom: 10px; border: 2px solid #f1f5f9; border-radius: 8px; box-sizing: border-box; font-family: inherit; }
         .auth-btn { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
         .signup-only { display: none; }
-
-        /* ستايل اللوغو في أسفل نافذة الدخول */
-        .auth-logo-footer {
-            display: block;
-            margin: 40px auto 0 auto; /* توسيط مع مسافة علوية */
-            height: 80px; /* تصغير الحجم */
-            width: auto;
-            opacity: 0.5; /* شفافية */
-            transition: 0.3s;
-        }
-        .auth-logo-footer:hover { opacity: 1; }
 
         /* Modal & Popup */
         #name-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 5000; display: none; justify-content: center; align-items: center; }
@@ -216,8 +214,6 @@
                 <button type="submit" class="auth-btn" id="submit-btn">تسجيل الدخول</button>
             </form>
             <p style="font-size:13px; color:#64748b; margin-top:15px; cursor:pointer; text-decoration:underline;" onclick="toggleAuthMode()" id="toggle-msg">ليس لديك حساب؟ أنشئ حساباً جديداً</p>
-            
-            <img src="https://i.imgur.com/rP6Yotb.png" alt="ZASTopo Pro Logo" class="auth-logo-footer">
         </div>
     </div>
 
@@ -248,6 +244,8 @@
     <div id="user-panel" class="panel">
         <h3><i class="fas fa-id-card"></i> الملف الشخصي</h3>
         <div class="user-info-card">
+            <img src="https://i.imgur.com/rP6Yotb.png" alt="ZASTopo Pro Logo" class="profile-panel-logo">
+            
             <div class="user-avatar"><i class="fas fa-user"></i></div>
             <h4 id="display-name" style="margin:5px 0;">زائر</h4>
             <div class="credits-text">
@@ -261,11 +259,38 @@
     <div id="layers-panel" class="panel">
         <h3><i class="fas fa-globe"></i> نظام الإحداثيات</h3>
         <select id="lambert-zone" class="tool-input" onchange="updateProjection()">
-            <optgroup label="🇲🇦 المغرب"><option value="EPSG:26191">Zone I</option><option value="EPSG:26192">Zone II</option></optgroup>
-            <optgroup label="🇩🇿 الجزائر"><option value="EPSG:3060">UTM Z30</option></optgroup>
-            <optgroup label="🇹🇳 تونس"><option value="EPSG:22332">UTM Z32</option></optgroup>
-            <optgroup label="🇱🇾 ليبيا"><option value="EPSG:32633">UTM Z33</option></optgroup>
-            <optgroup label="🇪🇬 مصر"><option value="EPSG:22992">Red Belt</option></optgroup>
+            <optgroup label="🇲🇦 المغرب (Lambert)">
+                <option value="EPSG:26191" selected>Lambert Zone I (الشمال)</option>
+                <option value="EPSG:26192">Lambert Zone II (الوسط)</option>
+                <option value="EPSG:26193">Lambert Zone III (الجنوب)</option>
+                <option value="EPSG:26194">Lambert Zone IV (أقصى الجنوب)</option>
+                <option value="EPSG:26195">Merchich Nord Maroc</option>
+            </optgroup>
+            <optgroup label="🇩🇿 الجزائر (UTM WGS84)">
+                <option value="EPSG:32629">UTM Zone 29N (الغرب)</option>
+                <option value="EPSG:32630">UTM Zone 30N (الوسط الغربي)</option>
+                <option value="EPSG:32631">UTM Zone 31N (الوسط الشرقي)</option>
+                <option value="EPSG:32632">UTM Zone 32N (الشرق)</option>
+            </optgroup>
+            <optgroup label="🇹🇳 تونس">
+                <option value="EPSG:22332">Carthage UTM Zone 32N (محلي)</option>
+                <option value="EPSG:32632">UTM Zone 32N (WGS84 قياسي)</option>
+            </optgroup>
+            <optgroup label="🇱🇾 ليبيا (UTM WGS84)">
+                <option value="EPSG:32632">UTM Zone 32N (الغرب)</option>
+                <option value="EPSG:32633">UTM Zone 33N (الوسط)</option>
+                <option value="EPSG:32634">UTM Zone 34N (الشرق)</option>
+            </optgroup>
+            <optgroup label="🇲🇷 موريتانيا (UTM WGS84)">
+                <option value="EPSG:32628">UTM Zone 28N (الغرب)</option>
+                <option value="EPSG:32629">UTM Zone 29N (الشرق)</option>
+            </optgroup>
+            <optgroup label="🇪🇬 مصر (ETM الأحزمة المحلية)">
+                <option value="EPSG:22991">الحزام البنفسجي (Purple Belt)</option>
+                <option value="EPSG:22992">الحزام الأحمر (Red Belt)</option>
+                <option value="EPSG:22993">الحزام الأخضر (Green Belt)</option>
+                <option value="EPSG:22994">الحزام الأزرق (Blue Belt)</option>
+            </optgroup>
         </select>
         <div style="display:flex; gap:5px;">
             <input id="input-x" class="tool-input" placeholder="X">
@@ -321,7 +346,30 @@
         try { firebase.initializeApp(firebaseConfig); } catch(e){}
         const auth = firebase.auth(); const db = firebase.database();
 
-        proj4.defs([["EPSG:26191", "+proj=lcc +lat_1=33.3 +lat_0=33.3 +lon_0=-5.4 +k_0=0.999625769 +x_0=500000 +y_0=300000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"],["EPSG:3060", "+proj=utm +zone=30 +ellps=clrk80 +towgs84=-186,-93,310,0,0,0,0 +units=m +no_defs"]]);
+        // 🟢 تعريفات كافة الإسقاطات المحلية الجديدة (Proj4 Definitions)
+        proj4.defs([
+            ["EPSG:26191", "+proj=lcc +lat_1=33.3 +lat_0=33.3 +lon_0=-5.4 +k_0=0.999625769 +x_0=500000 +y_0=300000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"], // MA Zone 1
+            ["EPSG:26192", "+proj=lcc +lat_1=29.7 +lat_0=29.7 +lon_0=-5.4 +k_0=0.999615596 +x_0=500000 +y_0=300000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"], // MA Zone 2
+            ["EPSG:26193", "+proj=lcc +lat_1=26.1 +lat_0=26.1 +lon_0=-5.4 +k_0=0.999616304 +x_0=1200000 +y_0=400000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"], // MA Zone 3
+            ["EPSG:26194", "+proj=lcc +lat_1=22.5 +lat_0=22.5 +lon_0=-5.4 +k_0=0.999616437 +x_0=1500000 +y_0=400000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"], // MA Zone 4
+            ["EPSG:26195", "+proj=lcc +lat_1=33.3 +lat_0=33.3 +lon_0=-5.4 +k_0=0.999625769 +x_0=500000 +y_0=300000 +ellps=clrk80ign +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"], // MA Merchich
+
+            ["EPSG:32629", "+proj=utm +zone=29 +datum=WGS84 +units=m +no_defs"], // UTM 29N (DZ, MR)
+            ["EPSG:32630", "+proj=utm +zone=30 +datum=WGS84 +units=m +no_defs"], // UTM 30N (DZ)
+            ["EPSG:32631", "+proj=utm +zone=31 +datum=WGS84 +units=m +no_defs"], // UTM 31N (DZ)
+            ["EPSG:32632", "+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs"], // UTM 32N (DZ, TN, LY)
+            ["EPSG:32633", "+proj=utm +zone=33 +datum=WGS84 +units=m +no_defs"], // UTM 33N (LY)
+            ["EPSG:32634", "+proj=utm +zone=34 +datum=WGS84 +units=m +no_defs"], // UTM 34N (LY)
+            ["EPSG:32628", "+proj=utm +zone=28 +datum=WGS84 +units=m +no_defs"], // UTM 28N (MR)
+
+            ["EPSG:22332", "+proj=utm +zone=32 +ellps=clrk80ign +towgs84=-263,6,431,0,0,0,0 +units=m +no_defs"], // TN Carthage
+
+            ["EPSG:22991", "+proj=tmerc +lat_0=30 +lon_0=27 +k=1 +x_0=300000 +y_0=0 +a=6378200 +b=6356818.17 +towgs84=-130,110,-13,0,0,0,0 +units=m +no_defs"], // EG Purple
+            ["EPSG:22992", "+proj=tmerc +lat_0=30 +lon_0=31 +k=1 +x_0=615000 +y_0=810000 +a=6378200 +b=6356818.17 +towgs84=-130,110,-13,0,0,0,0 +units=m +no_defs"], // EG Red
+            ["EPSG:22993", "+proj=tmerc +lat_0=30 +lon_0=35 +k=1 +x_0=300000 +y_0=0 +a=6378200 +b=6356818.17 +towgs84=-130,110,-13,0,0,0,0 +units=m +no_defs"], // EG Green
+            ["EPSG:22994", "+proj=tmerc +lat_0=30 +lon_0=39 +k=1 +x_0=300000 +y_0=0 +a=6378200 +b=6356818.17 +towgs84=-130,110,-13,0,0,0,0 +units=m +no_defs"]  // EG Blue
+        ]);
+
         var currentZone = "EPSG:26191";
         
         var map = L.map('map', {zoomControl: false}).setView([33.3, -5.4], 6);
@@ -544,7 +592,7 @@
         function locateUser() { map.locate({setView:true, maxZoom:15}); }
         function clearMap() { drawnItems.clearLayers(); saveUserDrawings(); }
         function createBuffer() { if(drawnItems.getLayers().length === 0) return alert("حدد شكلاً"); let layer = drawnItems.getLayers()[drawnItems.getLayers().length - 1]; let dist = parseFloat(document.getElementById('buffer-val').value); try { let buffered = turf.buffer(layer.toGeoJSON(), dist, {units: 'meters'}); let bufLayer = L.geoJSON(buffered, {style:{color:'red', dashArray:'5,5'}}); bufLayer.eachLayer(l => { l.customName = "Buffer "+dist; drawnItems.addLayer(l); attachPopup(l); }); saveUserDrawings(); } catch(e) { alert("خطأ"); } }
-        function activateStreetView(){ alert("انقر للخريطة"); map.once('click', e => { document.getElementById('sv-overlay').style.display='flex'; document.getElementById('sv-iframe').src=`https://maps.google.com/maps?q=&layer=c&cbll=${e.latlng.lat},${e.latlng.lng}&cbp=11,0,0,0,0&output=svembed`; }); }
+        function activateStreetView(){ alert("انقر للخريطة"); map.once('click', e => { document.getElementById('sv-overlay').style.display='flex'; document.getElementById('sv-iframe').src=`maps.google.com/0{e.latlng.lat},${e.latlng.lng}&cbp=11,0,0,0,0&output=svembed`; }); }
         function closeStreetView(){ document.getElementById('sv-overlay').style.display='none'; document.getElementById('sv-iframe').src=""; }
         function downloadExcel() { let d=[]; drawnItems.eachLayer(l=>{ d.push({Name:l.customName, Notes:l.customNotes}); }); let w=XLSX.utils.json_to_sheet(d), b=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(b,w,"Data"); XLSX.writeFile(b,"Data.xlsx"); }
         function downloadDXF() { let d="0\nSECTION\n2\nHEADER\n9\n$ACADVER\n1\nAC1009\n0\nENDSEC\n0\nSECTION\n2\nENTITIES\n"; drawnItems.eachLayer(l=>{ if(l instanceof L.Marker) { try{let p=proj4("EPSG:4326",currentZone,[l.getLatLng().lng,l.getLatLng().lat]); d+=`0\nPOINT\n8\nPoints\n10\n${p[0]}\n20\n${p[1]}\n30\n0.0\n`;}catch(e){} } }); d+="0\nENDSEC\n0\nEOF"; let b=new Blob([d],{type:'application/dxf'}); let a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download="export.dxf"; a.click(); }

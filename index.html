@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ZASTopo Pro | V46</title>
+    <title>ZASTopo Pro | V47</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -15,14 +15,7 @@
         body { margin: 0; font-family: 'Cairo', sans-serif; overflow: hidden; background: #0f172a; }
         #map { height: 100vh; width: 100%; z-index: 1; }
 
-        /* تعديلات الرسم */
-        .leaflet-draw-tooltip { font-family: 'Cairo'; }
-        
-        /* مؤشر الممحاة */
-        .eraser-active-map { cursor: not-allowed !important; }
-        .eraser-btn-active { background: #fee2e2 !important; color: #ef4444 !important; border: 1px solid #ef4444 !important; transform: scale(1.05); }
-
-        /* القائمة العائمة */
+        /* === القائمة اليمنى العائمة (Dock) === */
         .dock-container { position: absolute; top: 50%; transform: translateY(-50%); right: 15px; display: flex; flex-direction: column; gap: 12px; z-index: 2000; pointer-events: none; }
         .dock-group { display: flex; flex-direction: column; gap: 8px; pointer-events: auto; background: rgba(255,255,255,0.15); padding: 6px; border-radius: 16px; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2); }
         .dock-item { width: 42px; height: 42px; background: white; border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 18px; color: #475569; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.2s; position: relative; }
@@ -30,18 +23,25 @@
         .dock-item::after { content: attr(data-tooltip); position: absolute; right: 55px; background: #1e293b; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; opacity: 0; pointer-events: none; transition: 0.2s; visibility: hidden; white-space: nowrap; font-family: 'Cairo'; }
         .dock-item:hover::after { opacity: 1; visibility: visible; right: 50px; }
 
-        /* اللوحات */
-        .panel { position: absolute; top: 20px; right: 80px; width: 300px; background: var(--glass); backdrop-filter: blur(12px); border-radius: 16px; padding: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 2000; display: none; max-height: 85vh; overflow-y: auto; animation: slideIn 0.3s; }
+        /* === القائمة اليسرى (أدوات المسح) === */
+        .left-dock { position: absolute; top: 50%; transform: translateY(-50%); left: 15px; display: flex; flex-direction: column; gap: 10px; z-index: 2000; }
+        .eraser-btn { background: white; color: #ef4444; border: 2px solid white; }
+        .eraser-btn:hover { background: #fee2e2; }
+        .eraser-active { background: #ef4444 !important; color: white !important; border-color: #ef4444 !important; animation: pulseRed 1.5s infinite; }
+        .clear-btn { background: #1e293b; color: white; }
+        .clear-btn:hover { background: #0f172a; }
+
+        /* === اللوحات (Panels) === */
+        .panel { position: absolute; top: 20px; right: 80px; width: 300px; background: var(--glass); backdrop-filter: blur(12px); border-radius: 16px; padding: 15px; box-shadow: var(--shadow); z-index: 2000; display: none; max-height: 85vh; overflow-y: auto; animation: slideIn 0.3s; }
         @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         .panel.active { display: block; }
-        .panel h3 { margin: 0 0 12px 0; font-size: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; color: #1e293b; }
         
         .tool-btn { display: flex; align-items: center; gap: 8px; width: 100%; padding: 9px; margin-bottom: 6px; border: 1px solid #e2e8f0; border-radius: 8px; background: white; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 600; transition: 0.2s; }
         .tool-btn:hover { background: #eff6ff; border-color: var(--primary); color: var(--primary); }
         .tool-input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 6px; font-family: inherit; box-sizing: border-box; font-size: 12px; }
 
         /* زر الإيقاف الأحمر */
-        #stop-drawing-btn { background: #fee2e2; color: #ef4444; border-color: #fca5a5; display: none; justify-content: center; font-weight: bold; animation: pulseRed 2s infinite; }
+        #stop-drawing-btn { background: #fee2e2; color: #ef4444; border-color: #fca5a5; display: none; justify-content: center; font-weight: bold; animation: pulseRed 2s infinite; margin-bottom: 10px; }
         @keyframes pulseRed { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
         /* Street View & Modal */
@@ -50,28 +50,19 @@
         #sv-close { position: absolute; top: 10px; right: 10px; background: red; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px; z-index: 10; font-family: 'Cairo'; }
         #sv-iframe { width: 100%; height: 100%; border: none; }
 
-        /* Search Bar */
-        #search-bar { position: absolute; top: 15px; right: 15px; z-index: 1000; width: 220px; background: white; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; padding: 4px; align-items: center; transition: 0.3s; }
-        #search-bar:hover { width: 260px; }
-        #search-bar input { border: none; background: transparent; padding: 0 15px; flex: 1; outline: none; font-family: inherit; font-size: 13px; }
-        #search-bar button { width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--primary); color: white; cursor: pointer; }
-
-        /* Info Bar */
-        #bottom-bar { position: absolute; bottom: 10px; left: 10px; background: rgba(255,255,255,0.9); padding: 4px 12px; border-radius: 20px; font-size: 11px; z-index: 1000; font-family: monospace; dir: ltr; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-
         /* Chart */
-        #chart-container { display: none; position: absolute; bottom: 40px; left: 10px; width: 400px; height: 250px; background: rgba(255,255,255,0.95); border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); z-index: 2500; padding: 10px; border: 1px solid #ccc; }
+        #chart-container { display: none; position: absolute; bottom: 40px; left: 60px; width: 400px; height: 250px; background: rgba(255,255,255,0.95); border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); z-index: 2500; padding: 10px; border: 1px solid #ccc; }
         canvas { width: 100% !important; height: 100% !important; }
         .close-chart { position: absolute; top: 5px; right: 5px; background: red; color: white; border: none; width: 20px; height: 20px; border-radius: 50%; cursor: pointer; font-size: 10px; }
 
         /* Auth */
         #auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #0f172a, #1e293b); z-index: 9999; display: flex; justify-content: center; align-items: center; }
-        .auth-card { background: white; padding: 30px; border-radius: 20px; width: 350px; text-align: center; }
+        .auth-card { background: white; padding: 30px; border-radius: 20px; width: 350px; text-align: center; max-height: 90vh; overflow-y: auto; }
         .auth-input { width: 100%; padding: 12px; margin-bottom: 10px; border: 2px solid #f1f5f9; border-radius: 8px; box-sizing: border-box; font-family: inherit; }
         .auth-btn { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
         .signup-only { display: none; }
 
-        /* Name Modal */
+        /* نافذة التسمية */
         #name-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 5000; display: none; justify-content: center; align-items: center; }
         .name-card { background: white; padding: 25px; border-radius: 15px; width: 300px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.3); animation: popIn 0.2s; }
         @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -83,12 +74,15 @@
         .feature-title { font-weight: bold; color: #1e293b; font-size: 15px; border-bottom: 2px solid #eee; padding-bottom: 5px; margin-bottom: 5px; }
 
         #save-status { position: absolute; bottom: 10px; right: 10px; font-size: 11px; font-weight: bold; color: #2ecc71; background: rgba(255,255,255,0.8); padding: 2px 8px; border-radius: 4px; z-index: 1000; }
+        #search-bar { position: absolute; top: 15px; right: 15px; z-index: 1000; width: 220px; background: white; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; padding: 4px; align-items: center; transition: 0.3s; }
+        #search-bar input { border: none; background: transparent; padding: 0 15px; flex: 1; outline: none; font-family: inherit; font-size: 13px; }
+        #search-bar button { width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--primary); color: white; cursor: pointer; }
+        #bottom-bar { position: absolute; bottom: 10px; left: 10px; background: rgba(255,255,255,0.9); padding: 4px 12px; border-radius: 20px; font-size: 11px; z-index: 1000; font-family: monospace; dir: ltr; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
 
-        /* مفتاح الرسم المستمر */
-        .toggle-switch { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; background: #e0f2fe; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: bold; color: #0369a1; border: 1px solid #bae6fd; }
-        .toggle-input { width: auto !important; margin: 0 !important; cursor: pointer; transform: scale(1.2); }
+        /* مؤشر الممحاة النشط */
+        .eraser-cursor { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="red"><path d="M16.24 3.56l4.95 4.94c.78.79.78 2.05 0 2.84L12 20.53a4.008 4.008 0 0 1-5.66 0L2.81 17a4.008 4.008 0 0 1 0-5.66l9.19-9.19c.78-.78 2.05-.78 2.84 0l1.4 1.41zM4.22 15.58l3.54 3.53c.78.79 2.05.79 2.83 0L12 17.71l-6.37-6.36-1.41 1.41a2.003 2.003 0 0 0 0 2.82z"/></svg>'), auto !important; }
 
-        @media (max-width: 768px) { .dock-container { right: 10px; } .panel { right: 65px; width: 250px; } #search-bar { width: 200px; right: 10px; } }
+        @media (max-width: 768px) { .dock-container { right: 10px; } .panel { right: 65px; width: 250px; } #search-bar { width: 200px; right: 10px; } .left-dock { left: 10px; } }
     </style>
 </head>
 <body>
@@ -129,8 +123,36 @@
                         <input type="text" id="lname" class="auth-input" placeholder="الاسم العائلي">
                     </div>
                     <select id="university" class="auth-input">
-                        <option value="" disabled selected>اختر المؤسسة</option>
-                        <option value="ump">جامعة محمد الأول - وجدة</option>
+                        <option value="" disabled selected>اختر المؤسسة الجامعية</option>
+                        <optgroup label="🇲🇦 المغرب">
+                            <option value="ump">جامعة محمد الأول - وجدة</option>
+                            <option value="um5">جامعة محمد الخامس - الرباط</option>
+                            <option value="uca">جامعة القاضي عياض - مراكش</option>
+                            <option value="usmba">جامعة سيدي محمد بن عبد الله - فاس</option>
+                            <option value="uae">جامعة عبد المالك السعدي - تطوان</option>
+                        </optgroup>
+                        <optgroup label="🇩🇿 الجزائر">
+                            <option value="usthb">جامعة هواري بومدين - الجزائر</option>
+                            <option value="oran1">جامعة وهران 1</option>
+                            <option value="const">جامعة قسنطينة 1</option>
+                        </optgroup>
+                        <optgroup label="🇹🇳 تونس">
+                            <option value="utm">جامعة تونس المنار</option>
+                            <option value="ucar">جامعة قرطاج</option>
+                            <option value="usfax">جامعة صفاقس</option>
+                        </optgroup>
+                        <optgroup label="🇱🇾 ليبيا">
+                            <option value="uob">جامعة بنغازي</option>
+                            <option value="uot">جامعة طرابلس</option>
+                        </optgroup>
+                        <optgroup label="🇲🇷 موريتانيا">
+                            <option value="una">جامعة نواكشوط العصرية</option>
+                        </optgroup>
+                        <optgroup label="🇪🇬 مصر">
+                            <option value="cu">جامعة القاهرة</option>
+                            <option value="asu">جامعة عين شمس</option>
+                            <option value="alexu">جامعة الإسكندرية</option>
+                        </optgroup>
                         <option value="other">مؤسسة أخرى</option>
                     </select>
                 </div>
@@ -164,12 +186,16 @@
         </div>
     </div>
 
+    <div class="left-dock">
+        <div class="dock-item eraser-btn" id="eraser-btn" onclick="toggleEraser()" data-tooltip="ممحاة"><i class="fas fa-eraser"></i></div>
+        <div class="dock-item clear-btn" onclick="clearMap()" data-tooltip="مسح الكل"><i class="fas fa-trash-alt"></i></div>
+    </div>
+
     <div id="user-panel" class="panel">
         <h3><i class="fas fa-id-card"></i> الملف الشخصي</h3>
         <div class="user-info-card">
             <div class="user-avatar"><i class="fas fa-user"></i></div>
             <h4 id="display-name" style="margin:5px 0;">زائر</h4>
-            <div style="height:1px; background:#e2e8f0; margin:10px 0;"></div>
             <div class="credits-text">
                 <strong>💻 تطوير وبرمجة:</strong> زكرياء المحجوبي
                 <br>
@@ -194,21 +220,11 @@
             <input id="input-y" class="tool-input" placeholder="Y">
         </div>
         <button class="tool-btn" onclick="goToCoordinates()">ذهاب</button>
-        <button class="tool-btn" style="color:red;" onclick="clearMap()">مسح الخريطة</button>
     </div>
 
     <div id="draw-panel" class="panel">
         <h3><i class="fas fa-pencil-ruler"></i> أدوات الرسم</h3>
         
-        <label class="toggle-switch">
-            <span>🔄 تفعيل الرسم المسترسل</span>
-            <input type="checkbox" id="continuous-mode" class="toggle-input">
-        </label>
-
-        <button class="tool-btn" id="btn-eraser" onclick="toggleEraser()">
-            <i class="fas fa-eraser"></i> الممحاة الذكية (Gomme)
-        </button>
-
         <button id="stop-drawing-btn" class="tool-btn" onclick="stopContinuousDraw()">🛑 إنهاء الرسم (Terminé)</button>
 
         <button class="tool-btn" onclick="startContinuousDraw('marker')"><i class="fas fa-map-marker-alt"></i> نقاط (Points)</button>
@@ -263,27 +279,45 @@
         L.control.scale({position: 'bottomright'}).addTo(map);
         L.tileLayer('https://{s}.google.com/vt/lyrs=y&gl=MA&hl=ar&x={x}&y={y}&z={z}',{maxZoom:22,subdomains:['mt0','mt1','mt2','mt3']}).addTo(map);
         var drawnItems = new L.FeatureGroup(); map.addLayer(drawnItems);
-        var snapshoter = L.simpleMapScreenshoter({ hideElementsWithSelectors: ['.dock-container', '.panel', '#search-bar'] }).addTo(map);
+        var snapshoter = L.simpleMapScreenshoter({ hideElementsWithSelectors: ['.dock-container', '.panel', '#search-bar', '.left-dock'] }).addTo(map);
 
         var drawControl = new L.Control.Draw({ edit: { featureGroup: drawnItems }, draw: false }); 
         map.addControl(drawControl);
 
-        // === 🟢 نظام الممحاة (Eraser) ===
+        // === 🟢 الممحاة (La Gomme) - إصلاح جذري ===
         let isEraserActive = false;
         function toggleEraser() {
             isEraserActive = !isEraserActive;
-            const btn = document.getElementById('btn-eraser');
+            const btn = document.getElementById('eraser-btn');
             if(isEraserActive) {
-                btn.classList.add('eraser-btn-active');
-                map.getContainer().classList.add('eraser-active-map');
-                stopContinuousDraw(); // إيقاف الرسم إذا كان نشطاً
+                btn.classList.add('eraser-active');
+                map.getContainer().classList.add('eraser-cursor');
+                stopContinuousDraw(); // إيقاف الرسم إذا كان يعمل
+                
+                // إضافة مستمع النقر للمسح
+                drawnItems.eachLayer(layer => {
+                    layer.off('click'); // تنظيف قديم
+                    layer.on('click', eraserHandler); 
+                });
             } else {
-                btn.classList.remove('eraser-btn-active');
-                map.getContainer().classList.remove('eraser-active-map');
+                btn.classList.remove('eraser-active');
+                map.getContainer().classList.remove('eraser-cursor');
+                // إعادة الوضع الطبيعي (فتح Popup)
+                drawnItems.eachLayer(layer => {
+                    layer.off('click', eraserHandler);
+                });
             }
         }
 
-        // === نظام الرسم المتتابع ===
+        // دالة المسح
+        function eraserHandler(e) {
+            if(!isEraserActive) return;
+            L.DomEvent.stop(e); // إيقاف أي أحداث أخرى مثل Popup
+            drawnItems.removeLayer(e.target);
+            saveUserDrawings();
+        }
+
+        // === 🟢 الرسم المستمر الافتراضي (Always On) ===
         let activeDrawHandler = null;
         let currentDrawType = null;
 
@@ -292,9 +326,11 @@
             if(activeDrawHandler) activeDrawHandler.disable();
             currentDrawType = type;
             document.getElementById('stop-drawing-btn').style.display = 'flex';
+            
             if(type === 'marker') activeDrawHandler = new L.Draw.Marker(map);
             else if(type === 'polyline') activeDrawHandler = new L.Draw.Polyline(map);
             else if(type === 'polygon') activeDrawHandler = new L.Draw.Polygon(map);
+            
             if(activeDrawHandler) activeDrawHandler.enable();
         }
 
@@ -308,13 +344,16 @@
         let currentLayer = null;
         map.on(L.Draw.Event.CREATED, function(e) {
             currentLayer = e.layer;
+            // إيقاف مؤقت للتسمية
             if(activeDrawHandler) activeDrawHandler.disable();
+
             document.getElementById('feature-name-input').value = "";
             document.getElementById('feature-notes-input').value = "";
             document.getElementById('name-modal-overlay').style.display = 'flex';
             document.getElementById('feature-name-input').focus();
         });
 
+        // الحفظ وإعادة تفعيل الرسم (Loop)
         function saveFeatureName() {
             let name = document.getElementById('feature-name-input').value;
             let notes = document.getElementById('feature-notes-input').value;
@@ -324,28 +363,21 @@
             currentLayer.customNotes = notes;
             if(name) currentLayer.bindTooltip(name, {permanent:true, className:'map-label', direction:'center'});
             
-            // 🟢 إضافة خاصية الحذف عند النقر (للممحاة)
-            currentLayer.on('click', function(e) {
-                if (isEraserActive) {
-                    L.DomEvent.stop(e); // منع فتح النافذة
-                    drawnItems.removeLayer(currentLayer);
-                    saveUserDrawings();
-                }
-            });
+            // إضافة مستمع المسح
+            currentLayer.on('click', eraserHandler);
 
             drawnItems.addLayer(currentLayer);
             attachPopup(currentLayer);
-            
-            // لا تفتح النافذة إذا كان الوضع مستمر (لتسريع الرسم)
-            // currentLayer.openPopup(); 
+            currentLayer.openPopup(); 
 
             document.getElementById('name-modal-overlay').style.display = 'none';
             saveUserDrawings();
 
-            if (document.getElementById('continuous-mode').checked && currentDrawType) {
-                setTimeout(() => { startContinuousDraw(currentDrawType); }, 100);
-            } else {
-                stopContinuousDraw();
+            // 🔄 إعادة تفعيل الأداة تلقائياً (الرسم المسترسل)
+            if (currentDrawType) {
+                setTimeout(() => {
+                    startContinuousDraw(currentDrawType);
+                }, 100);
             }
             currentLayer = null;
         }
@@ -359,7 +391,7 @@
                 content += `<div class="coord-box">Lat: ${ll.lat.toFixed(5)} <br> Lng: ${ll.lng.toFixed(5)}</div><div class="coord-box" style="background:#e0f2fe"><span id="loc-xy">جاري التحويل...</span></div><div class="z-val">الارتفاع: <span class="z-loading">...</span> m</div>`;
                 layer.bindPopup(content);
                 layer.on('popupopen', () => {
-                    if(isEraserActive) { layer.closePopup(); return; } // منع الفتح أثناء المسح
+                    if(isEraserActive) { layer.closePopup(); return; }
                     try {
                         let p = proj4("EPSG:4326", currentZone, [ll.lng, ll.lat]);
                         let newContent = layer.getPopup().getContent().replace('<span id="loc-xy">جاري التحويل...</span>', `X: ${p[0].toFixed(2)} | Y: ${p[1].toFixed(2)}`);
@@ -378,62 +410,56 @@
                 content += `<div class="val-highlight">${ha} هكتار</div><div style="font-size:12px; color:#64748b;">${sqm} متر²</div>`;
                 layer.bindPopup(content);
             }
-            // إضافة مستمع النقر للممحاة للعناصر القديمة/المحملة
-            layer.on('click', function(e) {
-                if (isEraserActive) {
-                    L.DomEvent.stop(e);
-                    drawnItems.removeLayer(layer);
-                    saveUserDrawings();
-                }
-            });
         }
 
-        // Auth
+        // === 🟢 Auth (Old Reliable Method) ===
         let isLoginMode = true;
         function toggleAuthMode() { isLoginMode = !isLoginMode; document.querySelectorAll('.signup-only').forEach(e => e.style.display = isLoginMode ? 'none' : 'block'); document.getElementById('auth-title').innerText = isLoginMode ? 'تسجيل الدخول' : 'إنشاء حساب'; document.getElementById('submit-btn').innerText = isLoginMode ? 'دخول' : 'إنشاء حساب'; }
+        
         function handleAuth(e) {
             e.preventDefault();
             const email = document.getElementById('email').value;
             const pass = document.getElementById('password').value;
+            
             if(isLoginMode) {
-                auth.signInWithEmailAndPassword(email, pass).then(() => location.reload()).catch(e => alert("خطأ: " + e.message));
+                auth.signInWithEmailAndPassword(email, pass)
+                    .then(() => location.reload())
+                    .catch(e => alert("خطأ في الدخول: " + e.message));
             } else {
                 const fname = document.getElementById('fname').value;
                 const lname = document.getElementById('lname').value;
-                const univ = document.getElementById('university').value;
-                if(!fname || !lname || !univ) return alert("املأ البيانات");
+                if(!fname || !lname) return alert("الاسم مطلوب");
+                
                 auth.createUserWithEmailAndPassword(email, pass).then(cred => {
                     return cred.user.updateProfile({ displayName: fname + " " + lname });
-                }).then(() => { alert("تم الإنشاء"); location.reload(); }).catch(e => alert("خطأ: " + e.message));
+                }).then(() => {
+                    alert("تم إنشاء الحساب!");
+                    location.reload();
+                }).catch(e => alert("خطأ في التسجيل: " + e.message));
             }
         }
         function logoutUser() { auth.signOut().then(() => location.reload()); }
 
-        // Load & Save
+        // Standard
         auth.onAuthStateChanged(user => {
             if (user) { document.getElementById('auth-overlay').style.display='none'; if(user.displayName) document.getElementById('display-name').innerText=user.displayName; loadUserDrawings(user.uid); }
             else { document.getElementById('auth-overlay').style.display='flex'; drawnItems.clearLayers(); }
         });
-        function saveUserDrawings() { if(!auth.currentUser) return; let f=[]; drawnItems.eachLayer(l=>{let j=l.toGeoJSON(); j.properties.customName=l.customName||""; j.properties.customNotes=l.customNotes||""; f.push(j);}); db.ref('users/'+auth.currentUser.uid).set({drawings:JSON.stringify({type:"FeatureCollection",features:f})}); document.getElementById('save-status').innerText="تم الحفظ"; setTimeout(()=>document.getElementById('save-status').innerText="جاهز",2000); }
-        function loadUserDrawings(uid) { db.ref('users/'+uid).once('value').then(s=>{ let d=s.val(); if(d&&d.drawings) L.geoJSON(JSON.parse(d.drawings),{onEachFeature:(f,l)=>{l.customName=f.properties.customName; drawnItems.addLayer(l); attachPopup(l);}}); }); }
-
-        // Standard Functions
         function togglePanel(id) { document.querySelectorAll('.panel').forEach(p=>{if(p.id===id)p.classList.toggle('active');else p.classList.remove('active');}); }
+        function saveUserDrawings() { if(!auth.currentUser) return; let f=[]; drawnItems.eachLayer(l=>{let j=l.toGeoJSON(); j.properties.customName=l.customName||""; j.properties.customNotes=l.customNotes||""; f.push(j);}); db.ref('users/'+auth.currentUser.uid).set({drawings:JSON.stringify({type:"FeatureCollection",features:f})}); document.getElementById('save-status').innerText="تم الحفظ"; setTimeout(()=>document.getElementById('save-status').innerText="جاهز",2000); }
+        function loadUserDrawings(uid) { db.ref('users/'+uid).once('value').then(s=>{ let d=s.val(); if(d&&d.drawings) L.geoJSON(JSON.parse(d.drawings),{onEachFeature:(f,l)=>{l.customName=f.properties.customName; drawnItems.addLayer(l); attachPopup(l); l.on('click', eraserHandler);}}); }); }
+        
+        // Other Tools
         map.on(L.Draw.Event.EDITED, () => { saveUserDrawings(); }); map.on(L.Draw.Event.DELETED, () => { saveUserDrawings(); });
         function updateProjection() { currentZone=document.getElementById('lambert-zone').value; }
         function searchPlace() { let q=document.getElementById('search-input').value; fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}`).then(r=>r.json()).then(d=>{if(d.length) map.setView([d[0].lat,d[0].lon],13);}); }
         function goToCoordinates() { let x=parseFloat(document.getElementById('input-x').value), y=parseFloat(document.getElementById('input-y').value); try{let l=proj4(currentZone,"EPSG:4326",[x,y]); map.setView([l[1],l[0]],16); L.marker([l[1],l[0]]).addTo(map);}catch(e){} }
         function locateUser() { map.locate({setView:true, maxZoom:15}); }
         function clearMap() { drawnItems.clearLayers(); saveUserDrawings(); }
-        // Buffer
         function createBuffer() { if(drawnItems.getLayers().length === 0) return alert("حدد شكلاً"); let layer = drawnItems.getLayers()[drawnItems.getLayers().length - 1]; let dist = parseFloat(document.getElementById('buffer-val').value); try { let buffered = turf.buffer(layer.toGeoJSON(), dist, {units: 'meters'}); let bufLayer = L.geoJSON(buffered, {style:{color:'red', dashArray:'5,5'}}); bufLayer.eachLayer(l => { l.customName = "Buffer "+dist; drawnItems.addLayer(l); attachPopup(l); }); saveUserDrawings(); } catch(e) { alert("خطأ"); } }
-        // Profile
         async function generateRealProfile() { let line=null; drawnItems.eachLayer(l => { if(l instanceof L.Polyline && !(l instanceof L.Polygon)) line = l; }); if(!line) return alert("ارسم خطاً"); document.getElementById('chart-container').style.display = 'block'; let latlngs = line.getLatLngs(); if(Array.isArray(latlngs[0])) latlngs = latlngs.flat(); let points = []; for(let i=0; i<latlngs.length; i++) points.push(latlngs[i]); if(points.length > 60) { let s = Math.ceil(points.length/60); points = points.filter((_,i)=>i%s===0); } let lats = points.map(p=>p.lat.toFixed(5)).join(','); let lngs = points.map(p=>p.lng.toFixed(5)).join(','); try { let res = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lats}&longitude=${lngs}`); let data = await res.json(); if(data.elevation) { let ctx = document.getElementById('elevationChart').getContext('2d'); if(window.myChart) window.myChart.destroy(); window.myChart = new Chart(ctx, { type: 'line', data: { labels: data.elevation.map((_, i) => i), datasets: [{ label: 'Z (m)', data: data.elevation, borderColor: '#2563eb', borderWidth: 2, pointRadius: 0, tension: 0.4, fill: true, backgroundColor: 'rgba(37, 99, 235, 0.1)' }] }, options: { scales: { y: { beginAtZero: false } }, responsive: true, maintainAspectRatio: false } }); } } catch(e) { alert("فشل الاتصال"); } }
-        // Street View
-        let isStreetView=false; function activateStreetView(){ isStreetView=!isStreetView; alert(isStreetView?"انقر للخريطة":"توقف"); if(isStreetView) { map.on('click', openInternalSV); map.getContainer().style.cursor='crosshair'; } else { map.off('click', openInternalSV); map.getContainer().style.cursor=''; } }
-        function openInternalSV(e){ document.getElementById('sv-overlay').style.display='flex'; document.getElementById('sv-iframe').src=`https://maps.google.com/maps?q=&layer=c&cbll=${e.latlng.lat},${e.latlng.lng}&cbp=11,0,0,0,0&output=svembed`; isStreetView=false; map.off('click', openInternalSV); map.getContainer().style.cursor=''; }
+        function activateStreetView(){ alert("انقر للخريطة"); map.once('click', e => { document.getElementById('sv-overlay').style.display='flex'; document.getElementById('sv-iframe').src=`https://maps.google.com/maps?q=&layer=c&cbll=${e.latlng.lat},${e.latlng.lng}&cbp=11,0,0,0,0&output=svembed`; }); }
         function closeStreetView(){ document.getElementById('sv-overlay').style.display='none'; document.getElementById('sv-iframe').src=""; }
-        // Downloads
         function downloadExcel() { let d=[]; drawnItems.eachLayer(l=>{ d.push({Name:l.customName, Notes:l.customNotes}); }); let w=XLSX.utils.json_to_sheet(d), b=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(b,w,"Data"); XLSX.writeFile(b,"Data.xlsx"); }
         function downloadDXF() { let d="0\nSECTION\n2\nHEADER\n9\n$ACADVER\n1\nAC1009\n0\nENDSEC\n0\nSECTION\n2\nENTITIES\n"; drawnItems.eachLayer(l=>{ if(l instanceof L.Marker) { try{let p=proj4("EPSG:4326",currentZone,[l.getLatLng().lng,l.getLatLng().lat]); d+=`0\nPOINT\n8\nPoints\n10\n${p[0]}\n20\n${p[1]}\n30\n0.0\n`;}catch(e){} } }); d+="0\nENDSEC\n0\nEOF"; let b=new Blob([d],{type:'application/dxf'}); let a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download="export.dxf"; a.click(); }
         function downloadChart(){ let u=document.getElementById('elevationChart').toDataURL('image/png'); let a=document.createElement('a'); a.href=u; a.download='profile.png'; a.click(); }

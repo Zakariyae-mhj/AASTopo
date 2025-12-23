@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ZASTopo Pro | V59 (Excel Export Added)</title>
+    <title>ZASTopo Pro | V60 (Final with Dedication)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -93,6 +93,28 @@
         .credits-text { font-size: 11px; color: #64748b; line-height: 1.6; border-top: 1px solid #eee; margin-top: 10px; padding-top: 10px; text-align: center; }
         .credits-text strong { color: #1e293b; display: block; margin-bottom: 2px; }
         
+        /* 🟢 ستايل صندوق الإهداء الجديد */
+        .dedication-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+            text-align: center;
+        }
+        .dedication-box h5 {
+            margin: 0 0 8px 0;
+            color: var(--primary);
+            font-size: 13px;
+        }
+        .dedication-text {
+            font-size: 11px;
+            color: #475569;
+            line-height: 1.7;
+            margin: 0;
+            text-align: justify; /* محاذاة النص ليكون مرتباً */
+        }
+
         #sv-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; justify-content: center; align-items: center; }
         #sv-modal { width: 90%; height: 80%; background: white; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; position: relative; }
         #sv-close { position: absolute; top: 10px; right: 10px; background: red; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px; z-index: 10; font-family: 'Cairo'; }
@@ -264,6 +286,13 @@
                 <strong>💻 تطوير وبرمجة:</strong> زكرياء المحجوبي<br>
                 <strong>🔬 المختبر:</strong> مختبر دينامية الأوساط الجافة والتهيئة الجهوية<br>
                 <strong>🎓 المؤسسة:</strong> شعبة الجغرافيا - جامعة محمد الأول
+            </div>
+            <hr style="margin: 15px 0; border-top: 1px solid #e2e8f0;">
+            <div class="dedication-box">
+                <h5>✨ إهداء وصدقة جارية</h5>
+                <p class="dedication-text">
+                    أضع هذه المنصة العلمية بين أيدي عموم الباحثين والطلبة والمهتمين بمجال الخرائط والطبوغرافيا أينما كانوا. وأغتنم هذه الفرصة لأخصّ بتحية تقدير وعرفان السادة أعضاء الأكاديمية المغربية للدراسات الجغرافية والتنمية الترابية، وزملائي طلبة شعبة الجغرافيا بجامعة محمد الأول بوجدة. لقد نويتُ هذا الجهد المتواضع صدقةً جاريةً عن والديّ الكريمين، سائلاً المولى عز وجل أن ينفع به الجميع، وأن يجعل كل استفادة علمية منه نوراً في ميزان حسناتهما ورفعةً في درجاتهما.
+                </p>
             </div>
         </div>
     </div>

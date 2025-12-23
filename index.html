@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ZASTopo Pro | منصة الخرائط الطبوغرافية</title>
+    <title>ZASTopo Pro | V59 (Excel Export Added)</title>
+    
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -601,9 +602,110 @@
         function clearMap() { drawnItems.clearLayers(); saveUserDrawings(); }
         function createBuffer() { if(drawnItems.getLayers().length === 0) return alert("حدد شكلاً"); let layer = drawnItems.getLayers()[drawnItems.getLayers().length - 1]; let dist = parseFloat(document.getElementById('buffer-val').value); try { let buffered = turf.buffer(layer.toGeoJSON(), dist, {units: 'meters'}); let bufLayer = L.geoJSON(buffered, {style:{color:'red', dashArray:'5,5'}}); bufLayer.eachLayer(l => { l.customName = "Buffer "+dist; drawnItems.addLayer(l); attachPopup(l); }); saveUserDrawings(); } catch(e) { alert("خطأ"); } }
         // 🟢 تم إصلاح رابط Street View هنا
-        function activateStreetView(){ alert("انقر للخريطة"); map.once('click', e => { document.getElementById('sv-overlay').style.display='flex'; document.getElementById('sv-iframe').src=`https://www.google.com/maps?layer=c&cbll=${e.latlng.lat},${e.latlng.lng}&output=svembed`; }); }
+        function activateStreetView(){ alert("انقر للخريطة"); map.once('click', e => { document.getElementById('sv-overlay').style.display='flex'; document.getElementById('sv-iframe').src=`maps.google.com/0{e.latlng.lat},${e.latlng.lng}&output=svembed`; }); }
         function closeStreetView(){ document.getElementById('sv-overlay').style.display='none'; document.getElementById('sv-iframe').src=""; }
-        function downloadExcel() { let d=[]; drawnItems.eachLayer(l=>{ d.push({Name:l.customName, Notes:l.customNotes}); }); let w=XLSX.utils.json_to_sheet(d), b=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(b,w,"Data"); XLSX.writeFile(b,"Data.xlsx"); }
+        
+        // ============================================================
+        // 🟢 دالة تصدير الإكسيل الجديدة والمطورة (Async Excel Export)
+        // ============================================================
+        async function downloadExcel() {
+            // 1. التحقق من وجود عناصر
+            if (drawnItems.getLayers().length === 0) {
+                alert("لا توجد عناصر مرسومة لتصديرها.");
+                return;
+            }
+
+            // 2. تغيير نص الزر لإظهار حالة التحميل (UX)
+            const exportBtn = document.querySelector('button[onclick="downloadExcel()"]');
+            const originalBtnText = exportBtn ? exportBtn.innerText : "📊 Excel";
+            if (exportBtn) {
+                exportBtn.innerText = "جاري جلب الارتفاعات (Z)... يرجى الانتظار ⏳";
+                exportBtn.style.opacity = "0.7";
+                exportBtn.disabled = true;
+            }
+
+            const dataRowsPromises = [];
+
+            // 3. المرور على كل عنصر وإنشاء "وعد" (Promise) بمعالجة بياناته
+            drawnItems.eachLayer(layer => {
+                const layerPromise = new Promise(async (resolve) => {
+                    let latlng, geomType;
+
+                    if (layer instanceof L.Marker) {
+                        latlng = layer.getLatLng();
+                        geomType = "نقطة (Point)";
+                    } else if (layer instanceof L.Polyline || layer instanceof L.Polygon) {
+                        latlng = layer.getCenter();
+                        geomType = layer instanceof L.Polygon ? "مساحة (Polygon)" : "خط (Polyline)";
+                    } else {
+                        latlng = layer.getLatLng ? layer.getLatLng() : layer.getCenter();
+                        geomType = "غير محدد";
+                    }
+
+                    // أ) حساب الإحداثيات المترية (X, Y)
+                    let projectedXY = ["غير متاح", "غير متاح"];
+                    try {
+                        let p = proj4("EPSG:4326", currentZone, [latlng.lng, latlng.lat]);
+                        projectedXY = [p[0].toFixed(2), p[1].toFixed(2)];
+                    } catch (e) {}
+
+                    // ب) جلب الارتفاع (Z) من API خارجي
+                    let elevationZ = "جاري التحميل...";
+                    try {
+                        const response = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${latlng.lat}&longitude=${latlng.lng}`);
+                        const data = await response.json();
+                        if (data && data.elevation && data.elevation.length > 0) {
+                            elevationZ = data.elevation[0].toFixed(1);
+                        } else {
+                            elevationZ = "غير متوفر";
+                        }
+                    } catch (e) {
+                        elevationZ = "خطأ اتصال";
+                    }
+
+                    // ج) إرجاع السطر النهائي مكتملاً
+                    resolve({
+                        "نوع العنصر": geomType,
+                        "الاسم (Name)": layer.customName || "بدون اسم",
+                        "الإحداثي X (متر)": projectedXY[0],
+                        "الإحداثي Y (متر)": projectedXY[1],
+                        "الارتفاع Z (متر)": elevationZ,
+                        "الملاحظات (Notes)": layer.customNotes || "",
+                        "Lat (WGS84)": latlng.lat.toFixed(5),
+                        "Lng (WGS84)": latlng.lng.toFixed(5),
+                        "نظام الإسقاط المستخدم": currentZone
+                    });
+                });
+
+                dataRowsPromises.push(layerPromise);
+            });
+
+            try {
+                // 4. انتظار اكتمال جلب بيانات جميع العناصر
+                const finalData = await Promise.all(dataRowsPromises);
+
+                // 5. إنشاء ملف الإكسيل
+                const worksheet = XLSX.utils.json_to_sheet(finalData);
+                const wscols = [{wch:15}, {wch:20}, {wch:15}, {wch:15}, {wch:15}, {wch:30}];
+                worksheet['!cols'] = wscols;
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "البيانات الطبوغرافية");
+                const date = new Date().toISOString().slice(0,19).replace(/:/g,"-");
+                XLSX.writeFile(workbook, `ZASTopo_Data_${date}.xlsx`);
+
+            } catch (err) {
+                alert("حدث خطأ أثناء إنشاء ملف الإكسيل.");
+            } finally {
+                // 6. إعادة الزر لحالته الأصلية
+                if (exportBtn) {
+                    exportBtn.innerText = originalBtnText;
+                    exportBtn.style.opacity = "1";
+                    exportBtn.disabled = false;
+                }
+            }
+        }
+        // ============================================================
+        
         function downloadDXF() { let d="0\nSECTION\n2\nHEADER\n9\n$ACADVER\n1\nAC1009\n0\nENDSEC\n0\nSECTION\n2\nENTITIES\n"; drawnItems.eachLayer(l=>{ if(l instanceof L.Marker) { try{let p=proj4("EPSG:4326",currentZone,[l.getLatLng().lng,l.getLatLng().lat]); d+=`0\nPOINT\n8\nPoints\n10\n${p[0]}\n20\n${p[1]}\n30\n0.0\n`;}catch(e){} } }); d+="0\nENDSEC\n0\nEOF"; let b=new Blob([d],{type:'application/dxf'}); let a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download="export.dxf"; a.click(); }
         function downloadChart(){ let u=document.getElementById('elevationChart').toDataURL('image/png'); let a=document.createElement('a'); a.href=u; a.download='profile.png'; a.click(); }
         function takeScreenshotAndMetadata() { snapshoter.takeScreen('image').then(i=>{ let a=document.createElement('a'); a.href=i; a.download='map.jpg'; a.click(); }); }

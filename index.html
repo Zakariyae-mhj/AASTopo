@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ZASTopo Pro | V64 (GIS Layers & Full Projections)</title>
+    <title>ZASTopo Pro | V65 (Fixed Layers)</title>
     
     <meta name="theme-color" content="#2563eb">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -11,7 +11,6 @@
     <meta name="apple-mobile-web-app-title" content="ZASTopo Pro">
     <link rel="apple-touch-icon" href="https://i.imgur.com/rP6Yotb.png">
     <link rel="icon" type="image/png" href="https://i.imgur.com/rP6Yotb.png">
-    
     <link rel="manifest" href='data:application/manifest+json,{"name":"ZASTopo Pro","short_name":"ZASTopo","start_url":".","display":"standalone","background_color":"#ffffff","theme_color":"#2563eb","icons":[{"src":"https://i.imgur.com/rP6Yotb.png","sizes":"192x192","type":"image/png"},{"src":"https://i.imgur.com/rP6Yotb.png","sizes":"512x512","type":"image/png"}]}'>
 
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
@@ -20,13 +19,12 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
     
     <style>
-        /* --- الأساسيات --- */
+        /* --- Styles (نفس الستايل السابق) --- */
         :root { --primary: #2563eb; --glass: rgba(255, 255, 255, 0.95); --shadow: 0 8px 32px rgba(0,0,0,0.15); }
         body { margin: 0; font-family: 'Cairo', sans-serif; overflow: hidden; background: #0f172a; overscroll-behavior: none; }
         #map { height: 100vh; width: 100%; z-index: 1; }
         * { -webkit-tap-highlight-color: transparent; }
 
-        /* --- القوائم --- */
         .dock-container { position: absolute; top: 50%; transform: translateY(-50%); right: 15px; display: flex; flex-direction: column; gap: 12px; z-index: 2000; pointer-events: none; }
         .dock-group { display: flex; flex-direction: column; gap: 8px; pointer-events: auto; background: rgba(255,255,255,0.15); padding: 6px; border-radius: 16px; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2); }
         .dock-item { width: 42px; height: 42px; background: white; border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 18px; color: #475569; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.2s; position: relative; }
@@ -44,7 +42,6 @@
         @keyframes slideInRight { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         .panel h3 { margin: 0 0 12px 0; font-size: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; color: #1e293b; display: flex; justify-content: space-between; align-items: center; }
         
-        /* --- ستايل مدير الطبقات (TOC Style) --- */
         .layer-item { display: flex; align-items: center; background: white; padding: 8px; border-radius: 8px; margin-bottom: 6px; border: 1px solid #f1f5f9; transition: 0.2s; }
         .layer-item:hover { border-color: var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .layer-icon { width: 24px; height: 24px; display: flex; justify-content: center; align-items: center; border-radius: 4px; margin-left: 8px; font-size: 12px; }
@@ -55,26 +52,35 @@
         .layer-btn.visible { background: #dbeafe; color: var(--primary); }
         .layer-btn.delete:hover { background: #fee2e2; color: #ef4444; }
 
-        /* --- باقي الستايلات --- */
         .profile-panel-logo { display: block; margin: 0 auto 15px auto; height: 70px; width: auto; filter: drop-shadow(0 3px 5px rgba(0,0,0,0.2)); }
         .dedication-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; margin-top: 10px; text-align: center; }
         .dedication-box h5 { margin: 0 0 8px 0; color: var(--primary); font-size: 13px; }
         .dedication-text { font-size: 11px; color: #475569; line-height: 1.7; margin: 0; text-align: justify; }
+        
         .tool-btn { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px; margin-bottom: 6px; border: 1px solid #e2e8f0; border-radius: 8px; background: white; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 600; min-height: 44px; }
         .tool-btn:hover { background: #eff6ff; border-color: var(--primary); color: var(--primary); }
         .tool-input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 6px; font-family: inherit; box-sizing: border-box; font-size: 13px; min-height: 44px; }
+        #stop-drawing-btn { background: #fee2e2; color: #ef4444; border-color: #fca5a5; display: none; justify-content: center; font-weight: bold; animation: pulseRed 2s infinite; margin-bottom: 10px; }
         
         #chart-container { display: none; position: absolute; bottom: 40px; left: 60px; width: 500px; height: 320px; background: rgba(255,255,255,0.98); border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); z-index: 2500; padding: 15px; border: 1px solid #ccc; }
         canvas { width: 100% !important; height: 260px !important; }
         .close-chart { position: absolute; top: 10px; right: 10px; background: #8e44ad; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 14px; }
-        
+        #chart-loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 14px; font-weight: bold; color: #8e44ad; display: none; }
+
         #auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #0f172a, #1e293b); z-index: 9999; display: flex; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
         .auth-card { background: white; padding: 30px; border-radius: 20px; width: 100%; max-width: 380px; text-align: center; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
         .auth-logo-header { display: block; margin: 0 auto 10px auto; height: 60px; width: auto; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2)); }
-        
+        .auth-input { width: 100%; padding: 12px; margin-bottom: 10px; border: 2px solid #f1f5f9; border-radius: 8px; box-sizing: border-box; font-family: inherit; font-size: 14px; }
+        .auth-btn { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; }
+        .signup-only { display: none; }
+
         #name-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 5000; display: none; justify-content: center; align-items: center; padding: 20px; }
         .name-card { background: white; padding: 25px; border-radius: 15px; width: 100%; max-width: 300px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
-        
+        .leaflet-popup-content { text-align: center; font-family: 'Cairo'; font-size: 13px; line-height: 1.6; margin: 10px; min-width: 160px; }
+        .coord-box { background: #f1f5f9; padding: 5px; border-radius: 6px; margin: 5px 0; border: 1px solid #e2e8f0; font-size: 11px; }
+        .val-highlight { color: #d97706; font-weight: bold; font-size: 14px; border: 1px solid #fcd34d; background: #fffbeb; padding: 2px 5px; border-radius: 4px; display: inline-block; margin-top: 3px; }
+        .feature-title { font-weight: bold; color: #1e293b; font-size: 15px; border-bottom: 2px solid #eee; padding-bottom: 5px; margin-bottom: 5px; }
+
         #save-status { position: absolute; bottom: 10px; right: 10px; font-size: 11px; font-weight: bold; color: #2ecc71; background: rgba(255,255,255,0.8); padding: 2px 8px; border-radius: 4px; z-index: 1000; }
         #search-bar { position: absolute; top: 15px; right: 15px; z-index: 1000; width: 220px; background: white; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; padding: 4px; align-items: center; transition: 0.3s; }
         #search-bar input { border: none; background: transparent; padding: 0 15px; flex: 1; outline: none; font-family: inherit; font-size: 13px; height: 32px; }
@@ -84,7 +90,7 @@
         
         #sv-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; justify-content: center; align-items: center; }
         #sv-modal { width: 90%; height: 80%; background: white; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; position: relative; }
-        #sv-close { position: absolute; top: 10px; right: 10px; background: red; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px; z-index: 10; font-family: 'Cairo'; }
+        #sv-close { position: absolute; top: 10px; right: 10px; background: red; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px; z-index: 10; font-size: 14px; font-family: 'Cairo'; }
         #sv-iframe { width: 100%; height: 100%; border: none; }
 
         @media (max-width: 768px) {
@@ -213,64 +219,13 @@
         <button class="close-chart" style="position:absolute; top:15px; left:15px; background:#f1f5f9; color:#64748b;" onclick="togglePanel('layers-panel')"><i class="fas fa-chevron-down"></i></button>
         <div style="margin-top: 20px;">
             <select id="lambert-zone" class="tool-input" onchange="updateProjection()">
-                <optgroup label="🇲🇦 المغرب (Maroc)">
-                    <option value="EPSG:26191" selected>Nord (Lambert I)</option>
-                    <option value="EPSG:26192">Centre (Lambert II)</option>
-                    <option value="EPSG:26193">Sud (Lambert III)</option>
-                    <option value="EPSG:26194">Grand Sud (Lambert IV)</option>
-                    <option value="EPSG:26195">Merchich Nord (Ancien)</option>
-                </optgroup>
-                <optgroup label="🇩🇿 الجزائر (Algérie)">
-                    <option value="EPSG:3059">Nord Sahara (Voirol)</option>
-                    <option value="EPSG:32629">UTM Zone 29N</option>
-                    <option value="EPSG:32630">UTM Zone 30N</option>
-                    <option value="EPSG:32631">UTM Zone 31N</option>
-                    <option value="EPSG:32632">UTM Zone 32N</option>
-                </optgroup>
-                <optgroup label="🇹🇳 تونس (Tunisie)">
-                    <option value="EPSG:22332">Carthage UTM (Nord)</option>
-                    <option value="EPSG:32632">WGS84 UTM Zone 32N</option>
-                </optgroup>
-                <optgroup label="🇱🇾 ليبيا (Libye)">
-                    <option value="EPSG:32632">UTM Zone 32N</option>
-                    <option value="EPSG:32633">UTM Zone 33N</option>
-                    <option value="EPSG:32634">UTM Zone 34N</option>
-                </optgroup>
-                <optgroup label="🇪🇬 مصر (Egypte)">
-                    <option value="EPSG:22992">Red Belt (Le Caire/Delta)</option>
-                    <option value="EPSG:22991">Purple Belt</option>
-                    <option value="EPSG:22993">Green Belt</option>
-                    <option value="EPSG:22994">Blue Belt</option>
-                    <option value="EPSG:32636">UTM Zone 36N</option>
-                </optgroup>
-                <optgroup label="🇸🇦 السعودية (Arabie Saoudite)">
-                    <option value="EPSG:32637">UTM Zone 37N</option>
-                    <option value="EPSG:32638">UTM Zone 38N</option>
-                    <option value="EPSG:32639">UTM Zone 39N</option>
-                    <option value="EPSG:24338">Ain el Abd UTM 38N</option>
-                    <option value="EPSG:24339">Ain el Abd UTM 39N</option>
-                </optgroup>
-                <optgroup label="🇯🇴 الأردن (Jordanie)">
-                    <option value="EPSG:2314">JTM (Jordan Transverse Mercator)</option>
-                    <option value="EPSG:32636">UTM Zone 36N</option>
-                </optgroup>
-                <optgroup label="🇵🇸 فلسطين (Palestine)">
-                    <option value="EPSG:28191">Palestine 1923 / Palestine Grid</option>
-                    <option value="EPSG:2039">Israel TM / Palestine 1923 Grid</option>
-                </optgroup>
-                <optgroup label="🇱🇧 لبنان & 🇸🇾 سوريا">
-                    <option value="EPSG:22770">Deir ez Zor / Levant Stereographic</option>
-                    <option value="EPSG:32636">UTM Zone 36N</option>
-                    <option value="EPSG:32637">UTM Zone 37N</option>
-                </optgroup>
-                <optgroup label="🇮🇶 العراق (Iraq)">
-                    <option value="EPSG:32637">UTM Zone 37N</option>
-                    <option value="EPSG:32638">UTM Zone 38N</option>
-                </optgroup>
-                <optgroup label="🇦🇪 الإمارات & 🇴🇲 عمان">
-                    <option value="EPSG:32639">UTM Zone 39N</option>
-                    <option value="EPSG:32640">UTM Zone 40N</option>
-                </optgroup>
+                <optgroup label="🇲🇦 المغرب (Lambert)"><option value="EPSG:26191" selected>Lambert Zone I</option><option value="EPSG:26192">Lambert Zone II</option><option value="EPSG:26193">Lambert Zone III</option><option value="EPSG:26194">Lambert Zone IV</option><option value="EPSG:26195">Merchich</option></optgroup>
+                <optgroup label="🇩🇿 الجزائر (UTM)"><option value="EPSG:3059">Nord Sahara</option><option value="EPSG:32629">Zone 29N</option><option value="EPSG:32630">Zone 30N</option><option value="EPSG:32631">Zone 31N</option><option value="EPSG:32632">Zone 32N</option></optgroup>
+                <optgroup label="🇹🇳 تونس (Tunisie)"><option value="EPSG:22332">Carthage UTM</option><option value="EPSG:32632">Zone 32N</option></optgroup>
+                <optgroup label="🇱🇾 ليبيا (Libye)"><option value="EPSG:32632">Zone 32N</option><option value="EPSG:32633">Zone 33N</option><option value="EPSG:32634">Zone 34N</option></optgroup>
+                <optgroup label="🇪🇬 مصر (Egypte)"><option value="EPSG:22992">Red Belt</option><option value="EPSG:22991">Purple Belt</option><option value="EPSG:22993">Green Belt</option><option value="EPSG:22994">Blue Belt</option><option value="EPSG:32636">Zone 36N</option></optgroup>
+                <optgroup label="🇸🇦 السعودية"><option value="EPSG:32637">Zone 37N</option><option value="EPSG:32638">Zone 38N</option><option value="EPSG:32639">Zone 39N</option></optgroup>
+                <optgroup label="🇯🇴 الأردن"><option value="EPSG:2314">JTM</option><option value="EPSG:32636">Zone 36N</option></optgroup>
             </select>
             <div style="display:flex; gap:5px;">
                 <input id="input-x" class="tool-input" placeholder="X">
@@ -286,9 +241,9 @@
         <button class="close-chart" style="position:absolute; top:15px; left:15px; background:#f1f5f9; color:#64748b;" onclick="togglePanel('draw-panel')"><i class="fas fa-chevron-down"></i></button>
         <div style="margin-top: 20px;">
             <button id="stop-drawing-btn" class="tool-btn" onclick="stopContinuousDraw()">🛑 إنهاء الرسم</button>
-            <button class="tool-btn" onclick="startContinuousDraw('marker')"><i class="fas fa-map-marker-alt"></i> نقاط (Points)</button>
-            <button class="tool-btn" onclick="startContinuousDraw('polyline')"><i class="fas fa-route"></i> خطوط (Lines)</button>
-            <button class="tool-btn" onclick="startContinuousDraw('polygon')"><i class="fas fa-draw-polygon"></i> مساحات (Polygons)</button>
+            <button class="tool-btn" onclick="startContinuousDraw('marker')"><i class="fas fa-map-marker-alt"></i> نقاط</button>
+            <button class="tool-btn" onclick="startContinuousDraw('polyline')"><i class="fas fa-route"></i> خطوط</button>
+            <button class="tool-btn" onclick="startContinuousDraw('polygon')"><i class="fas fa-draw-polygon"></i> مساحات</button>
             <hr>
             <button class="tool-btn" onclick="activateStreetView()"><i class="fas fa-street-view"></i> Street View</button>
             <div style="display:flex; gap:5px; margin-top:5px;">
@@ -342,19 +297,17 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
     <script>
-        // Config & Proj4 Defs
         const firebaseConfig = { apiKey: "AIzaSyBHjDSoCDrZAh9KIW1LI4H6XxIdeB8YnFw", authDomain: "rusle-462022.firebaseapp.com", databaseURL: "https://rusle-462022-default-rtdb.firebaseio.com", projectId: "rusle-462022", storageBucket: "rusle-462022.firebasestorage.app", messagingSenderId: "106974487623", appId: "1:106974487623:web:f42e4cf7fd2e2218947d62", measurementId: "G-YVJL1T2VXM" };
         try { firebase.initializeApp(firebaseConfig); } catch(e){}
         const auth = firebase.auth(); const db = firebase.database();
 
-        // 🟢 تعريفات Proj4 الشاملة (Mashreq & Maghreb)
         proj4.defs([
             ["EPSG:26191", "+proj=lcc +lat_1=33.3 +lat_0=33.3 +lon_0=-5.4 +k_0=0.999625769 +x_0=500000 +y_0=300000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"],
             ["EPSG:26192", "+proj=lcc +lat_1=29.7 +lat_0=29.7 +lon_0=-5.4 +k_0=0.999615596 +x_0=500000 +y_0=300000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"],
             ["EPSG:26193", "+proj=lcc +lat_1=26.1 +lat_0=26.1 +lon_0=-5.4 +k_0=0.999616304 +x_0=1200000 +y_0=400000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"],
             ["EPSG:26194", "+proj=lcc +lat_1=22.5 +lat_0=22.5 +lon_0=-5.4 +k_0=0.999616437 +x_0=1500000 +y_0=400000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"],
             ["EPSG:26195", "+proj=lcc +lat_1=33.3 +lat_0=33.3 +lon_0=-5.4 +k_0=0.999625769 +x_0=500000 +y_0=300000 +ellps=clrk80ign +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"],
-            ["EPSG:3059", "+proj=utm +zone=31 +ellps=clrk80ign +units=m +no_defs"], /* Nord Sahara */
+            ["EPSG:3059", "+proj=utm +zone=31 +ellps=clrk80ign +units=m +no_defs"],
             ["EPSG:32629", "+proj=utm +zone=29 +datum=WGS84 +units=m +no_defs"],
             ["EPSG:32630", "+proj=utm +zone=30 +datum=WGS84 +units=m +no_defs"],
             ["EPSG:32631", "+proj=utm +zone=31 +datum=WGS84 +units=m +no_defs"],
@@ -366,21 +319,21 @@
             ["EPSG:32638", "+proj=utm +zone=38 +datum=WGS84 +units=m +no_defs"],
             ["EPSG:32639", "+proj=utm +zone=39 +datum=WGS84 +units=m +no_defs"],
             ["EPSG:32640", "+proj=utm +zone=40 +datum=WGS84 +units=m +no_defs"],
-            ["EPSG:22332", "+proj=utm +zone=32 +ellps=clrk80ign +towgs84=-263,6,431,0,0,0,0 +units=m +no_defs"], /* Carthage */
-            ["EPSG:22992", "+proj=tmerc +lat_0=30 +lon_0=31 +k=1 +x_0=615000 +y_0=810000 +a=6378200 +b=6356818.17 +towgs84=-130,110,-13,0,0,0,0 +units=m +no_defs"], /* Red Belt */
+            ["EPSG:22332", "+proj=utm +zone=32 +ellps=clrk80ign +towgs84=-263,6,431,0,0,0,0 +units=m +no_defs"],
+            ["EPSG:22992", "+proj=tmerc +lat_0=30 +lon_0=31 +k=1 +x_0=615000 +y_0=810000 +a=6378200 +b=6356818.17 +towgs84=-130,110,-13,0,0,0,0 +units=m +no_defs"],
             ["EPSG:22991", "+proj=tmerc +lat_0=30 +lon_0=27 +k=1 +x_0=300000 +y_0=0 +a=6378200 +b=6356818.17 +towgs84=-130,110,-13,0,0,0,0 +units=m +no_defs"],
             ["EPSG:22993", "+proj=tmerc +lat_0=30 +lon_0=35 +k=1 +x_0=300000 +y_0=0 +a=6378200 +b=6356818.17 +towgs84=-130,110,-13,0,0,0,0 +units=m +no_defs"],
             ["EPSG:22994", "+proj=tmerc +lat_0=30 +lon_0=39 +k=1 +x_0=300000 +y_0=0 +a=6378200 +b=6356818.17 +towgs84=-130,110,-13,0,0,0,0 +units=m +no_defs"],
-            ["EPSG:24338", "+proj=utm +zone=38 +ellps=intl +towgs84=-143,-236,7,0,0,0,0 +units=m +no_defs"], /* Ain el Abd 38 */
-            ["EPSG:24339", "+proj=utm +zone=39 +ellps=intl +towgs84=-143,-236,7,0,0,0,0 +units=m +no_defs"], /* Ain el Abd 39 */
-            ["EPSG:2314", "+proj=tmerc +lat_0=0 +lon_0=37 +k=0.999935 +x_0=500000 +y_0=-3000000 +a=6378249.145 +b=6356514.86955 +towgs84=-133,-77,51,0,0,0,0 +units=m +no_defs"], /* JTM */
-            ["EPSG:28191", "+proj=tmerc +lat_0=31.7343936111111 +lon_0=35.2045169444445 +k=1 +x_0=170251.555 +y_0=1126867.909 +a=6378300.789 +b=6356566.435 +towgs84=-275.722,35.2833,304.117,-1.92,1.35,-5.63,2.54 +units=m +no_defs"], /* Palestine 1923 */
-            ["EPSG:2039", "+proj=tmerc +lat_0=31.7343936111111 +lon_0=35.2045169444444 +k=1.0000067 +x_0=219529.584 +y_0=626907.39 +ellps=GRS80 +towgs84=-48,55,52,0,0,0,0 +units=m +no_defs"], /* Israel TM */
-            ["EPSG:22770", "+proj=stere +lat_0=34.2 +lon_0=39.15 +k=0.999534104 +x_0=0 +y_0=0 +a=6378249.2 +b=6356515 +towgs84=-182,-222,192,0,0,0,0 +units=m +no_defs"] /* Levant Stereographic */
+            ["EPSG:24338", "+proj=utm +zone=38 +ellps=intl +towgs84=-143,-236,7,0,0,0,0 +units=m +no_defs"],
+            ["EPSG:24339", "+proj=utm +zone=39 +ellps=intl +towgs84=-143,-236,7,0,0,0,0 +units=m +no_defs"],
+            ["EPSG:2314", "+proj=tmerc +lat_0=0 +lon_0=37 +k=0.999935 +x_0=500000 +y_0=-3000000 +a=6378249.145 +b=6356514.86955 +towgs84=-133,-77,51,0,0,0,0 +units=m +no_defs"],
+            ["EPSG:28191", "+proj=tmerc +lat_0=31.7343936111111 +lon_0=35.2045169444445 +k=1 +x_0=170251.555 +y_0=1126867.909 +a=6378300.789 +b=6356566.435 +towgs84=-275.722,35.2833,304.117,-1.92,1.35,-5.63,2.54 +units=m +no_defs"],
+            ["EPSG:2039", "+proj=tmerc +lat_0=31.7343936111111 +lon_0=35.2045169444444 +k=1.0000067 +x_0=219529.584 +y_0=626907.39 +ellps=GRS80 +towgs84=-48,55,52,0,0,0,0 +units=m +no_defs"],
+            ["EPSG:22770", "+proj=stere +lat_0=34.2 +lon_0=39.15 +k=0.999534104 +x_0=0 +y_0=0 +a=6378249.2 +b=6356515 +towgs84=-182,-222,192,0,0,0,0 +units=m +no_defs"]
         ]);
 
         var currentZone = "EPSG:26191";
-        var map = L.map('map', {zoomControl: false}).setView([30, 20], 5); /* Centered broadly on MENA */
+        var map = L.map('map', {zoomControl: false}).setView([30, 20], 5);
         L.control.scale({position: 'bottomright'}).addTo(map);
         L.tileLayer('https://{s}.google.com/vt/lyrs=y&gl=MA&hl=ar&x={x}&y={y}&z={z}',{maxZoom:22,subdomains:['mt0','mt1','mt2','mt3']}).addTo(map);
         var drawnItems = new L.FeatureGroup(); map.addLayer(drawnItems);
@@ -388,7 +341,6 @@
         var drawControl = new L.Control.Draw({ edit: { featureGroup: drawnItems }, draw: false }); 
         map.addControl(drawControl);
 
-        // --- Functions & Logic ---
         let isEraserActive = false;
         function toggleEraser() { isEraserActive = !isEraserActive; document.getElementById('eraser-btn').classList.toggle('eraser-active', isEraserActive); map.getContainer().classList.toggle('eraser-cursor', isEraserActive); if(isEraserActive){ stopContinuousDraw(); drawnItems.eachLayer(l => l.on('click', eraserHandler)); } else { drawnItems.eachLayer(l => l.off('click', eraserHandler)); } }
         function eraserHandler(e) { if(!isEraserActive) return; L.DomEvent.stop(e); drawnItems.removeLayer(e.target); saveUserDrawings(); updateLayerList(); }
@@ -410,7 +362,7 @@
         }
 
         // ============================================================
-        // 🟢 الجديد: نظام إدارة الطبقات (Table of Contents)
+        // 🟢 نظام إدارة الطبقات المطور (Recursive Fix)
         // ============================================================
         function updateLayerList() {
             const list = document.getElementById('layers-list-container');
@@ -430,10 +382,11 @@
                 if (layer instanceof L.Marker) iconHtml = '<i class="fas fa-map-marker-alt" style="color:#e74c3c;"></i>';
                 else if (layer instanceof L.Polygon) iconHtml = '<i class="fas fa-draw-polygon" style="color:#3498db;"></i>';
                 else if (layer instanceof L.Polyline) iconHtml = '<i class="fas fa-route" style="color:#f1c40f;"></i>';
+                // إذا كانت مجموعة (مستوردة)
+                if (layer.eachLayer && !layer._latlng) iconHtml = '<i class="fas fa-folder-open" style="color:#2ecc71;"></i>';
 
-                // زر الإظهار/الإخفاء (Eye Toggle)
-                // نستخدم opacity بدلاً من removeLayer للحفاظ على التناسق مع أدوات الرسم
-                const isVisible = layer.options.opacity !== 0;
+                // التحقق من حالة الظهور المحفوظة (Default: true)
+                const isVisible = layer._customVisible !== false;
                 
                 item.innerHTML = `
                     <div class="layer-icon">${iconHtml}</div>
@@ -464,26 +417,49 @@
             }
         }
 
+        // 🟢 الدالة الذكية للإخفاء/الإظهار (Recursion)
         function toggleLayerVisibility(id, btn) {
             const layer = drawnItems.getLayer(id);
-            if (layer) {
-                const isVisible = layer.options.opacity !== 0;
-                if (isVisible) {
-                    // Hide
-                    if (layer instanceof L.Marker) layer.setOpacity(0);
-                    else layer.setStyle({ opacity: 0, fillOpacity: 0 });
-                    layer.closePopup();
-                    layer.unbindTooltip(); // Hide tooltip temporarily
-                    btn.classList.remove('visible');
-                    btn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+            if (!layer) return;
+
+            // تحديد الحالة الجديدة
+            const isCurrentlyVisible = layer._customVisible !== false; // الافتراضي true
+            const newStatus = !isCurrentlyVisible;
+            layer._customVisible = newStatus; // حفظ الحالة
+
+            // دالة تطبيق الحالة على العنصر وأبنائه
+            const applyRecursive = (lyr, show) => {
+                if (lyr.eachLayer) { // إذا كان مجموعة (Group/GeoJSON)
+                    lyr.eachLayer(child => applyRecursive(child, show));
                 } else {
-                    // Show
-                    if (layer instanceof L.Marker) layer.setOpacity(1);
-                    else layer.setStyle({ opacity: 1, fillOpacity: 0.2 }); // Reset to default style
-                    if (layer.customName) layer.bindTooltip(layer.customName, {permanent:true, className:'map-label', direction:'center'});
-                    btn.classList.add('visible');
-                    btn.innerHTML = '<i class="fas fa-eye"></i>';
+                    // إذا كان عنصراً منفرداً
+                    if (lyr instanceof L.Marker) {
+                        lyr.setOpacity(show ? 1 : 0);
+                        if(show) { if(lyr._tooltip) lyr.openTooltip(); } 
+                        else { lyr.closeTooltip(); lyr.closePopup(); }
+                    } else if (lyr instanceof L.Path) { // خط أو مضلع
+                        if (show) {
+                            // استعادة الستايل الافتراضي
+                            lyr.setStyle({ stroke: true, fill: true, opacity: 1, fillOpacity: 0.2 });
+                            if(lyr._tooltip) lyr.openTooltip();
+                        } else {
+                            // إخفاء
+                            lyr.setStyle({ stroke: false, fill: false, opacity: 0, fillOpacity: 0 });
+                            lyr.closeTooltip(); lyr.closePopup();
+                        }
+                    }
                 }
+            };
+
+            applyRecursive(layer, newStatus);
+
+            // تحديث الزر
+            if (newStatus) {
+                btn.classList.add('visible');
+                btn.innerHTML = '<i class="fas fa-eye"></i>';
+            } else {
+                btn.classList.remove('visible');
+                btn.innerHTML = '<i class="fas fa-eye-slash"></i>';
             }
         }
 
@@ -496,7 +472,6 @@
             }
         }
 
-        // تحديث القائمة عند أي تغيير
         map.on(L.Draw.Event.CREATED, updateLayerList);
         map.on(L.Draw.Event.DELETED, updateLayerList);
         
@@ -506,7 +481,6 @@
             let line = null; drawnItems.eachLayer(l => { if(l instanceof L.Polyline && !(l instanceof L.Polygon)) line = l; }); if(!line) return alert("ارسم خطاً أولاً"); document.getElementById('chart-container').style.display = 'block'; document.getElementById('chart-loader').style.display = 'block'; if(window.innerWidth <= 768) togglePanel('draw-panel'); let latlngs = line.getLatLngs(); if(Array.isArray(latlngs[0])) latlngs = latlngs.flat(); let totalPoints = latlngs.length; let samples = []; if (totalPoints > 100) { let step = Math.ceil(totalPoints / 100); for(let i=0; i<totalPoints; i+=step) samples.push(latlngs[i]); } else { for(let i=0; i<latlngs.length-1; i++) { samples.push(latlngs[i]); if(totalPoints < 5) { let p1 = latlngs[i]; let p2 = latlngs[i+1]; for(let k=1; k<20; k++) { samples.push(L.latLng(p1.lat + (p2.lat-p1.lat)*(k/20), p1.lng + (p2.lng-p1.lng)*(k/20))); } } } samples.push(latlngs[latlngs.length-1]); } if(samples.length > 100) samples = samples.slice(0, 100); let lats = samples.map(p=>p.lat.toFixed(4)).join(','); let lngs = samples.map(p=>p.lng.toFixed(4)).join(','); try { let res = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lats}&longitude=${lngs}`); let data = await res.json(); document.getElementById('chart-loader').style.display = 'none'; if(data.elevation) { let ctx = document.getElementById('elevationChart').getContext('2d'); if(window.myChart) window.myChart.destroy(); let labels = samples.map((p, i) => { if(i===0) return 0; return (samples[0].distanceTo(p)/1000).toFixed(2); }); window.myChart = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [{ label: 'الارتفاع (متر)', data: data.elevation, borderColor: '#8e44ad', borderWidth: 2, pointRadius: 0, tension: 0.3, fill: true, backgroundColor: 'rgba(142, 68, 173, 0.4)' }] }, options: { scales: { y: { beginAtZero: false, title: {display:true, text:'الارتفاع (m)'} }, x: { title: {display:true, text:'المسافة (km)'}, ticks: { maxTicksLimit: 10 } } }, responsive: true, maintainAspectRatio: false, interaction: { intersect: false, mode: 'index' }, } }); } } catch(e) { document.getElementById('chart-loader').innerText = "خطأ: الخط طويل جداً"; }
         }
 
-        // استيراد الملفات (مع تحديث القائمة)
         function loadFile(input) {
             const file = input.files[0]; if (!file) return; const ext = file.name.split('.').pop().toLowerCase(); const reader = new FileReader();
             if (ext === 'kmz') { const zip = new JSZip(); zip.loadAsync(file).then(function(contents) { const kmlFile = Object.keys(contents.files).find(name => name.toLowerCase().endsWith('.kml')); if (kmlFile) { contents.files[kmlFile].async('string').then(function(text) { parseKML(text); }); } else { alert("ملف KMZ تالف"); } }, function() { alert("خطأ في قراءة ملف KMZ"); }); } 
@@ -522,11 +496,10 @@
             if (layer.getLayers().length > 0) { map.fitBounds(layer.getBounds()); saveUserDrawings(); updateLayerList(); alert("تم الاستيراد ✅"); }
         }
 
-        // تصدير
         function downloadKML() { if (drawnItems.getLayers().length === 0) return alert("فارغ"); const kml = tokml(drawnItems.toGeoJSON()); const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([kml], {type: "application/vnd.google-earth.kml+xml"})); a.download = "export.kml"; a.click(); }
         function downloadKMZ() { if (drawnItems.getLayers().length === 0) return alert("فارغ"); const zip = new JSZip(); zip.file("doc.kml", tokml(drawnItems.toGeoJSON())); zip.generateAsync({type:"blob"}).then(function(content) { const a = document.createElement("a"); a.href = URL.createObjectURL(content); a.download = "export.kmz"; a.click(); }); }
-        async function downloadCSV() { /* نفس كود CSV السابق */ if (drawnItems.getLayers().length === 0) return alert("لا يوجد رسم."); let csvContent = "\uFEFFName,Type,X,Y,Lat,Lng\n"; drawnItems.eachLayer(l => { let latlng = (l instanceof L.Marker) ? l.getLatLng() : l.getCenter(); let p = [0,0]; try { p = proj4("EPSG:4326", currentZone, [latlng.lng, latlng.lat]); } catch(e){} let name = l.customName || "Noname"; let type = (l instanceof L.Marker) ? "Point" : "Line/Poly"; csvContent += `${name},${type},${p[0].toFixed(2)},${p[1].toFixed(2)},${latlng.lat.toFixed(6)},${latlng.lng.toFixed(6)}\n`; }); const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "ZASTopo_Data.csv"; a.click(); }
-        async function downloadExcel() { /* نفس كود Excel السابق */ if (drawnItems.getLayers().length === 0) { alert("لا توجد عناصر مرسومة لتصديرها."); return; } const exportBtn = document.querySelector('button[onclick="downloadExcel()"]'); const originalBtnText = exportBtn ? exportBtn.innerText : "📊 Excel"; if (exportBtn) { exportBtn.innerText = "جاري جلب الارتفاعات (Z)... يرجى الانتظار ⏳"; exportBtn.style.opacity = "0.7"; exportBtn.disabled = true; } const dataRowsPromises = []; drawnItems.eachLayer(layer => { const layerPromise = new Promise(async (resolve) => { let latlng, geomType; if (layer instanceof L.Marker) { latlng = layer.getLatLng(); geomType = "نقطة (Point)"; } else if (layer instanceof L.Polyline || layer instanceof L.Polygon) { latlng = layer.getCenter(); geomType = layer instanceof L.Polygon ? "مساحة (Polygon)" : "خط (Polyline)"; } else { latlng = layer.getLatLng ? layer.getLatLng() : layer.getCenter(); geomType = "غير محدد"; } let projectedXY = ["غير متاح", "غير متاح"]; try { let p = proj4("EPSG:4326", currentZone, [latlng.lng, latlng.lat]); projectedXY = [p[0].toFixed(2), p[1].toFixed(2)]; } catch (e) {} let elevationZ = "جاري التحميل..."; try { const response = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${latlng.lat}&longitude=${latlng.lng}`); const data = await response.json(); if (data && data.elevation && data.elevation.length > 0) { elevationZ = data.elevation[0].toFixed(1); } else { elevationZ = "غير متوفر"; } } catch (e) { elevationZ = "خطأ اتصال"; } resolve({ "نوع العنصر": geomType, "الاسم (Name)": layer.customName || "بدون اسم", "الإحداثي X (متر)": projectedXY[0], "الإحداثي Y (متر)": projectedXY[1], "الارتفاع Z (متر)": elevationZ, "الملاحظات (Notes)": layer.customNotes || "", "Lat (WGS84)": latlng.lat.toFixed(5), "Lng (WGS84)": latlng.lng.toFixed(5), "نظام الإسقاط المستخدم": currentZone }); }); dataRowsPromises.push(layerPromise); }); try { const finalData = await Promise.all(dataRowsPromises); const worksheet = XLSX.utils.json_to_sheet(finalData); const wscols = [{wch:15}, {wch:20}, {wch:15}, {wch:15}, {wch:15}, {wch:30}]; worksheet['!cols'] = wscols; const workbook = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(workbook, worksheet, "البيانات الطبوغرافية"); const date = new Date().toISOString().slice(0,19).replace(/:/g,"-"); XLSX.writeFile(workbook, `ZASTopo_Data_${date}.xlsx`); } catch (err) { alert("حدث خطأ أثناء إنشاء ملف الإكسيل."); } finally { if (exportBtn) { exportBtn.innerText = originalBtnText; exportBtn.style.opacity = "1"; exportBtn.disabled = false; } } }
+        async function downloadCSV() { if (drawnItems.getLayers().length === 0) return alert("لا يوجد رسم."); let csvContent = "\uFEFFName,Type,X,Y,Lat,Lng\n"; drawnItems.eachLayer(l => { let latlng = (l instanceof L.Marker) ? l.getLatLng() : l.getCenter(); let p = [0,0]; try { p = proj4("EPSG:4326", currentZone, [latlng.lng, latlng.lat]); } catch(e){} let name = l.customName || "Noname"; let type = (l instanceof L.Marker) ? "Point" : "Line/Poly"; csvContent += `${name},${type},${p[0].toFixed(2)},${p[1].toFixed(2)},${latlng.lat.toFixed(6)},${latlng.lng.toFixed(6)}\n`; }); const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "ZASTopo_Data.csv"; a.click(); }
+        async function downloadExcel() { if (drawnItems.getLayers().length === 0) { alert("لا توجد عناصر مرسومة لتصديرها."); return; } const exportBtn = document.querySelector('button[onclick="downloadExcel()"]'); const originalBtnText = exportBtn ? exportBtn.innerText : "📊 Excel"; if (exportBtn) { exportBtn.innerText = "جاري جلب الارتفاعات (Z)... يرجى الانتظار ⏳"; exportBtn.style.opacity = "0.7"; exportBtn.disabled = true; } const dataRowsPromises = []; drawnItems.eachLayer(layer => { const layerPromise = new Promise(async (resolve) => { let latlng, geomType; if (layer instanceof L.Marker) { latlng = layer.getLatLng(); geomType = "نقطة (Point)"; } else if (layer instanceof L.Polyline || layer instanceof L.Polygon) { latlng = layer.getCenter(); geomType = layer instanceof L.Polygon ? "مساحة (Polygon)" : "خط (Polyline)"; } else { latlng = layer.getLatLng ? layer.getLatLng() : layer.getCenter(); geomType = "غير محدد"; } let projectedXY = ["غير متاح", "غير متاح"]; try { let p = proj4("EPSG:4326", currentZone, [latlng.lng, latlng.lat]); projectedXY = [p[0].toFixed(2), p[1].toFixed(2)]; } catch (e) {} let elevationZ = "جاري التحميل..."; try { const response = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${latlng.lat}&longitude=${latlng.lng}`); const data = await response.json(); if (data && data.elevation && data.elevation.length > 0) { elevationZ = data.elevation[0].toFixed(1); } else { elevationZ = "غير متوفر"; } } catch (e) { elevationZ = "خطأ اتصال"; } resolve({ "نوع العنصر": geomType, "الاسم (Name)": layer.customName || "بدون اسم", "الإحداثي X (متر)": projectedXY[0], "الإحداثي Y (متر)": projectedXY[1], "الارتفاع Z (متر)": elevationZ, "الملاحظات (Notes)": layer.customNotes || "", "Lat (WGS84)": latlng.lat.toFixed(5), "Lng (WGS84)": latlng.lng.toFixed(5), "نظام الإسقاط المستخدم": currentZone }); }); dataRowsPromises.push(layerPromise); }); try { const finalData = await Promise.all(dataRowsPromises); const worksheet = XLSX.utils.json_to_sheet(finalData); const wscols = [{wch:15}, {wch:20}, {wch:15}, {wch:15}, {wch:15}, {wch:30}]; worksheet['!cols'] = wscols; const workbook = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(workbook, worksheet, "البيانات الطبوغرافية"); const date = new Date().toISOString().slice(0,19).replace(/:/g,"-"); XLSX.writeFile(workbook, `ZASTopo_Data_${date}.xlsx`); } catch (err) { alert("حدث خطأ أثناء إنشاء ملف الإكسيل."); } finally { if (exportBtn) { exportBtn.innerText = originalBtnText; exportBtn.style.opacity = "1"; exportBtn.disabled = false; } } }
         function downloadDXF() { let d="0\nSECTION\n2\nHEADER\n9\n$ACADVER\n1\nAC1009\n0\nENDSEC\n0\nSECTION\n2\nENTITIES\n"; drawnItems.eachLayer(l=>{ if(l instanceof L.Marker) { try{let p=proj4("EPSG:4326",currentZone,[l.getLatLng().lng,l.getLatLng().lat]); d+=`0\nPOINT\n8\nPoints\n10\n${p[0]}\n20\n${p[1]}\n30\n0.0\n`;}catch(e){} } }); d+="0\nENDSEC\n0\nEOF"; let b=new Blob([d],{type:'application/dxf'}); let a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download="export.dxf"; a.click(); }
         function downloadChart(){ let u=document.getElementById('elevationChart').toDataURL('image/png'); let a=document.createElement('a'); a.href=u; a.download='profile.png'; a.click(); }
         function takeScreenshotAndMetadata() { snapshoter.takeScreen('image').then(i=>{ let a=document.createElement('a'); a.href=i; a.download='map.jpg'; a.click(); }); }
@@ -546,6 +519,8 @@
         function locateUser() { map.locate({setView:true, maxZoom:15}); }
         function clearMap() { drawnItems.clearLayers(); saveUserDrawings(); updateLayerList(); }
         function createBuffer() { if(drawnItems.getLayers().length === 0) return alert("حدد شكلاً"); let layer = drawnItems.getLayers()[drawnItems.getLayers().length - 1]; let dist = parseFloat(document.getElementById('buffer-val').value); try { let buffered = turf.buffer(layer.toGeoJSON(), dist, {units: 'meters'}); let bufLayer = L.geoJSON(buffered, {style:{color:'red', dashArray:'5,5'}}); bufLayer.eachLayer(l => { l.customName = "Buffer "+dist; drawnItems.addLayer(l); attachPopup(l); }); saveUserDrawings(); updateLayerList(); } catch(e) { alert("خطأ"); } }
+        function activateStreetView(){ alert("انقر للخريطة"); map.once('click', e => { document.getElementById('sv-overlay').style.display='flex'; document.getElementById('sv-iframe').src=`maps.google.com/0{e.latlng.lat},${e.latlng.lng}&output=svembed`; }); }
+        function closeStreetView(){ document.getElementById('sv-overlay').style.display='none'; document.getElementById('sv-iframe').src=""; }
         map.on('mousemove', e => { try { let p = proj4("EPSG:4326", currentZone, [e.latlng.lng, e.latlng.lat]); document.getElementById('bottom-bar').innerHTML = `X: ${p[0].toFixed(0)} | Y: ${p[1].toFixed(0)} | Lat: ${e.latlng.lat.toFixed(4)}`; } catch(x){} });
     </script>
 </body>

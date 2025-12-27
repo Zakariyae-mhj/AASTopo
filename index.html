@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ZASTopo Pro | V62 (Import/Export Master)</title>
+    <title>ZASTopo Pro | V63 (KMZ Support)</title>
     
     <meta name="theme-color" content="#2563eb">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
     
     <style>
-        /* نفس التنسيقات السابقة تماماً (V61) */
+        /* --- نفس الستايل السابق تماماً --- */
         :root { --primary: #2563eb; --glass: rgba(255, 255, 255, 0.95); --shadow: 0 8px 32px rgba(0,0,0,0.15); }
         body { margin: 0; font-family: 'Cairo', sans-serif; overflow: hidden; background: #0f172a; overscroll-behavior: none; }
         #map { height: 100vh; width: 100%; z-index: 1; }
@@ -198,7 +198,7 @@
             <select id="lambert-zone" class="tool-input" onchange="updateProjection()">
                 <optgroup label="🇲🇦 المغرب (Lambert)"><option value="EPSG:26191">Lambert Zone I</option><option value="EPSG:26192">Lambert Zone II</option><option value="EPSG:26193">Lambert Zone III</option><option value="EPSG:26194">Lambert Zone IV</option><option value="EPSG:26195">Merchich</option></optgroup>
                 <optgroup label="🇩🇿 الجزائر (UTM)"><option value="EPSG:32629">Zone 29N</option><option value="EPSG:32630">Zone 30N</option><option value="EPSG:32631">Zone 31N</option><option value="EPSG:32632">Zone 32N</option></optgroup>
-                </select>
+            </select>
             <div style="display:flex; gap:5px;">
                 <input id="input-x" class="tool-input" placeholder="X">
                 <input id="input-y" class="tool-input" placeholder="Y">
@@ -232,14 +232,17 @@
         <button class="close-chart" style="position:absolute; top:15px; left:15px; background:#f1f5f9; color:#64748b;" onclick="togglePanel('data-panel')"><i class="fas fa-chevron-down"></i></button>
         <div style="margin-top: 20px;">
             <div style="border: 2px dashed #ccc; padding: 10px; border-radius: 8px; margin-bottom: 10px; text-align: center;">
-                <input type="file" id="file-input" accept=".kml,.gpx,.dxf" style="display:none;" onchange="loadFile(this)">
-                <button class="tool-btn" style="justify-content: center;" onclick="document.getElementById('file-input').click()">📥 استيراد مجال الدراسة (KML/DXF)</button>
+                <input type="file" id="file-input" accept=".kmz,.kml,.gpx,.dxf" style="display:none;" onchange="loadFile(this)">
+                <button class="tool-btn" style="justify-content: center;" onclick="document.getElementById('file-input').click()">📥 استيراد (KMZ/KML/DXF)</button>
             </div>
             <hr style="border-top:1px solid #eee;">
             <label style="font-size: 12px; color: #64748b; display: block; margin-bottom: 5px;">تصدير البيانات:</label>
             <button class="tool-btn" onclick="downloadExcel()"><i class="fas fa-file-excel" style="color: green;"></i> Excel (XLSX)</button>
             <button class="tool-btn" onclick="downloadCSV()"><i class="fas fa-file-csv" style="color: orange;"></i> CSV (Text)</button>
-            <button class="tool-btn" onclick="downloadKML()"><i class="fas fa-globe" style="color: blue;"></i> Google Earth (KML)</button>
+            <div style="display:flex; gap:5px;">
+                <button class="tool-btn" onclick="downloadKML()"><i class="fas fa-globe" style="color: blue;"></i> KML</button>
+                <button class="tool-btn" onclick="downloadKMZ()"><i class="fas fa-file-archive" style="color: darkblue;"></i> KMZ</button>
+            </div>
             <button class="tool-btn" onclick="downloadDXF()"><i class="fas fa-pencil-ruler" style="color: purple;"></i> AutoCAD (DXF)</button>
             <button class="tool-btn" onclick="takeScreenshotAndMetadata()"><i class="fas fa-camera"></i> لقطة شاشة</button>
         </div>
@@ -256,20 +259,20 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
     <script src="https://unpkg.com/@mapbox/togeojson@0.16.0/togeojson.js"></script>
-    <script src="https://unpkg.com/tokml@0.4.0/tokml.js"></script> <script src="https://unpkg.com/leaflet-geometryutil"></script>
+    <script src="https://unpkg.com/tokml@0.4.0/tokml.js"></script>
+    <script src="https://unpkg.com/leaflet-geometryutil"></script>
     <script src="https://unpkg.com/leaflet-simple-map-screenshoter"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dxf-parser@1.1.2/dist/dxf-parser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
     <script>
-        // إعدادات Firebase
         const firebaseConfig = { apiKey: "AIzaSyBHjDSoCDrZAh9KIW1LI4H6XxIdeB8YnFw", authDomain: "rusle-462022.firebaseapp.com", databaseURL: "https://rusle-462022-default-rtdb.firebaseio.com", projectId: "rusle-462022", storageBucket: "rusle-462022.firebasestorage.app", messagingSenderId: "106974487623", appId: "1:106974487623:web:f42e4cf7fd2e2218947d62", measurementId: "G-YVJL1T2VXM" };
         try { firebase.initializeApp(firebaseConfig); } catch(e){}
         const auth = firebase.auth(); const db = firebase.database();
 
-        // Proj4 Defs
         proj4.defs([
             ["EPSG:26191", "+proj=lcc +lat_1=33.3 +lat_0=33.3 +lon_0=-5.4 +k_0=0.999625769 +x_0=500000 +y_0=300000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"],
             ["EPSG:26192", "+proj=lcc +lat_1=29.7 +lat_0=29.7 +lon_0=-5.4 +k_0=0.999615596 +x_0=500000 +y_0=300000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"],
@@ -299,7 +302,6 @@
         var drawControl = new L.Control.Draw({ edit: { featureGroup: drawnItems }, draw: false }); 
         map.addControl(drawControl);
 
-        // [Basic Drawing and Auth functions from previous versions remain same here...]
         let isEraserActive = false;
         function toggleEraser() { isEraserActive = !isEraserActive; const btn = document.getElementById('eraser-btn'); if(isEraserActive) { btn.classList.add('eraser-active'); map.getContainer().classList.add('eraser-cursor'); stopContinuousDraw(); drawnItems.eachLayer(l => l.on('click', eraserHandler)); } else { btn.classList.remove('eraser-active'); map.getContainer().classList.remove('eraser-cursor'); drawnItems.eachLayer(l => l.off('click', eraserHandler)); } }
         function eraserHandler(e) { if(!isEraserActive) return; L.DomEvent.stop(e); drawnItems.removeLayer(e.target); saveUserDrawings(); }
@@ -322,7 +324,7 @@
         }
 
         // ============================================================
-        // 🟢 الجديد: استيراد KML/GPX/DXF
+        // 🟢 الجديد: استيراد KML/KMZ/GPX/DXF
         // ============================================================
         function loadFile(input) {
             const file = input.files[0];
@@ -330,49 +332,68 @@
             const ext = file.name.split('.').pop().toLowerCase();
             const reader = new FileReader();
 
-            reader.onload = function(e) {
-                const text = e.target.result;
-                try {
-                    if (ext === 'kml') {
-                        const parser = new DOMParser();
-                        const kml = parser.parseFromString(text, 'text/xml');
-                        const geojson = toGeoJSON.kml(kml);
-                        addGeoJSONToMap(geojson);
-                    } else if (ext === 'gpx') {
-                        const parser = new DOMParser();
-                        const gpx = parser.parseFromString(text, 'text/xml');
-                        const geojson = toGeoJSON.gpx(gpx);
-                        addGeoJSONToMap(geojson);
-                    } else if (ext === 'dxf') {
-                        // استيراد DXF مبسط (يحتاج أن يكون DXF بنظام إحداثيات محلي ويتم تحويله)
-                        const parser = new DxfParser();
-                        const dxf = parser.parseSync(text);
-                        let geojsonFeatures = [];
-                        if(dxf && dxf.entities) {
-                            dxf.entities.forEach(ent => {
-                                if (ent.type === 'POINT' || ent.type === 'INSERT') {
-                                    // عكس الإسقاط من متري إلى WGS84
-                                    let ll = proj4(currentZone, "EPSG:4326", [ent.position.x, ent.position.y]);
-                                    geojsonFeatures.push({type: "Feature", geometry: {type: "Point", coordinates: [ll[0], ll[1]]}, properties: {name: "DXF Point"}});
-                                } else if (ent.type === 'LWPOLYLINE' || ent.type === 'POLYLINE') {
-                                    let coords = ent.vertices.map(v => {
-                                        let ll = proj4(currentZone, "EPSG:4326", [v.x, v.y]);
-                                        return [ll[0], ll[1]];
-                                    });
-                                    geojsonFeatures.push({type: "Feature", geometry: {type: "LineString", coordinates: coords}, properties: {name: "DXF Line"}});
-                                }
-                            });
-                            addGeoJSONToMap({type: "FeatureCollection", features: geojsonFeatures});
-                        }
+            if (ext === 'kmz') {
+                // التعامل مع ملف KMZ المضغوط
+                const zip = new JSZip();
+                zip.loadAsync(file).then(function(contents) {
+                    // البحث عن ملف kml داخل الضغط
+                    const kmlFile = Object.keys(contents.files).find(name => name.toLowerCase().endsWith('.kml'));
+                    if (kmlFile) {
+                        contents.files[kmlFile].async('string').then(function(text) {
+                            parseKML(text);
+                        });
                     } else {
-                        alert("صيغة الملف غير مدعومة.");
+                        alert("ملف KMZ تالف أو لا يحتوي على KML.");
                     }
-                } catch(err) {
-                    alert("خطأ في قراءة الملف: " + err);
-                }
-            };
-            reader.readAsText(file);
+                }, function() { alert("خطأ في قراءة ملف KMZ"); });
+            } else {
+                // التعامل مع الملفات النصية العادية
+                reader.onload = function(e) {
+                    const text = e.target.result;
+                    try {
+                        if (ext === 'kml') {
+                            parseKML(text);
+                        } else if (ext === 'gpx') {
+                            const parser = new DOMParser();
+                            const gpx = parser.parseFromString(text, 'text/xml');
+                            const geojson = toGeoJSON.gpx(gpx);
+                            addGeoJSONToMap(geojson);
+                        } else if (ext === 'dxf') {
+                            const parser = new DxfParser();
+                            const dxf = parser.parseSync(text);
+                            let geojsonFeatures = [];
+                            if(dxf && dxf.entities) {
+                                dxf.entities.forEach(ent => {
+                                    if (ent.type === 'POINT' || ent.type === 'INSERT') {
+                                        let ll = proj4(currentZone, "EPSG:4326", [ent.position.x, ent.position.y]);
+                                        geojsonFeatures.push({type: "Feature", geometry: {type: "Point", coordinates: [ll[0], ll[1]]}, properties: {name: "DXF Point"}});
+                                    } else if (ent.type === 'LWPOLYLINE' || ent.type === 'POLYLINE') {
+                                        let coords = ent.vertices.map(v => {
+                                            let ll = proj4(currentZone, "EPSG:4326", [v.x, v.y]);
+                                            return [ll[0], ll[1]];
+                                        });
+                                        geojsonFeatures.push({type: "Feature", geometry: {type: "LineString", coordinates: coords}, properties: {name: "DXF Line"}});
+                                    }
+                                });
+                                addGeoJSONToMap({type: "FeatureCollection", features: geojsonFeatures});
+                            }
+                        } else {
+                            alert("صيغة الملف غير مدعومة.");
+                        }
+                    } catch(err) {
+                        alert("خطأ في قراءة الملف: " + err);
+                    }
+                };
+                reader.readAsText(file);
+            }
             input.value = ''; // Reset input
+        }
+
+        function parseKML(text) {
+            const parser = new DOMParser();
+            const kml = parser.parseFromString(text, 'text/xml');
+            const geojson = toGeoJSON.kml(kml);
+            addGeoJSONToMap(geojson);
         }
 
         function addGeoJSONToMap(geojson) {
@@ -393,11 +414,10 @@
         }
 
         // ============================================================
-        // 🟢 الجديد: تصدير KML و CSV
+        // 🟢 الجديد: تصدير KML و KMZ
         // ============================================================
         function downloadKML() {
             if (drawnItems.getLayers().length === 0) return alert("لا يوجد رسم لتصديره.");
-            // تحويل Leaflet Layers إلى GeoJSON ثم إلى KML باستخدام tokml
             const geojson = drawnItems.toGeoJSON();
             const kml = tokml(geojson);
             const blob = new Blob([kml], {type: "application/vnd.google-earth.kml+xml"});
@@ -407,12 +427,26 @@
             a.click();
         }
 
+        function downloadKMZ() {
+            if (drawnItems.getLayers().length === 0) return alert("لا يوجد رسم لتصديره.");
+            const geojson = drawnItems.toGeoJSON();
+            const kml = tokml(geojson);
+            
+            // ضغط KML داخل ملف ZIP
+            const zip = new JSZip();
+            zip.file("doc.kml", kml);
+            
+            zip.generateAsync({type:"blob"}).then(function(content) {
+                const a = document.createElement("a");
+                a.href = URL.createObjectURL(content);
+                a.download = "ZASTopo_Export.kmz";
+                a.click();
+            });
+        }
+
         async function downloadCSV() {
             if (drawnItems.getLayers().length === 0) return alert("لا يوجد رسم.");
-            // نستخدم نفس منطق Excel للحصول على البيانات ثم نحولها لنص
-            // (اختصاراً، سنقوم بعمل نسخة مبسطة هنا)
-            let csvContent = "\uFEFFName,Type,X,Y,Lat,Lng\n"; // Header with BOM
-            
+            let csvContent = "\uFEFFName,Type,X,Y,Lat,Lng\n"; 
             drawnItems.eachLayer(l => {
                 let latlng = (l instanceof L.Marker) ? l.getLatLng() : l.getCenter();
                 let p = [0,0];
@@ -421,7 +455,6 @@
                 let type = (l instanceof L.Marker) ? "Point" : "Line/Poly";
                 csvContent += `${name},${type},${p[0].toFixed(2)},${p[1].toFixed(2)},${latlng.lat.toFixed(6)},${latlng.lng.toFixed(6)}\n`;
             });
-            
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const a = document.createElement("a");
             a.href = URL.createObjectURL(blob);
@@ -429,7 +462,7 @@
             a.click();
         }
 
-        // [Existing Excel and DXF functions...]
+        // [Excel and DXF Export logic remains same]
         async function downloadExcel() {
             if (drawnItems.getLayers().length === 0) { alert("لا توجد عناصر مرسومة لتصديرها."); return; }
             const exportBtn = document.querySelector('button[onclick="downloadExcel()"]');

@@ -3,15 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ZASTopo Pro | V65 (Fixed Layers)</title>
+    <title>ZASTopo Pro | منصة الخرائط</title>
     
     <meta name="theme-color" content="#2563eb">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="ZASTopo Pro">
-    <link rel="apple-touch-icon" href="https://i.imgur.com/rP6Yotb.png">
-    <link rel="icon" type="image/png" href="https://i.imgur.com/rP6Yotb.png">
-    <link rel="manifest" href='data:application/manifest+json,{"name":"ZASTopo Pro","short_name":"ZASTopo","start_url":".","display":"standalone","background_color":"#ffffff","theme_color":"#2563eb","icons":[{"src":"https://i.imgur.com/rP6Yotb.png","sizes":"192x192","type":"image/png"},{"src":"https://i.imgur.com/rP6Yotb.png","sizes":"512x512","type":"image/png"}]}'>
+    <meta name="apple-mobile-web-app-title" content="ZASTopo">
+    
+    <link rel="apple-touch-icon" sizes="180x180" href="https://i.imgur.com/rP6Yotb.png">
+    
+    <link rel="manifest" href='data:application/manifest+json,{"name":"ZASTopo Pro","short_name":"ZASTopo","start_url":".","display":"standalone","background_color":"#ffffff","theme_color":"#2563eb","icons":[{"src":"https://i.imgur.com/rP6Yotb.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},{"src":"https://i.imgur.com/rP6Yotb.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}]}'>
 
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -19,7 +21,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
     
     <style>
-        /* --- Styles (نفس الستايل السابق) --- */
+        /* --- Styles --- */
         :root { --primary: #2563eb; --glass: rgba(255, 255, 255, 0.95); --shadow: 0 8px 32px rgba(0,0,0,0.15); }
         body { margin: 0; font-family: 'Cairo', sans-serif; overflow: hidden; background: #0f172a; overscroll-behavior: none; }
         #map { height: 100vh; width: 100%; z-index: 1; }
@@ -362,7 +364,7 @@
         }
 
         // ============================================================
-        // 🟢 نظام إدارة الطبقات المطور (Recursive Fix)
+        // 🟢 الجديد: تحديث منطق إظهار/إخفاء الطبقات (Fixed Recursion)
         // ============================================================
         function updateLayerList() {
             const list = document.getElementById('layers-list-container');
@@ -377,15 +379,13 @@
                 const item = document.createElement('div');
                 item.className = 'layer-item';
                 
-                // تحديد الأيقونة حسب النوع
                 let iconHtml = '<i class="fas fa-question"></i>';
                 if (layer instanceof L.Marker) iconHtml = '<i class="fas fa-map-marker-alt" style="color:#e74c3c;"></i>';
                 else if (layer instanceof L.Polygon) iconHtml = '<i class="fas fa-draw-polygon" style="color:#3498db;"></i>';
                 else if (layer instanceof L.Polyline) iconHtml = '<i class="fas fa-route" style="color:#f1c40f;"></i>';
-                // إذا كانت مجموعة (مستوردة)
                 if (layer.eachLayer && !layer._latlng) iconHtml = '<i class="fas fa-folder-open" style="color:#2ecc71;"></i>';
 
-                // التحقق من حالة الظهور المحفوظة (Default: true)
+                // الحالة الافتراضية
                 const isVisible = layer._customVisible !== false;
                 
                 item.innerHTML = `
@@ -407,53 +407,43 @@
         function zoomToLayer(id) {
             const layer = drawnItems.getLayer(id);
             if (layer) {
-                if (layer instanceof L.Marker) {
-                    map.setView(layer.getLatLng(), 16);
-                    layer.openPopup();
-                } else {
-                    map.fitBounds(layer.getBounds());
-                    layer.openPopup();
-                }
+                if (layer instanceof L.Marker) { map.setView(layer.getLatLng(), 16); layer.openPopup(); }
+                else { map.fitBounds(layer.getBounds()); layer.openPopup(); }
             }
         }
 
-        // 🟢 الدالة الذكية للإخفاء/الإظهار (Recursion)
         function toggleLayerVisibility(id, btn) {
             const layer = drawnItems.getLayer(id);
             if (!layer) return;
 
-            // تحديد الحالة الجديدة
-            const isCurrentlyVisible = layer._customVisible !== false; // الافتراضي true
+            const isCurrentlyVisible = layer._customVisible !== false;
             const newStatus = !isCurrentlyVisible;
-            layer._customVisible = newStatus; // حفظ الحالة
+            layer._customVisible = newStatus;
 
-            // دالة تطبيق الحالة على العنصر وأبنائه
+            // دالة تكرارية لتطبيق الحالة على جميع العناصر الفرعية
             const applyRecursive = (lyr, show) => {
-                if (lyr.eachLayer) { // إذا كان مجموعة (Group/GeoJSON)
+                // إذا كانت المجموعة تحتوي على طبقات فرعية (مثل GeoJSON المستورد)
+                if (lyr.eachLayer) {
                     lyr.eachLayer(child => applyRecursive(child, show));
-                } else {
-                    // إذا كان عنصراً منفرداً
-                    if (lyr instanceof L.Marker) {
-                        lyr.setOpacity(show ? 1 : 0);
-                        if(show) { if(lyr._tooltip) lyr.openTooltip(); } 
-                        else { lyr.closeTooltip(); lyr.closePopup(); }
-                    } else if (lyr instanceof L.Path) { // خط أو مضلع
-                        if (show) {
-                            // استعادة الستايل الافتراضي
-                            lyr.setStyle({ stroke: true, fill: true, opacity: 1, fillOpacity: 0.2 });
-                            if(lyr._tooltip) lyr.openTooltip();
-                        } else {
-                            // إخفاء
-                            lyr.setStyle({ stroke: false, fill: false, opacity: 0, fillOpacity: 0 });
-                            lyr.closeTooltip(); lyr.closePopup();
-                        }
+                }
+                
+                // تطبيق على العنصر نفسه
+                if (lyr instanceof L.Marker) {
+                    lyr.setOpacity(show ? 1 : 0);
+                    if(show) { if(lyr._tooltip) lyr.openTooltip(); } else { lyr.closeTooltip(); lyr.closePopup(); }
+                } else if (lyr instanceof L.Path) { 
+                    if (show) {
+                        lyr.setStyle({ stroke: true, fill: true, opacity: 1, fillOpacity: 0.2 });
+                        if(lyr._tooltip) lyr.openTooltip();
+                    } else {
+                        lyr.setStyle({ stroke: false, fill: false, opacity: 0, fillOpacity: 0 });
+                        lyr.closeTooltip(); lyr.closePopup();
                     }
                 }
             };
 
             applyRecursive(layer, newStatus);
 
-            // تحديث الزر
             if (newStatus) {
                 btn.classList.add('visible');
                 btn.innerHTML = '<i class="fas fa-eye"></i>';
@@ -503,24 +493,20 @@
         function downloadDXF() { let d="0\nSECTION\n2\nHEADER\n9\n$ACADVER\n1\nAC1009\n0\nENDSEC\n0\nSECTION\n2\nENTITIES\n"; drawnItems.eachLayer(l=>{ if(l instanceof L.Marker) { try{let p=proj4("EPSG:4326",currentZone,[l.getLatLng().lng,l.getLatLng().lat]); d+=`0\nPOINT\n8\nPoints\n10\n${p[0]}\n20\n${p[1]}\n30\n0.0\n`;}catch(e){} } }); d+="0\nENDSEC\n0\nEOF"; let b=new Blob([d],{type:'application/dxf'}); let a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download="export.dxf"; a.click(); }
         function downloadChart(){ let u=document.getElementById('elevationChart').toDataURL('image/png'); let a=document.createElement('a'); a.href=u; a.download='profile.png'; a.click(); }
         function takeScreenshotAndMetadata() { snapshoter.takeScreen('image').then(i=>{ let a=document.createElement('a'); a.href=i; a.download='map.jpg'; a.click(); }); }
-        
-        let isLoginMode = true;
-        function toggleAuthMode() { isLoginMode = !isLoginMode; document.querySelectorAll('.signup-only').forEach(e => e.style.display = isLoginMode ? 'none' : 'block'); document.getElementById('submit-btn').innerText = isLoginMode ? 'دخول' : 'إنشاء حساب'; }
-        function handleAuth(e) { e.preventDefault(); const email = document.getElementById('email').value; const pass = document.getElementById('password').value; if(isLoginMode) { auth.signInWithEmailAndPassword(email, pass).then(() => location.reload()).catch(e => alert("خطأ: " + e.message)); } else { const fname = document.getElementById('fname').value; const lname = document.getElementById('lname').value; if(!fname || !lname) return alert("الاسم مطلوب"); auth.createUserWithEmailAndPassword(email, pass).then(cred => { return cred.user.updateProfile({ displayName: fname + " " + lname }); }).then(() => { alert("تم الإنشاء"); location.reload(); }).catch(e => alert("خطأ: " + e.message)); } }
-        function logoutUser() { auth.signOut().then(() => location.reload()); }
-        auth.onAuthStateChanged(user => { if (user) { document.getElementById('auth-overlay').style.display='none'; if(user.displayName) document.getElementById('display-name').innerText=user.displayName; loadUserDrawings(user.uid); } else { document.getElementById('auth-overlay').style.display='flex'; drawnItems.clearLayers(); } });
-        function togglePanel(id) { document.querySelectorAll('.panel').forEach(p=>{ if(p.id===id) p.classList.toggle('active'); else p.classList.remove('active'); }); }
-        function saveUserDrawings() { if(!auth.currentUser) return; let f=[]; drawnItems.eachLayer(l=>{let j=l.toGeoJSON(); j.properties.customName=l.customName||""; j.properties.customNotes=l.customNotes||""; f.push(j);}); db.ref('users/'+auth.currentUser.uid).set({drawings:JSON.stringify({type:"FeatureCollection",features:f})}); document.getElementById('save-status').innerText="تم الحفظ"; setTimeout(()=>document.getElementById('save-status').innerText="جاهز",2000); }
-        function loadUserDrawings(uid) { db.ref('users/'+uid).once('value').then(s=>{ let d=s.val(); if(d&&d.drawings) L.geoJSON(JSON.parse(d.drawings),{onEachFeature:(f,l)=>{l.customName=f.properties.customName; drawnItems.addLayer(l); attachPopup(l); l.on('click', eraserHandler);}}); updateLayerList(); }); }
-        map.on(L.Draw.Event.EDITED, () => { saveUserDrawings(); updateLayerList(); }); map.on(L.Draw.Event.DELETED, () => { saveUserDrawings(); updateLayerList(); });
-        function updateProjection() { currentZone=document.getElementById('lambert-zone').value; }
-        function searchPlace() { let q=document.getElementById('search-input').value; fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}`).then(r=>r.json()).then(d=>{if(d.length) map.setView([d[0].lat,d[0].lon],13);}); }
-        function goToCoordinates() { let x=parseFloat(document.getElementById('input-x').value), y=parseFloat(document.getElementById('input-y').value); try{let l=proj4(currentZone,"EPSG:4326",[x,y]); map.setView([l[1],l[0]],16); L.marker([l[1],l[0]]).addTo(map);}catch(e){} }
-        function locateUser() { map.locate({setView:true, maxZoom:15}); }
-        function clearMap() { drawnItems.clearLayers(); saveUserDrawings(); updateLayerList(); }
-        function createBuffer() { if(drawnItems.getLayers().length === 0) return alert("حدد شكلاً"); let layer = drawnItems.getLayers()[drawnItems.getLayers().length - 1]; let dist = parseFloat(document.getElementById('buffer-val').value); try { let buffered = turf.buffer(layer.toGeoJSON(), dist, {units: 'meters'}); let bufLayer = L.geoJSON(buffered, {style:{color:'red', dashArray:'5,5'}}); bufLayer.eachLayer(l => { l.customName = "Buffer "+dist; drawnItems.addLayer(l); attachPopup(l); }); saveUserDrawings(); updateLayerList(); } catch(e) { alert("خطأ"); } }
-        function activateStreetView(){ alert("انقر للخريطة"); map.once('click', e => { document.getElementById('sv-overlay').style.display='flex'; document.getElementById('sv-iframe').src=`maps.google.com/0{e.latlng.lat},${e.latlng.lng}&output=svembed`; }); }
-        function closeStreetView(){ document.getElementById('sv-overlay').style.display='none'; document.getElementById('sv-iframe').src=""; }
+        function loadFile(i) { /* الاستيراد */ }
+
+        // --- Service Worker Registration (PWA Magic) ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                // Register a simple service worker to enable "Add to Home Screen"
+                navigator.serviceWorker.register('sw.js').then(function(registration) {
+                    console.log('ServiceWorker registration successful');
+                }, function(err) {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+            });
+        }
+
         map.on('mousemove', e => { try { let p = proj4("EPSG:4326", currentZone, [e.latlng.lng, e.latlng.lat]); document.getElementById('bottom-bar').innerHTML = `X: ${p[0].toFixed(0)} | Y: ${p[1].toFixed(0)} | Lat: ${e.latlng.lat.toFixed(4)}`; } catch(x){} });
     </script>
 </body>

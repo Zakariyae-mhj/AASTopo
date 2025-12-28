@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ZASTopo Pro | V69 (Split Coordinates)</title>
+    <title>ZASTopo Pro | V70 (Clean UI)</title>
     
     <meta name="theme-color" content="#2563eb">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -24,6 +24,11 @@
         body { margin: 0; font-family: 'Cairo', sans-serif; overflow: hidden; background: #0f172a; overscroll-behavior: none; }
         #map { height: 100vh; width: 100%; z-index: 1; }
         * { -webkit-tap-highlight-color: transparent; }
+
+        /* 🟢 إخفاء شعار Leaflet تماماً */
+        .leaflet-control-attribution {
+            display: none !important;
+        }
 
         .dock-container { position: absolute; top: 50%; transform: translateY(-50%); right: 15px; display: flex; flex-direction: column; gap: 12px; z-index: 2000; pointer-events: none; }
         .dock-group { display: flex; flex-direction: column; gap: 8px; pointer-events: auto; background: rgba(255,255,255,0.15); padding: 6px; border-radius: 16px; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2); }
@@ -81,12 +86,26 @@
         .val-highlight { color: #d97706; font-weight: bold; font-size: 14px; border: 1px solid #fcd34d; background: #fffbeb; padding: 2px 5px; border-radius: 4px; display: inline-block; margin-top: 3px; }
         .feature-title { font-weight: bold; color: #1e293b; font-size: 15px; border-bottom: 2px solid #eee; padding-bottom: 5px; margin-bottom: 5px; }
 
-        #save-status { position: absolute; bottom: 10px; right: 10px; font-size: 11px; font-weight: bold; color: #2ecc71; background: rgba(255,255,255,0.8); padding: 2px 8px; border-radius: 4px; z-index: 1000; }
+        /* 🟢 تعديل مكان "جاهز": تم نقله للأعلى لكي لا يغطي المقياس */
+        #save-status { 
+            position: absolute; 
+            top: 70px; /* تحت شريط البحث */
+            left: 50%; 
+            transform: translateX(-50%);
+            font-size: 11px; 
+            font-weight: bold; 
+            color: #2ecc71; 
+            background: rgba(255,255,255,0.9); 
+            padding: 4px 12px; 
+            border-radius: 20px; 
+            z-index: 1000; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
         #search-bar { position: absolute; top: 15px; right: 15px; z-index: 1000; width: 220px; background: white; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; padding: 4px; align-items: center; transition: 0.3s; }
         #search-bar input { border: none; background: transparent; padding: 0 15px; flex: 1; outline: none; font-family: inherit; font-size: 13px; height: 32px; }
         #search-bar button { width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--primary); color: white; cursor: pointer; }
         
-        /* 🟢 تنسيق الشريط السفلي الجديد (Split View) */
         #bottom-bar { 
             position: absolute; 
             bottom: 10px; 
@@ -100,7 +119,7 @@
             dir: ltr; 
             box-shadow: 0 2px 10px rgba(0,0,0,0.15);
             display: flex;
-            flex-direction: column; /* جعل العناصر فوق بعضها */
+            flex-direction: column;
             gap: 2px;
             border: 1px solid rgba(0,0,0,0.1);
             text-align: left;
@@ -125,7 +144,8 @@
             .dock-group:last-child { position: absolute; bottom: 80px; right: 15px; flex-direction: column; background: white; padding: 5px; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
             #chart-container { left: 0; bottom: 0; width: 100%; height: 40vh; border-radius: 25px 25px 0 0; box-sizing: border-box; }
             #bottom-bar { bottom: 80px; left: 15px; }
-            #save-status { bottom: 80px; right: auto; left: 50%; transform: translateX(-50%); }
+            /* في الموبايل، نرفع الحالة أكثر */
+            #save-status { top: 70px; } 
         }
     </style>
 </head>
@@ -230,7 +250,9 @@
             <hr style="margin: 15px 0; border-top: 1px solid #e2e8f0;">
             <div class="dedication-box">
                 <h5>✨ إهداء وصدقة جارية</h5>
-                <p class="dedication-text">أضع هذه المنصة العلمية بين أيدي عموم الباحثين والطلبة والمهتمين بمجال الخرائط والطبوغرافيا أينما كانوا...</p>
+                <p class="dedication-text">
+                    أضع هذه المنصة العلمية بين أيدي عموم الباحثين والطلبة والمهتمين بمجال الخرائط والطبوغرافيا أينما كانوا. وأغتنم هذه الفرصة لأخصّ بتحية تقدير وعرفان السادة أعضاء الأكاديمية المغربية للدراسات الجغرافية والتنمية الترابية، وزملائي طلبة شعبة الجغرافيا بجامعة محمد الأول بوجدة. لقد نويتُ هذا الجهد المتواضع صدقةً جاريةً عن والديّ الكريمين، سائلاً المولى عز وجل أن ينفع به الجميع، وأن يجعل كل استفادة علمية منه نوراً في ميزان حسناتهما ورفعةً في درجاتهما.
+                </p>
             </div>
         </div>
         <div style="height: 80px;"></div>
@@ -241,13 +263,21 @@
         <button class="close-chart" style="position:absolute; top:15px; left:15px; background:#f1f5f9; color:#64748b;" onclick="togglePanel('layers-panel')"><i class="fas fa-chevron-down"></i></button>
         <div style="margin-top: 20px;">
             <select id="lambert-zone" class="tool-input" onchange="updateProjection()">
-                <optgroup label="🇲🇦 المغرب (Lambert)"><option value="EPSG:26191" selected>Lambert Zone I</option><option value="EPSG:26192">Lambert Zone II</option><option value="EPSG:26193">Lambert Zone III</option><option value="EPSG:26194">Lambert Zone IV</option><option value="EPSG:26195">Merchich</option></optgroup>
-                <optgroup label="🇩🇿 الجزائر (UTM)"><option value="EPSG:3059">Nord Sahara</option><option value="EPSG:32629">Zone 29N</option><option value="EPSG:32630">Zone 30N</option><option value="EPSG:32631">Zone 31N</option><option value="EPSG:32632">Zone 32N</option></optgroup>
-                <optgroup label="🇹🇳 تونس (Tunisie)"><option value="EPSG:22332">Carthage UTM</option><option value="EPSG:32632">Zone 32N</option></optgroup>
-                <optgroup label="🇱🇾 ليبيا (Libye)"><option value="EPSG:32632">Zone 32N</option><option value="EPSG:32633">Zone 33N</option><option value="EPSG:32634">Zone 34N</option></optgroup>
-                <optgroup label="🇪🇬 مصر (Egypte)"><option value="EPSG:22992">Red Belt</option><option value="EPSG:22991">Purple Belt</option><option value="EPSG:22993">Green Belt</option><option value="EPSG:22994">Blue Belt</option><option value="EPSG:32636">Zone 36N</option></optgroup>
-                <optgroup label="🇸🇦 السعودية"><option value="EPSG:32637">Zone 37N</option><option value="EPSG:32638">Zone 38N</option><option value="EPSG:32639">Zone 39N</option></optgroup>
-                <optgroup label="🇯🇴 الأردن"><option value="EPSG:2314">JTM</option><option value="EPSG:32636">Zone 36N</option></optgroup>
+                <optgroup label="🇲🇦 المغرب (Maroc)">
+                    <option value="EPSG:26191" selected>Nord (Lambert I)</option>
+                    <option value="EPSG:26192">Centre (Lambert II)</option>
+                    <option value="EPSG:26193">Sud (Lambert III)</option>
+                    <option value="EPSG:26194">Grand Sud (Lambert IV)</option>
+                    <option value="EPSG:26195">Merchich Nord</option>
+                </optgroup>
+                <optgroup label="🇩🇿 الجزائر (Algérie)">
+                    <option value="EPSG:3059">Nord Sahara (Voirol)</option>
+                    <option value="EPSG:32629">UTM Zone 29N</option>
+                    <option value="EPSG:32630">UTM Zone 30N</option>
+                    <option value="EPSG:32631">UTM Zone 31N</option>
+                    <option value="EPSG:32632">UTM Zone 32N</option>
+                </optgroup>
+                <optgroup label="🌐 النظام العالمي (Global)"><option value="EPSG:4326">WGS84 (Lat/Lon)</option><option value="EPSG:3857">Web Mercator (Google/Bing)</option></optgroup>
             </select>
             <div style="display:flex; gap:5px;">
                 <input id="input-x" class="tool-input" placeholder="X">
@@ -263,9 +293,9 @@
         <button class="close-chart" style="position:absolute; top:15px; left:15px; background:#f1f5f9; color:#64748b;" onclick="togglePanel('draw-panel')"><i class="fas fa-chevron-down"></i></button>
         <div style="margin-top: 20px;">
             <button id="stop-drawing-btn" class="tool-btn" onclick="stopContinuousDraw()">🛑 إنهاء الرسم</button>
-            <button class="tool-btn" onclick="startContinuousDraw('marker')"><i class="fas fa-map-marker-alt"></i> نقاط</button>
-            <button class="tool-btn" onclick="startContinuousDraw('polyline')"><i class="fas fa-route"></i> خطوط</button>
-            <button class="tool-btn" onclick="startContinuousDraw('polygon')"><i class="fas fa-draw-polygon"></i> مساحات</button>
+            <button class="tool-btn" onclick="startContinuousDraw('marker')"><i class="fas fa-map-marker-alt"></i> نقاط (Points)</button>
+            <button class="tool-btn" onclick="startContinuousDraw('polyline')"><i class="fas fa-route"></i> خطوط (Lines)</button>
+            <button class="tool-btn" onclick="startContinuousDraw('polygon')"><i class="fas fa-draw-polygon"></i> مساحات (Polygons)</button>
             <hr>
             <button class="tool-btn" onclick="activateStreetView()"><i class="fas fa-street-view"></i> Street View</button>
             <div style="display:flex; gap:5px; margin-top:5px;">
@@ -302,8 +332,8 @@
     <div id="map"></div>
     
     <div id="bottom-bar">
-        <div style="font-weight:bold; color:var(--primary)">XY: 0 | 0</div>
-        <div style="color:#64748b">Lat: 0 | Lng: 0</div>
+        <div style="font-weight:bold; color:#2563eb">📐 X: 0 | Y: 0</div>
+        <div style="color:#64748b">🌐 Lat: 0 | Lng: 0</div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
@@ -334,14 +364,12 @@
             ["EPSG:26194", "+proj=lcc +lat_1=22.5 +lat_0=22.5 +lon_0=-5.4 +k_0=0.999616437 +x_0=1500000 +y_0=400000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"],
             ["EPSG:26195", "+proj=lcc +lat_1=33.3 +lat_0=33.3 +lon_0=-5.4 +k_0=0.999625769 +x_0=500000 +y_0=300000 +ellps=clrk80ign +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"],
             ["EPSG:3059", "+proj=utm +zone=31 +ellps=clrk80ign +units=m +no_defs"],
-            ["EPSG:32628", "+proj=utm +zone=28 +datum=WGS84 +units=m +no_defs"],
             ["EPSG:32629", "+proj=utm +zone=29 +datum=WGS84 +units=m +no_defs"],
             ["EPSG:32630", "+proj=utm +zone=30 +datum=WGS84 +units=m +no_defs"],
             ["EPSG:32631", "+proj=utm +zone=31 +datum=WGS84 +units=m +no_defs"],
             ["EPSG:32632", "+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs"],
             ["EPSG:32633", "+proj=utm +zone=33 +datum=WGS84 +units=m +no_defs"],
             ["EPSG:32634", "+proj=utm +zone=34 +datum=WGS84 +units=m +no_defs"],
-            ["EPSG:32635", "+proj=utm +zone=35 +datum=WGS84 +units=m +no_defs"],
             ["EPSG:32636", "+proj=utm +zone=36 +datum=WGS84 +units=m +no_defs"],
             ["EPSG:32637", "+proj=utm +zone=37 +datum=WGS84 +units=m +no_defs"],
             ["EPSG:32638", "+proj=utm +zone=38 +datum=WGS84 +units=m +no_defs"],
@@ -358,11 +386,6 @@
             ["EPSG:28191", "+proj=tmerc +lat_0=31.7343936111111 +lon_0=35.2045169444445 +k=1 +x_0=170251.555 +y_0=1126867.909 +a=6378300.789 +b=6356566.435 +towgs84=-275.722,35.2833,304.117,-1.92,1.35,-5.63,2.54 +units=m +no_defs"],
             ["EPSG:2039", "+proj=tmerc +lat_0=31.7343936111111 +lon_0=35.2045169444444 +k=1.0000067 +x_0=219529.584 +y_0=626907.39 +ellps=GRS80 +towgs84=-48,55,52,0,0,0,0 +units=m +no_defs"],
             ["EPSG:22770", "+proj=stere +lat_0=34.2 +lon_0=39.15 +k=0.999534104 +x_0=0 +y_0=0 +a=6378249.2 +b=6356515 +towgs84=-182,-222,192,0,0,0,0 +units=m +no_defs"],
-            ["EPSG:2932", "+proj=tmerc +lat_0=24.45 +lon_0=51.2166666666667 +k=0.99999 +x_0=200000 +y_0=300000 +ellps=intl +towgs84=-119,-155,-69,0,0,0,0 +units=m +no_defs"],
-            ["EPSG:31900", "+proj=utm +zone=39 +ellps=GRS80 +units=m +no_defs"],
-            ["EPSG:20135", "+proj=utm +zone=35 +a=6378249.145 +b=6356514.86955 +towgs84=-166,-15,204,0,0,0,0 +units=m +no_defs"],
-            ["EPSG:20136", "+proj=utm +zone=36 +a=6378249.145 +b=6356514.86955 +towgs84=-166,-15,204,0,0,0,0 +units=m +no_defs"],
-            ["EPSG:20137", "+proj=utm +zone=37 +a=6378249.145 +b=6356514.86955 +towgs84=-166,-15,204,0,0,0,0 +units=m +no_defs"],
             ["EPSG:4326", "+proj=longlat +datum=WGS84 +no_defs"],
             ["EPSG:3857", "+proj=merc +a=6378137 +b=6378137 +lat_ts=0 +lon_0=0 +x_0=0 +y_0=0 +k=1 +units=m +nadgrids=@null +wktext +no_defs"]
         ]);
@@ -396,7 +419,6 @@
             else if (layer instanceof L.Polygon) { let area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]); let ha = (area/10000).toFixed(4); let sqm = area.toFixed(2); content += `<div class="val-highlight">${ha} هكتار</div><div style="font-size:12px; color:#64748b;">${sqm} متر²</div>`; layer.bindPopup(content); }
         }
 
-        // Undo/Redo & Layers
         let stateStack = []; let currentStateIndex = -1; let isProgrammaticChange = false;
         function recordState() { if (isProgrammaticChange) return; if (currentStateIndex < stateStack.length - 1) stateStack = stateStack.slice(0, currentStateIndex + 1); if (stateStack.length > 20) { stateStack.shift(); currentStateIndex--; } stateStack.push(JSON.stringify(drawnItems.toGeoJSON())); currentStateIndex++; }
         function undo() { if (currentStateIndex > 0) { isProgrammaticChange = true; currentStateIndex--; const previousState = JSON.parse(stateStack[currentStateIndex]); drawnItems.clearLayers(); L.geoJSON(previousState, { onEachFeature: function(f, l) { l.customName = f.properties.customName || ""; l.customNotes = f.properties.customNotes || ""; l._customVisible = f.properties._customVisible; drawnItems.addLayer(l); attachPopup(l); l.on('click', eraserHandler); } }); isProgrammaticChange = false; saveUserDrawings(); updateLayerList(); } }
@@ -453,7 +475,6 @@
         function activateStreetView(){ alert("انقر للخريطة"); map.once('click', e => { document.getElementById('sv-overlay').style.display='flex'; document.getElementById('sv-iframe').src=`maps.google.com/0{e.latlng.lat},${e.latlng.lng}&output=svembed`; }); }
         function closeStreetView(){ document.getElementById('sv-overlay').style.display='none'; document.getElementById('sv-iframe').src=""; }
         
-        // 🟢 تحديث منطق الشريط السفلي (Split View)
         map.on('mousemove', e => {
             try {
                 let p = proj4("EPSG:4326", currentZone, [e.latlng.lng, e.latlng.lat]);

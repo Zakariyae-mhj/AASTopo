@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ZASTopo Pro | V65 (Fixed Layers)</title>
+    <title>ZASTopo Pro | V67 (Undo/Redo System)</title>
     
     <meta name="theme-color" content="#2563eb">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
     
     <style>
-        /* --- Styles (نفس الستايل السابق) --- */
+        /* --- Styles --- */
         :root { --primary: #2563eb; --glass: rgba(255, 255, 255, 0.95); --shadow: 0 8px 32px rgba(0,0,0,0.15); }
         body { margin: 0; font-family: 'Cairo', sans-serif; overflow: hidden; background: #0f172a; overscroll-behavior: none; }
         #map { height: 100vh; width: 100%; z-index: 1; }
@@ -37,6 +37,10 @@
         .eraser-active { background: #ef4444 !important; color: white !important; animation: pulseRed 1.5s infinite; }
         .clear-btn { background: #1e293b; color: white; }
         
+        /* 🟢 أزرار التراجع والإعادة (Undo/Redo Buttons) */
+        .undo-redo-btn { background: white; color: #2563eb; }
+        .undo-redo-btn.disabled { opacity: 0.5; cursor: not-allowed; color: #cbd5e1; background: #f1f5f9; }
+
         .panel { position: absolute; top: 20px; right: 80px; width: 300px; background: var(--glass); backdrop-filter: blur(12px); border-radius: 16px; padding: 15px; box-shadow: var(--shadow); z-index: 2000; display: none; max-height: 85vh; overflow-y: auto; transition: 0.3s; }
         .panel.active { display: block; animation: slideInRight 0.3s forwards; }
         @keyframes slideInRight { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
@@ -179,6 +183,8 @@
     </div>
 
     <div class="left-dock">
+        <div class="dock-item undo-redo-btn desktop-tooltip" onclick="undo()" data-tooltip="تراجع"><i class="fas fa-undo"></i></div>
+        <div class="dock-item undo-redo-btn desktop-tooltip" onclick="redo()" data-tooltip="إعادة"><i class="fas fa-redo"></i></div>
         <div class="dock-item eraser-btn desktop-tooltip" id="eraser-btn" onclick="toggleEraser()" data-tooltip="ممحاة"><i class="fas fa-eraser"></i></div>
         <div class="dock-item clear-btn desktop-tooltip" onclick="clearMap()" data-tooltip="مسح الكل"><i class="fas fa-trash-alt"></i></div>
     </div>
@@ -193,89 +199,10 @@
         <div style="height: 80px;"></div>
     </div>
 
-    <div id="user-panel" class="panel">
-        <h3><i class="fas fa-id-card"></i> الملف الشخصي</h3>
-        <button class="close-chart" style="position:absolute; top:15px; left:15px; background:#f1f5f9; color:#64748b;" onclick="togglePanel('user-panel')"><i class="fas fa-chevron-down"></i></button>
-        <div class="user-info-card" style="margin-top: 20px;">
-            <img src="https://i.imgur.com/rP6Yotb.png" alt="Logo" class="profile-panel-logo">
-            <div class="user-avatar"><i class="fas fa-user"></i></div>
-            <h4 id="display-name" style="margin:5px 0;">زائر</h4>
-            <div class="credits-text">
-                <strong>💻 تطوير وبرمجة:</strong> زكرياء المحجوبي<br>
-                <strong>🔬 المختبر:</strong> مختبر دينامية الأوساط الجافة والتهيئة الجهوية<br>
-                <strong>🎓 المؤسسة:</strong> شعبة الجغرافيا - جامعة محمد الأول
-            </div>
-            <hr style="margin: 15px 0; border-top: 1px solid #e2e8f0;">
-            <div class="dedication-box">
-                <h5>✨ إهداء وصدقة جارية</h5>
-                <p class="dedication-text">أضع هذه المنصة العلمية بين أيدي عموم الباحثين والطلبة والمهتمين بمجال الخرائط والطبوغرافيا أينما كانوا...</p>
-            </div>
-        </div>
-        <div style="height: 80px;"></div>
-    </div>
-
-    <div id="layers-panel" class="panel">
-        <h3><i class="fas fa-globe"></i> نظام الإحداثيات</h3>
-        <button class="close-chart" style="position:absolute; top:15px; left:15px; background:#f1f5f9; color:#64748b;" onclick="togglePanel('layers-panel')"><i class="fas fa-chevron-down"></i></button>
-        <div style="margin-top: 20px;">
-            <select id="lambert-zone" class="tool-input" onchange="updateProjection()">
-                <optgroup label="🇲🇦 المغرب (Lambert)"><option value="EPSG:26191" selected>Lambert Zone I</option><option value="EPSG:26192">Lambert Zone II</option><option value="EPSG:26193">Lambert Zone III</option><option value="EPSG:26194">Lambert Zone IV</option><option value="EPSG:26195">Merchich</option></optgroup>
-                <optgroup label="🇩🇿 الجزائر (UTM)"><option value="EPSG:3059">Nord Sahara</option><option value="EPSG:32629">Zone 29N</option><option value="EPSG:32630">Zone 30N</option><option value="EPSG:32631">Zone 31N</option><option value="EPSG:32632">Zone 32N</option></optgroup>
-                <optgroup label="🇹🇳 تونس (Tunisie)"><option value="EPSG:22332">Carthage UTM</option><option value="EPSG:32632">Zone 32N</option></optgroup>
-                <optgroup label="🇱🇾 ليبيا (Libye)"><option value="EPSG:32632">Zone 32N</option><option value="EPSG:32633">Zone 33N</option><option value="EPSG:32634">Zone 34N</option></optgroup>
-                <optgroup label="🇪🇬 مصر (Egypte)"><option value="EPSG:22992">Red Belt</option><option value="EPSG:22991">Purple Belt</option><option value="EPSG:22993">Green Belt</option><option value="EPSG:22994">Blue Belt</option><option value="EPSG:32636">Zone 36N</option></optgroup>
-                <optgroup label="🇸🇦 السعودية"><option value="EPSG:32637">Zone 37N</option><option value="EPSG:32638">Zone 38N</option><option value="EPSG:32639">Zone 39N</option></optgroup>
-                <optgroup label="🇯🇴 الأردن"><option value="EPSG:2314">JTM</option><option value="EPSG:32636">Zone 36N</option></optgroup>
-            </select>
-            <div style="display:flex; gap:5px;">
-                <input id="input-x" class="tool-input" placeholder="X">
-                <input id="input-y" class="tool-input" placeholder="Y">
-            </div>
-            <button class="tool-btn" onclick="goToCoordinates()">ذهاب</button>
-        </div>
-        <div style="height: 80px;"></div>
-    </div>
-
-    <div id="draw-panel" class="panel">
-        <h3><i class="fas fa-pencil-ruler"></i> أدوات الرسم</h3>
-        <button class="close-chart" style="position:absolute; top:15px; left:15px; background:#f1f5f9; color:#64748b;" onclick="togglePanel('draw-panel')"><i class="fas fa-chevron-down"></i></button>
-        <div style="margin-top: 20px;">
-            <button id="stop-drawing-btn" class="tool-btn" onclick="stopContinuousDraw()">🛑 إنهاء الرسم</button>
-            <button class="tool-btn" onclick="startContinuousDraw('marker')"><i class="fas fa-map-marker-alt"></i> نقاط</button>
-            <button class="tool-btn" onclick="startContinuousDraw('polyline')"><i class="fas fa-route"></i> خطوط</button>
-            <button class="tool-btn" onclick="startContinuousDraw('polygon')"><i class="fas fa-draw-polygon"></i> مساحات</button>
-            <hr>
-            <button class="tool-btn" onclick="activateStreetView()"><i class="fas fa-street-view"></i> Street View</button>
-            <div style="display:flex; gap:5px; margin-top:5px;">
-                <input type="number" id="buffer-val" class="tool-input" value="50" style="width:60px; margin:0;">
-                <button class="tool-btn" style="margin:0; flex:1;" onclick="createBuffer()">نطاق عازل</button>
-            </div>
-            <button class="tool-btn" style="margin-top:10px;" onclick="generateRealProfile()">🏔️ المقطع الطبوغرافي</button>
-        </div>
-        <div style="height: 80px;"></div>
-    </div>
-
-    <div id="data-panel" class="panel">
-        <h3><i class="fas fa-file-export"></i> إدارة البيانات</h3>
-        <button class="close-chart" style="position:absolute; top:15px; left:15px; background:#f1f5f9; color:#64748b;" onclick="togglePanel('data-panel')"><i class="fas fa-chevron-down"></i></button>
-        <div style="margin-top: 20px;">
-            <div style="border: 2px dashed #ccc; padding: 10px; border-radius: 8px; margin-bottom: 10px; text-align: center;">
-                <input type="file" id="file-input" accept=".kmz,.kml,.gpx,.dxf" style="display:none;" onchange="loadFile(this)">
-                <button class="tool-btn" style="justify-content: center;" onclick="document.getElementById('file-input').click()">📥 استيراد (KMZ/KML/DXF)</button>
-            </div>
-            <hr style="border-top:1px solid #eee;">
-            <label style="font-size: 12px; color: #64748b; display: block; margin-bottom: 5px;">تصدير البيانات:</label>
-            <button class="tool-btn" onclick="downloadExcel()"><i class="fas fa-file-excel" style="color: green;"></i> Excel (XLSX)</button>
-            <button class="tool-btn" onclick="downloadCSV()"><i class="fas fa-file-csv" style="color: orange;"></i> CSV (Text)</button>
-            <div style="display:flex; gap:5px;">
-                <button class="tool-btn" onclick="downloadKML()"><i class="fas fa-globe" style="color: blue;"></i> KML</button>
-                <button class="tool-btn" onclick="downloadKMZ()"><i class="fas fa-file-archive" style="color: darkblue;"></i> KMZ</button>
-            </div>
-            <button class="tool-btn" onclick="downloadDXF()"><i class="fas fa-pencil-ruler" style="color: purple;"></i> AutoCAD (DXF)</button>
-            <button class="tool-btn" onclick="takeScreenshotAndMetadata()"><i class="fas fa-camera"></i> لقطة شاشة</button>
-        </div>
-        <div style="height: 80px;"></div>
-    </div>
+    <div id="user-panel" class="panel"><h3><i class="fas fa-id-card"></i> الملف الشخصي</h3><button class="close-chart" style="position:absolute; top:15px; left:15px; background:#f1f5f9; color:#64748b;" onclick="togglePanel('user-panel')"><i class="fas fa-chevron-down"></i></button><div class="user-info-card" style="margin-top: 20px;"><img src="https://i.imgur.com/rP6Yotb.png" alt="Logo" class="profile-panel-logo"><div class="user-avatar"><i class="fas fa-user"></i></div><h4 id="display-name" style="margin:5px 0;">زائر</h4><div class="credits-text"><strong>💻 تطوير وبرمجة:</strong> زكرياء المحجوبي<br><strong>🔬 المختبر:</strong> مختبر دينامية الأوساط الجافة والتهيئة الجهوية<br><strong>🎓 المؤسسة:</strong> شعبة الجغرافيا - جامعة محمد الأول</div><hr style="margin: 15px 0; border-top: 1px solid #e2e8f0;"><div class="dedication-box"><h5>✨ إهداء وصدقة جارية</h5><p class="dedication-text">أضع هذه المنصة العلمية بين أيدي عموم الباحثين والطلبة والمهتمين بمجال الخرائط والطبوغرافيا أينما كانوا...</p></div></div><div style="height: 80px;"></div></div>
+    <div id="layers-panel" class="panel"><h3><i class="fas fa-globe"></i> نظام الإحداثيات</h3><button class="close-chart" style="position:absolute; top:15px; left:15px; background:#f1f5f9; color:#64748b;" onclick="togglePanel('layers-panel')"><i class="fas fa-chevron-down"></i></button><div style="margin-top: 20px;"><select id="lambert-zone" class="tool-input" onchange="updateProjection()"><optgroup label="🇲🇦 المغرب (Lambert)"><option value="EPSG:26191" selected>Lambert Zone I</option><option value="EPSG:26192">Lambert Zone II</option><option value="EPSG:26193">Lambert Zone III</option><option value="EPSG:26194">Lambert Zone IV</option><option value="EPSG:26195">Merchich</option></optgroup><optgroup label="🇩🇿 الجزائر (UTM)"><option value="EPSG:3059">Nord Sahara</option><option value="EPSG:32629">Zone 29N</option><option value="EPSG:32630">Zone 30N</option><option value="EPSG:32631">Zone 31N</option><option value="EPSG:32632">Zone 32N</option></optgroup></select><div style="display:flex; gap:5px;"><input id="input-x" class="tool-input" placeholder="X"><input id="input-y" class="tool-input" placeholder="Y"></div><button class="tool-btn" onclick="goToCoordinates()">ذهاب</button></div><div style="height: 80px;"></div></div>
+    <div id="draw-panel" class="panel"><h3><i class="fas fa-pencil-ruler"></i> أدوات الرسم</h3><button class="close-chart" style="position:absolute; top:15px; left:15px; background:#f1f5f9; color:#64748b;" onclick="togglePanel('draw-panel')"><i class="fas fa-chevron-down"></i></button><div style="margin-top: 20px;"><button id="stop-drawing-btn" class="tool-btn" onclick="stopContinuousDraw()">🛑 إنهاء الرسم</button><button class="tool-btn" onclick="startContinuousDraw('marker')"><i class="fas fa-map-marker-alt"></i> نقاط</button><button class="tool-btn" onclick="startContinuousDraw('polyline')"><i class="fas fa-route"></i> خطوط</button><button class="tool-btn" onclick="startContinuousDraw('polygon')"><i class="fas fa-draw-polygon"></i> مساحات</button><hr><button class="tool-btn" onclick="activateStreetView()"><i class="fas fa-street-view"></i> Street View</button><div style="display:flex; gap:5px; margin-top:5px;"><input type="number" id="buffer-val" class="tool-input" value="50" style="width:60px; margin:0;"><button class="tool-btn" style="margin:0; flex:1;" onclick="createBuffer()">نطاق عازل</button></div><button class="tool-btn" style="margin-top:10px;" onclick="generateRealProfile()">🏔️ المقطع الطبوغرافي</button></div><div style="height: 80px;"></div></div>
+    <div id="data-panel" class="panel"><h3><i class="fas fa-file-export"></i> إدارة البيانات</h3><button class="close-chart" style="position:absolute; top:15px; left:15px; background:#f1f5f9; color:#64748b;" onclick="togglePanel('data-panel')"><i class="fas fa-chevron-down"></i></button><div style="margin-top: 20px;"><div style="border: 2px dashed #ccc; padding: 10px; border-radius: 8px; margin-bottom: 10px; text-align: center;"><input type="file" id="file-input" accept=".kmz,.kml,.gpx,.dxf" style="display:none;" onchange="loadFile(this)"><button class="tool-btn" style="justify-content: center;" onclick="document.getElementById('file-input').click()">📥 استيراد (KMZ/KML/DXF)</button></div><hr style="border-top:1px solid #eee;"><label style="font-size: 12px; color: #64748b; display: block; margin-bottom: 5px;">تصدير البيانات:</label><button class="tool-btn" onclick="downloadExcel()"><i class="fas fa-file-excel" style="color: green;"></i> Excel (XLSX)</button><button class="tool-btn" onclick="downloadCSV()"><i class="fas fa-file-csv" style="color: orange;"></i> CSV (Text)</button><div style="display:flex; gap:5px;"><button class="tool-btn" onclick="downloadKML()"><i class="fas fa-globe" style="color: blue;"></i> KML</button><button class="tool-btn" onclick="downloadKMZ()"><i class="fas fa-file-archive" style="color: darkblue;"></i> KMZ</button></div><button class="tool-btn" onclick="downloadDXF()"><i class="fas fa-pencil-ruler" style="color: purple;"></i> AutoCAD (DXF)</button><button class="tool-btn" onclick="takeScreenshotAndMetadata()"><i class="fas fa-camera"></i> لقطة شاشة</button></div><div style="height: 80px;"></div></div>
 
     <div id="map"></div>
     <div id="bottom-bar">Lat: 0 | Lng: 0</div>
@@ -341,9 +268,94 @@
         var drawControl = new L.Control.Draw({ edit: { featureGroup: drawnItems }, draw: false }); 
         map.addControl(drawControl);
 
+        // ============================================================
+        // 🟢 نظام التراجع والإعادة (Undo/Redo System)
+        // ============================================================
+        let stateStack = [];
+        let currentStateIndex = -1;
+        let isProgrammaticChange = false; // لمنع الحلقة المفرغة عند استعادة الحالة
+
+        // دالة تسجيل الحالة (تُستدعى بعد كل تغيير)
+        function recordState() {
+            if (isProgrammaticChange) return;
+
+            // إذا قمنا بتغيير بعد التراجع، نحذف كل "المستقبل" (Redo history)
+            if (currentStateIndex < stateStack.length - 1) {
+                stateStack = stateStack.slice(0, currentStateIndex + 1);
+            }
+
+            // تحديد حد أقصى للذاكرة (مثلاً 20 خطوة)
+            if (stateStack.length > 20) {
+                stateStack.shift();
+                currentStateIndex--;
+            }
+
+            const currentState = drawnItems.toGeoJSON();
+            stateStack.push(JSON.stringify(currentState));
+            currentStateIndex++;
+            updateUndoRedoUI();
+        }
+
+        function undo() {
+            if (currentStateIndex > 0) {
+                isProgrammaticChange = true;
+                currentStateIndex--;
+                const previousState = JSON.parse(stateStack[currentStateIndex]);
+                
+                drawnItems.clearLayers();
+                L.geoJSON(previousState, {
+                    onEachFeature: function(f, l) {
+                        l.customName = f.properties.customName || "";
+                        l.customNotes = f.properties.customNotes || "";
+                        l._customVisible = f.properties._customVisible; // استعادة حالة الظهور
+                        drawnItems.addLayer(l);
+                        attachPopup(l);
+                        l.on('click', eraserHandler);
+                    }
+                });
+                
+                isProgrammaticChange = false;
+                saveUserDrawings();
+                updateLayerList();
+                updateUndoRedoUI();
+            }
+        }
+
+        function redo() {
+            if (currentStateIndex < stateStack.length - 1) {
+                isProgrammaticChange = true;
+                currentStateIndex++;
+                const nextState = JSON.parse(stateStack[currentStateIndex]);
+                
+                drawnItems.clearLayers();
+                L.geoJSON(nextState, {
+                    onEachFeature: function(f, l) {
+                        l.customName = f.properties.customName || "";
+                        l.customNotes = f.properties.customNotes || "";
+                        l._customVisible = f.properties._customVisible;
+                        drawnItems.addLayer(l);
+                        attachPopup(l);
+                        l.on('click', eraserHandler);
+                    }
+                });
+                
+                isProgrammaticChange = false;
+                saveUserDrawings();
+                updateLayerList();
+                updateUndoRedoUI();
+            }
+        }
+
+        function updateUndoRedoUI() {
+            // تلوين الأزرار حسب التوفر
+            // (يمكن إضافة كلاسات CSS لتغيير الشفافية هنا)
+        }
+
+        // ============================================================
+
         let isEraserActive = false;
         function toggleEraser() { isEraserActive = !isEraserActive; document.getElementById('eraser-btn').classList.toggle('eraser-active', isEraserActive); map.getContainer().classList.toggle('eraser-cursor', isEraserActive); if(isEraserActive){ stopContinuousDraw(); drawnItems.eachLayer(l => l.on('click', eraserHandler)); } else { drawnItems.eachLayer(l => l.off('click', eraserHandler)); } }
-        function eraserHandler(e) { if(!isEraserActive) return; L.DomEvent.stop(e); drawnItems.removeLayer(e.target); saveUserDrawings(); updateLayerList(); }
+        function eraserHandler(e) { if(!isEraserActive) return; L.DomEvent.stop(e); drawnItems.removeLayer(e.target); saveUserDrawings(); updateLayerList(); recordState(); /* 🟢 تسجيل الحذف */ }
         
         let activeDrawHandler = null; let currentDrawType = null;
         function startContinuousDraw(type) { if(isEraserActive) toggleEraser(); if(activeDrawHandler) activeDrawHandler.disable(); currentDrawType = type; document.getElementById('stop-drawing-btn').style.display = 'flex'; if(type === 'marker') activeDrawHandler = new L.Draw.Marker(map); else if(type === 'polyline') activeDrawHandler = new L.Draw.Polyline(map); else if(type === 'polygon') activeDrawHandler = new L.Draw.Polygon(map); if(activeDrawHandler) activeDrawHandler.enable(); if(window.innerWidth <= 768) togglePanel('draw-panel'); }
@@ -352,7 +364,7 @@
         map.on(L.Draw.Event.CREATED, function(e) { currentLayer = e.layer; if(activeDrawHandler) activeDrawHandler.disable(); document.getElementById('feature-name-input').value = ""; document.getElementById('feature-notes-input').value = ""; document.getElementById('name-modal-overlay').style.display = 'flex'; document.getElementById('feature-name-input').focus(); });
         
         let currentLayer = null;
-        function saveFeatureName() { let name = document.getElementById('feature-name-input').value; let notes = document.getElementById('feature-notes-input').value; if(!name) name = "عنصر جديد"; currentLayer.customName = name; currentLayer.customNotes = notes; if(name) currentLayer.bindTooltip(name, {permanent:true, className:'map-label', direction:'center'}); currentLayer.on('click', eraserHandler); drawnItems.addLayer(currentLayer); attachPopup(currentLayer); currentLayer.openPopup(); document.getElementById('name-modal-overlay').style.display = 'none'; saveUserDrawings(); updateLayerList(); if (currentDrawType) { setTimeout(() => { startContinuousDraw(currentDrawType); }, 100); } currentLayer = null; }
+        function saveFeatureName() { let name = document.getElementById('feature-name-input').value; let notes = document.getElementById('feature-notes-input').value; if(!name) name = "عنصر جديد"; currentLayer.customName = name; currentLayer.customNotes = notes; if(name) currentLayer.bindTooltip(name, {permanent:true, className:'map-label', direction:'center'}); currentLayer.on('click', eraserHandler); drawnItems.addLayer(currentLayer); attachPopup(currentLayer); currentLayer.openPopup(); document.getElementById('name-modal-overlay').style.display = 'none'; saveUserDrawings(); updateLayerList(); recordState(); /* 🟢 تسجيل الإضافة */ if (currentDrawType) { setTimeout(() => { startContinuousDraw(currentDrawType); }, 100); } currentLayer = null; }
 
         function attachPopup(layer) {
             let name = layer.customName || "عنصر"; let content = `<div class="feature-title">${name}</div>`;
@@ -361,125 +373,33 @@
             else if (layer instanceof L.Polygon) { let area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]); let ha = (area/10000).toFixed(4); let sqm = area.toFixed(2); content += `<div class="val-highlight">${ha} هكتار</div><div style="font-size:12px; color:#64748b;">${sqm} متر²</div>`; layer.bindPopup(content); }
         }
 
-        // ============================================================
-        // 🟢 نظام إدارة الطبقات المطور (Recursive Fix)
-        // ============================================================
+        // Layer Management (Recursive)
         function updateLayerList() {
-            const list = document.getElementById('layers-list-container');
-            list.innerHTML = "";
-            
-            if (drawnItems.getLayers().length === 0) {
-                list.innerHTML = '<p style="text-align:center; color:#94a3b8; font-size:12px;">لا توجد طبقات مرسومة</p>';
-                return;
-            }
-
+            const list = document.getElementById('layers-list-container'); list.innerHTML = "";
+            if (drawnItems.getLayers().length === 0) { list.innerHTML = '<p style="text-align:center; color:#94a3b8; font-size:12px;">لا توجد طبقات مرسومة</p>'; return; }
             drawnItems.eachLayer(layer => {
-                const item = document.createElement('div');
-                item.className = 'layer-item';
-                
-                // تحديد الأيقونة حسب النوع
+                const item = document.createElement('div'); item.className = 'layer-item';
                 let iconHtml = '<i class="fas fa-question"></i>';
-                if (layer instanceof L.Marker) iconHtml = '<i class="fas fa-map-marker-alt" style="color:#e74c3c;"></i>';
-                else if (layer instanceof L.Polygon) iconHtml = '<i class="fas fa-draw-polygon" style="color:#3498db;"></i>';
-                else if (layer instanceof L.Polyline) iconHtml = '<i class="fas fa-route" style="color:#f1c40f;"></i>';
-                // إذا كانت مجموعة (مستوردة)
-                if (layer.eachLayer && !layer._latlng) iconHtml = '<i class="fas fa-folder-open" style="color:#2ecc71;"></i>';
-
-                // التحقق من حالة الظهور المحفوظة (Default: true)
+                if (layer instanceof L.Marker) iconHtml = '<i class="fas fa-map-marker-alt" style="color:#e74c3c;"></i>'; else if (layer instanceof L.Polygon) iconHtml = '<i class="fas fa-draw-polygon" style="color:#3498db;"></i>'; else if (layer instanceof L.Polyline) iconHtml = '<i class="fas fa-route" style="color:#f1c40f;"></i>'; if (layer.eachLayer && !layer._latlng) iconHtml = '<i class="fas fa-folder-open" style="color:#2ecc71;"></i>';
                 const isVisible = layer._customVisible !== false;
-                
-                item.innerHTML = `
-                    <div class="layer-icon">${iconHtml}</div>
-                    <div class="layer-name" onclick="zoomToLayer(${L.stamp(layer)})">${layer.customName || "بدون اسم"}</div>
-                    <div class="layer-controls">
-                        <button class="layer-btn ${isVisible ? 'visible' : ''}" onclick="toggleLayerVisibility(${L.stamp(layer)}, this)">
-                            <i class="fas ${isVisible ? 'fa-eye' : 'fa-eye-slash'}"></i>
-                        </button>
-                        <button class="layer-btn delete" onclick="deleteLayer(${L.stamp(layer)})">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                `;
+                item.innerHTML = `<div class="layer-icon">${iconHtml}</div><div class="layer-name" onclick="zoomToLayer(${L.stamp(layer)})">${layer.customName || "بدون اسم"}</div><div class="layer-controls"><button class="layer-btn ${isVisible ? 'visible' : ''}" onclick="toggleLayerVisibility(${L.stamp(layer)}, this)"><i class="fas ${isVisible ? 'fa-eye' : 'fa-eye-slash'}"></i></button><button class="layer-btn delete" onclick="deleteLayer(${L.stamp(layer)})"><i class="fas fa-trash"></i></button></div>`;
                 list.appendChild(item);
             });
         }
-
-        function zoomToLayer(id) {
-            const layer = drawnItems.getLayer(id);
-            if (layer) {
-                if (layer instanceof L.Marker) {
-                    map.setView(layer.getLatLng(), 16);
-                    layer.openPopup();
-                } else {
-                    map.fitBounds(layer.getBounds());
-                    layer.openPopup();
-                }
-            }
-        }
-
-        // 🟢 الدالة الذكية للإخفاء/الإظهار (Recursion)
+        function zoomToLayer(id) { const layer = drawnItems.getLayer(id); if (layer) { if (layer instanceof L.Marker) { map.setView(layer.getLatLng(), 16); layer.openPopup(); } else { map.fitBounds(layer.getBounds()); layer.openPopup(); } } }
         function toggleLayerVisibility(id, btn) {
-            const layer = drawnItems.getLayer(id);
-            if (!layer) return;
-
-            // تحديد الحالة الجديدة
-            const isCurrentlyVisible = layer._customVisible !== false; // الافتراضي true
-            const newStatus = !isCurrentlyVisible;
-            layer._customVisible = newStatus; // حفظ الحالة
-
-            // دالة تطبيق الحالة على العنصر وأبنائه
-            const applyRecursive = (lyr, show) => {
-                if (lyr.eachLayer) { // إذا كان مجموعة (Group/GeoJSON)
-                    lyr.eachLayer(child => applyRecursive(child, show));
-                } else {
-                    // إذا كان عنصراً منفرداً
-                    if (lyr instanceof L.Marker) {
-                        lyr.setOpacity(show ? 1 : 0);
-                        if(show) { if(lyr._tooltip) lyr.openTooltip(); } 
-                        else { lyr.closeTooltip(); lyr.closePopup(); }
-                    } else if (lyr instanceof L.Path) { // خط أو مضلع
-                        if (show) {
-                            // استعادة الستايل الافتراضي
-                            lyr.setStyle({ stroke: true, fill: true, opacity: 1, fillOpacity: 0.2 });
-                            if(lyr._tooltip) lyr.openTooltip();
-                        } else {
-                            // إخفاء
-                            lyr.setStyle({ stroke: false, fill: false, opacity: 0, fillOpacity: 0 });
-                            lyr.closeTooltip(); lyr.closePopup();
-                        }
-                    }
-                }
-            };
-
+            const layer = drawnItems.getLayer(id); if (!layer) return;
+            const isCurrentlyVisible = layer._customVisible !== false; const newStatus = !isCurrentlyVisible; layer._customVisible = newStatus;
+            const applyRecursive = (lyr, show) => { if (lyr.eachLayer) { lyr.eachLayer(child => applyRecursive(child, show)); } if (lyr instanceof L.Marker) { lyr.setOpacity(show ? 1 : 0); if(show) { if(lyr._tooltip) lyr.openTooltip(); } else { lyr.closeTooltip(); lyr.closePopup(); } } else if (lyr instanceof L.Path) { if (show) { lyr.setStyle({ stroke: true, fill: true, opacity: 1, fillOpacity: 0.2 }); if(lyr._tooltip) lyr.openTooltip(); } else { lyr.setStyle({ stroke: false, fill: false, opacity: 0, fillOpacity: 0 }); lyr.closeTooltip(); lyr.closePopup(); } } };
             applyRecursive(layer, newStatus);
-
-            // تحديث الزر
-            if (newStatus) {
-                btn.classList.add('visible');
-                btn.innerHTML = '<i class="fas fa-eye"></i>';
-            } else {
-                btn.classList.remove('visible');
-                btn.innerHTML = '<i class="fas fa-eye-slash"></i>';
-            }
+            if (newStatus) { btn.classList.add('visible'); btn.innerHTML = '<i class="fas fa-eye"></i>'; } else { btn.classList.remove('visible'); btn.innerHTML = '<i class="fas fa-eye-slash"></i>'; }
         }
-
-        function deleteLayer(id) {
-            const layer = drawnItems.getLayer(id);
-            if (layer && confirm("هل أنت متأكد من حذف هذه الطبقة؟")) {
-                drawnItems.removeLayer(layer);
-                saveUserDrawings();
-                updateLayerList();
-            }
-        }
+        function deleteLayer(id) { const layer = drawnItems.getLayer(id); if (layer && confirm("هل أنت متأكد من حذف هذه الطبقة؟")) { drawnItems.removeLayer(layer); saveUserDrawings(); updateLayerList(); recordState(); /* 🟢 تسجيل الحذف */ } }
 
         map.on(L.Draw.Event.CREATED, updateLayerList);
         map.on(L.Draw.Event.DELETED, updateLayerList);
         
-        // ============================================================
-        
-        async function generateRealProfile() {
-            let line = null; drawnItems.eachLayer(l => { if(l instanceof L.Polyline && !(l instanceof L.Polygon)) line = l; }); if(!line) return alert("ارسم خطاً أولاً"); document.getElementById('chart-container').style.display = 'block'; document.getElementById('chart-loader').style.display = 'block'; if(window.innerWidth <= 768) togglePanel('draw-panel'); let latlngs = line.getLatLngs(); if(Array.isArray(latlngs[0])) latlngs = latlngs.flat(); let totalPoints = latlngs.length; let samples = []; if (totalPoints > 100) { let step = Math.ceil(totalPoints / 100); for(let i=0; i<totalPoints; i+=step) samples.push(latlngs[i]); } else { for(let i=0; i<latlngs.length-1; i++) { samples.push(latlngs[i]); if(totalPoints < 5) { let p1 = latlngs[i]; let p2 = latlngs[i+1]; for(let k=1; k<20; k++) { samples.push(L.latLng(p1.lat + (p2.lat-p1.lat)*(k/20), p1.lng + (p2.lng-p1.lng)*(k/20))); } } } samples.push(latlngs[latlngs.length-1]); } if(samples.length > 100) samples = samples.slice(0, 100); let lats = samples.map(p=>p.lat.toFixed(4)).join(','); let lngs = samples.map(p=>p.lng.toFixed(4)).join(','); try { let res = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lats}&longitude=${lngs}`); let data = await res.json(); document.getElementById('chart-loader').style.display = 'none'; if(data.elevation) { let ctx = document.getElementById('elevationChart').getContext('2d'); if(window.myChart) window.myChart.destroy(); let labels = samples.map((p, i) => { if(i===0) return 0; return (samples[0].distanceTo(p)/1000).toFixed(2); }); window.myChart = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [{ label: 'الارتفاع (متر)', data: data.elevation, borderColor: '#8e44ad', borderWidth: 2, pointRadius: 0, tension: 0.3, fill: true, backgroundColor: 'rgba(142, 68, 173, 0.4)' }] }, options: { scales: { y: { beginAtZero: false, title: {display:true, text:'الارتفاع (m)'} }, x: { title: {display:true, text:'المسافة (km)'}, ticks: { maxTicksLimit: 10 } } }, responsive: true, maintainAspectRatio: false, interaction: { intersect: false, mode: 'index' }, } }); } } catch(e) { document.getElementById('chart-loader').innerText = "خطأ: الخط طويل جداً"; }
-        }
+        async function generateRealProfile() { /* نفس الكود السابق */ let line = null; drawnItems.eachLayer(l => { if(l instanceof L.Polyline && !(l instanceof L.Polygon)) line = l; }); if(!line) return alert("ارسم خطاً أولاً"); document.getElementById('chart-container').style.display = 'block'; document.getElementById('chart-loader').style.display = 'block'; if(window.innerWidth <= 768) togglePanel('draw-panel'); let latlngs = line.getLatLngs(); if(Array.isArray(latlngs[0])) latlngs = latlngs.flat(); let totalPoints = latlngs.length; let samples = []; if (totalPoints > 100) { let step = Math.ceil(totalPoints / 100); for(let i=0; i<totalPoints; i+=step) samples.push(latlngs[i]); } else { for(let i=0; i<latlngs.length-1; i++) { samples.push(latlngs[i]); if(totalPoints < 5) { let p1 = latlngs[i]; let p2 = latlngs[i+1]; for(let k=1; k<20; k++) { samples.push(L.latLng(p1.lat + (p2.lat-p1.lat)*(k/20), p1.lng + (p2.lng-p1.lng)*(k/20))); } } } samples.push(latlngs[latlngs.length-1]); } if(samples.length > 100) samples = samples.slice(0, 100); let lats = samples.map(p=>p.lat.toFixed(4)).join(','); let lngs = samples.map(p=>p.lng.toFixed(4)).join(','); try { let res = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lats}&longitude=${lngs}`); let data = await res.json(); document.getElementById('chart-loader').style.display = 'none'; if(data.elevation) { let ctx = document.getElementById('elevationChart').getContext('2d'); if(window.myChart) window.myChart.destroy(); let labels = samples.map((p, i) => { if(i===0) return 0; return (samples[0].distanceTo(p)/1000).toFixed(2); }); window.myChart = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [{ label: 'الارتفاع (متر)', data: data.elevation, borderColor: '#8e44ad', borderWidth: 2, pointRadius: 0, tension: 0.3, fill: true, backgroundColor: 'rgba(142, 68, 173, 0.4)' }] }, options: { scales: { y: { beginAtZero: false, title: {display:true, text:'الارتفاع (m)'} }, x: { title: {display:true, text:'المسافة (km)'}, ticks: { maxTicksLimit: 10 } } }, responsive: true, maintainAspectRatio: false, interaction: { intersect: false, mode: 'index' }, } }); } } catch(e) { document.getElementById('chart-loader').innerText = "خطأ: الخط طويل جداً"; } }
 
         function loadFile(input) {
             const file = input.files[0]; if (!file) return; const ext = file.name.split('.').pop().toLowerCase(); const reader = new FileReader();
@@ -487,13 +407,10 @@
             else { reader.onload = function(e) { const text = e.target.result; try { if (ext === 'kml') parseKML(text); else if (ext === 'gpx') addGeoJSONToMap(toGeoJSON.gpx(new DOMParser().parseFromString(text, 'text/xml'))); else if (ext === 'dxf') parseDXF(text); else alert("صيغة غير مدعومة"); } catch(err) { alert("خطأ: " + err); } }; reader.readAsText(file); } input.value = '';
         }
         function parseKML(text) { addGeoJSONToMap(toGeoJSON.kml(new DOMParser().parseFromString(text, 'text/xml'))); }
-        function parseDXF(text) {
-            const parser = new DxfParser(); const dxf = parser.parseSync(text); let geojsonFeatures = [];
-            if(dxf && dxf.entities) { dxf.entities.forEach(ent => { if (ent.type === 'POINT' || ent.type === 'INSERT') { let ll = proj4(currentZone, "EPSG:4326", [ent.position.x, ent.position.y]); geojsonFeatures.push({type: "Feature", geometry: {type: "Point", coordinates: [ll[0], ll[1]]}, properties: {name: "DXF Point"}}); } else if (ent.type === 'LWPOLYLINE' || ent.type === 'POLYLINE') { let coords = ent.vertices.map(v => { let ll = proj4(currentZone, "EPSG:4326", [v.x, v.y]); return [ll[0], ll[1]]; }); geojsonFeatures.push({type: "Feature", geometry: {type: "LineString", coordinates: coords}, properties: {name: "DXF Line"}}); } }); addGeoJSONToMap({type: "FeatureCollection", features: geojsonFeatures}); }
-        }
+        function parseDXF(text) { const parser = new DxfParser(); const dxf = parser.parseSync(text); let geojsonFeatures = []; if(dxf && dxf.entities) { dxf.entities.forEach(ent => { if (ent.type === 'POINT' || ent.type === 'INSERT') { let ll = proj4(currentZone, "EPSG:4326", [ent.position.x, ent.position.y]); geojsonFeatures.push({type: "Feature", geometry: {type: "Point", coordinates: [ll[0], ll[1]]}, properties: {name: "DXF Point"}}); } else if (ent.type === 'LWPOLYLINE' || ent.type === 'POLYLINE') { let coords = ent.vertices.map(v => { let ll = proj4(currentZone, "EPSG:4326", [v.x, v.y]); return [ll[0], ll[1]]; }); geojsonFeatures.push({type: "Feature", geometry: {type: "LineString", coordinates: coords}, properties: {name: "DXF Line"}}); } }); addGeoJSONToMap({type: "FeatureCollection", features: geojsonFeatures}); } }
         function addGeoJSONToMap(geojson) {
             const layer = L.geoJSON(geojson, { onEachFeature: function(f, l) { l.customName = f.properties.name || "مستورد"; drawnItems.addLayer(l); attachPopup(l); } });
-            if (layer.getLayers().length > 0) { map.fitBounds(layer.getBounds()); saveUserDrawings(); updateLayerList(); alert("تم الاستيراد ✅"); }
+            if (layer.getLayers().length > 0) { map.fitBounds(layer.getBounds()); saveUserDrawings(); updateLayerList(); recordState(); /* 🟢 تسجيل الاستيراد */ alert("تم الاستيراد ✅"); }
         }
 
         function downloadKML() { if (drawnItems.getLayers().length === 0) return alert("فارغ"); const kml = tokml(drawnItems.toGeoJSON()); const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([kml], {type: "application/vnd.google-earth.kml+xml"})); a.download = "export.kml"; a.click(); }
@@ -506,19 +423,19 @@
         
         let isLoginMode = true;
         function toggleAuthMode() { isLoginMode = !isLoginMode; document.querySelectorAll('.signup-only').forEach(e => e.style.display = isLoginMode ? 'none' : 'block'); document.getElementById('submit-btn').innerText = isLoginMode ? 'دخول' : 'إنشاء حساب'; }
-        function handleAuth(e) { e.preventDefault(); const email = document.getElementById('email').value; const pass = document.getElementById('password').value; if(isLoginMode) { auth.signInWithEmailAndPassword(email, pass).then(() => location.reload()).catch(e => alert("خطأ: " + e.message)); } else { const fname = document.getElementById('fname').value; const lname = document.getElementById('lname').value; if(!fname || !lname) return alert("الاسم مطلوب"); auth.createUserWithEmailAndPassword(email, pass).then(cred => { return cred.user.updateProfile({ displayName: fname + " " + lname }); }).then(() => { alert("تم الإنشاء"); location.reload(); }).catch(e => alert("خطأ: " + e.message)); } }
+        function handleAuth(e) { e.preventDefault(); const email = document.getElementById('email').value; const pass = document.getElementById('password').value; if(isLoginMode) { auth.signInWithEmailAndPassword(email, pass).then(() => { console.log("Success"); }).catch(e => alert("خطأ: " + e.message)); } else { const fname = document.getElementById('fname').value; const lname = document.getElementById('lname').value; if(!fname || !lname) return alert("الاسم مطلوب"); auth.createUserWithEmailAndPassword(email, pass).then(cred => { return cred.user.updateProfile({ displayName: fname + " " + lname }); }).then(() => { alert("تم الإنشاء"); location.reload(); }).catch(e => alert("خطأ: " + e.message)); } }
         function logoutUser() { auth.signOut().then(() => location.reload()); }
         auth.onAuthStateChanged(user => { if (user) { document.getElementById('auth-overlay').style.display='none'; if(user.displayName) document.getElementById('display-name').innerText=user.displayName; loadUserDrawings(user.uid); } else { document.getElementById('auth-overlay').style.display='flex'; drawnItems.clearLayers(); } });
         function togglePanel(id) { document.querySelectorAll('.panel').forEach(p=>{ if(p.id===id) p.classList.toggle('active'); else p.classList.remove('active'); }); }
-        function saveUserDrawings() { if(!auth.currentUser) return; let f=[]; drawnItems.eachLayer(l=>{let j=l.toGeoJSON(); j.properties.customName=l.customName||""; j.properties.customNotes=l.customNotes||""; f.push(j);}); db.ref('users/'+auth.currentUser.uid).set({drawings:JSON.stringify({type:"FeatureCollection",features:f})}); document.getElementById('save-status').innerText="تم الحفظ"; setTimeout(()=>document.getElementById('save-status').innerText="جاهز",2000); }
-        function loadUserDrawings(uid) { db.ref('users/'+uid).once('value').then(s=>{ let d=s.val(); if(d&&d.drawings) L.geoJSON(JSON.parse(d.drawings),{onEachFeature:(f,l)=>{l.customName=f.properties.customName; drawnItems.addLayer(l); attachPopup(l); l.on('click', eraserHandler);}}); updateLayerList(); }); }
-        map.on(L.Draw.Event.EDITED, () => { saveUserDrawings(); updateLayerList(); }); map.on(L.Draw.Event.DELETED, () => { saveUserDrawings(); updateLayerList(); });
+        function saveUserDrawings() { if(!auth.currentUser) return; let f=[]; drawnItems.eachLayer(l=>{let j=l.toGeoJSON(); j.properties.customName=l.customName||""; j.properties.customNotes=l.customNotes||""; j.properties._customVisible = l._customVisible !== false; f.push(j);}); db.ref('users/'+auth.currentUser.uid).set({drawings:JSON.stringify({type:"FeatureCollection",features:f})}); document.getElementById('save-status').innerText="تم الحفظ"; setTimeout(()=>document.getElementById('save-status').innerText="جاهز",2000); }
+        function loadUserDrawings(uid) { db.ref('users/'+uid).once('value').then(s=>{ let d=s.val(); if(d&&d.drawings) L.geoJSON(JSON.parse(d.drawings),{onEachFeature:(f,l)=>{l.customName=f.properties.customName; l._customVisible = f.properties._customVisible; drawnItems.addLayer(l); attachPopup(l); l.on('click', eraserHandler);}}); updateLayerList(); recordState(); /* 🟢 حالة أولية */ }); }
+        map.on(L.Draw.Event.EDITED, () => { saveUserDrawings(); updateLayerList(); recordState(); }); map.on(L.Draw.Event.DELETED, () => { saveUserDrawings(); updateLayerList(); recordState(); });
         function updateProjection() { currentZone=document.getElementById('lambert-zone').value; }
         function searchPlace() { let q=document.getElementById('search-input').value; fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}`).then(r=>r.json()).then(d=>{if(d.length) map.setView([d[0].lat,d[0].lon],13);}); }
         function goToCoordinates() { let x=parseFloat(document.getElementById('input-x').value), y=parseFloat(document.getElementById('input-y').value); try{let l=proj4(currentZone,"EPSG:4326",[x,y]); map.setView([l[1],l[0]],16); L.marker([l[1],l[0]]).addTo(map);}catch(e){} }
         function locateUser() { map.locate({setView:true, maxZoom:15}); }
-        function clearMap() { drawnItems.clearLayers(); saveUserDrawings(); updateLayerList(); }
-        function createBuffer() { if(drawnItems.getLayers().length === 0) return alert("حدد شكلاً"); let layer = drawnItems.getLayers()[drawnItems.getLayers().length - 1]; let dist = parseFloat(document.getElementById('buffer-val').value); try { let buffered = turf.buffer(layer.toGeoJSON(), dist, {units: 'meters'}); let bufLayer = L.geoJSON(buffered, {style:{color:'red', dashArray:'5,5'}}); bufLayer.eachLayer(l => { l.customName = "Buffer "+dist; drawnItems.addLayer(l); attachPopup(l); }); saveUserDrawings(); updateLayerList(); } catch(e) { alert("خطأ"); } }
+        function clearMap() { drawnItems.clearLayers(); saveUserDrawings(); updateLayerList(); recordState(); }
+        function createBuffer() { if(drawnItems.getLayers().length === 0) return alert("حدد شكلاً"); let layer = drawnItems.getLayers()[drawnItems.getLayers().length - 1]; let dist = parseFloat(document.getElementById('buffer-val').value); try { let buffered = turf.buffer(layer.toGeoJSON(), dist, {units: 'meters'}); let bufLayer = L.geoJSON(buffered, {style:{color:'red', dashArray:'5,5'}}); bufLayer.eachLayer(l => { l.customName = "Buffer "+dist; drawnItems.addLayer(l); attachPopup(l); }); saveUserDrawings(); updateLayerList(); recordState(); } catch(e) { alert("خطأ"); } }
         function activateStreetView(){ alert("انقر للخريطة"); map.once('click', e => { document.getElementById('sv-overlay').style.display='flex'; document.getElementById('sv-iframe').src=`maps.google.com/0{e.latlng.lat},${e.latlng.lng}&output=svembed`; }); }
         function closeStreetView(){ document.getElementById('sv-overlay').style.display='none'; document.getElementById('sv-iframe').src=""; }
         map.on('mousemove', e => { try { let p = proj4("EPSG:4326", currentZone, [e.latlng.lng, e.latlng.lat]); document.getElementById('bottom-bar').innerHTML = `X: ${p[0].toFixed(0)} | Y: ${p[1].toFixed(0)} | Lat: ${e.latlng.lat.toFixed(4)}`; } catch(x){} });

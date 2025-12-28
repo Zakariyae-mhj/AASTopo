@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ZASTopo Pro | V68 (Full Arab World Coordinates)</title>
+    <title>ZASTopo Pro | V69 (Split Coordinates)</title>
     
     <meta name="theme-color" content="#2563eb">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
     
     <style>
-        /* --- Styles (نفس الستايل المعتمد سابقاً) --- */
+        /* --- Styles --- */
         :root { --primary: #2563eb; --glass: rgba(255, 255, 255, 0.95); --shadow: 0 8px 32px rgba(0,0,0,0.15); }
         body { margin: 0; font-family: 'Cairo', sans-serif; overflow: hidden; background: #0f172a; overscroll-behavior: none; }
         #map { height: 100vh; width: 100%; z-index: 1; }
@@ -49,6 +49,7 @@
         .layer-name { flex: 1; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; font-weight: 600; color: #334155; }
         .layer-controls { display: flex; gap: 5px; }
         .layer-btn { width: 24px; height: 24px; border: none; background: #f1f5f9; border-radius: 4px; cursor: pointer; color: #64748b; font-size: 11px; display: flex; justify-content: center; align-items: center; transition: 0.2s; }
+        .layer-btn:hover { background: #e2e8f0; color: #1e293b; }
         .layer-btn.visible { background: #dbeafe; color: var(--primary); }
         .layer-btn.delete:hover { background: #fee2e2; color: #ef4444; }
 
@@ -84,7 +85,27 @@
         #search-bar { position: absolute; top: 15px; right: 15px; z-index: 1000; width: 220px; background: white; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; padding: 4px; align-items: center; transition: 0.3s; }
         #search-bar input { border: none; background: transparent; padding: 0 15px; flex: 1; outline: none; font-family: inherit; font-size: 13px; height: 32px; }
         #search-bar button { width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--primary); color: white; cursor: pointer; }
-        #bottom-bar { position: absolute; bottom: 10px; left: 10px; background: rgba(255,255,255,0.9); padding: 4px 12px; border-radius: 20px; font-size: 11px; z-index: 1000; font-family: monospace; dir: ltr; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        
+        /* 🟢 تنسيق الشريط السفلي الجديد (Split View) */
+        #bottom-bar { 
+            position: absolute; 
+            bottom: 10px; 
+            left: 10px; 
+            background: rgba(255,255,255,0.95); 
+            padding: 6px 12px; 
+            border-radius: 12px; 
+            font-size: 12px; 
+            z-index: 1000; 
+            font-family: monospace; 
+            dir: ltr; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column; /* جعل العناصر فوق بعضها */
+            gap: 2px;
+            border: 1px solid rgba(0,0,0,0.1);
+            text-align: left;
+        }
+
         .eraser-cursor { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="red"><path d="M16.24 3.56l4.95 4.94c.78.79.78 2.05 0 2.84L12 20.53a4.008 4.008 0 0 1-5.66 0L2.81 17a4.008 4.008 0 0 1 0-5.66l9.19-9.19c.78-.78 2.05-.78 2.84 0l1.4 1.41zM4.22 15.58l3.54 3.53c.78.79 2.05.79 2.83 0L12 17.71l-6.37-6.36-1.41 1.41a2.003 2.003 0 0 0 0 2.82z"/></svg>'), auto !important; }
         
         #sv-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; justify-content: center; align-items: center; }
@@ -146,7 +167,7 @@
                     <select id="university" class="auth-input">
                         <option value="" disabled selected>اختر المؤسسة الجامعية</option>
                         <optgroup label="🇲🇦 المغرب"><option value="ump">جامعة محمد الأول - وجدة</option><option value="um5">جامعة محمد الخامس - الرباط</option><option value="uca">جامعة القاضي عياض - مراكش</option></optgroup>
-                        </select>
+                    </select>
                 </div>
                 <input type="email" id="email" class="auth-input" placeholder="البريد الإلكتروني" required>
                 <input type="password" id="password" class="auth-input" placeholder="كلمة المرور" required>
@@ -209,9 +230,7 @@
             <hr style="margin: 15px 0; border-top: 1px solid #e2e8f0;">
             <div class="dedication-box">
                 <h5>✨ إهداء وصدقة جارية</h5>
-                <p class="dedication-text">
-                    أضع هذه المنصة العلمية بين أيدي عموم الباحثين والطلبة والمهتمين بمجال الخرائط والطبوغرافيا أينما كانوا. وأغتنم هذه الفرصة لأخصّ بتحية تقدير وعرفان السادة أعضاء الأكاديمية المغربية للدراسات الجغرافية والتنمية الترابية، وزملائي طلبة شعبة الجغرافيا بجامعة محمد الأول بوجدة. لقد نويتُ هذا الجهد المتواضع صدقةً جاريةً عن والديّ الكريمين، سائلاً المولى عز وجل أن ينفع به الجميع، وأن يجعل كل استفادة علمية منه نوراً في ميزان حسناتهما ورفعةً في درجاتهما.
-                </p>
+                <p class="dedication-text">أضع هذه المنصة العلمية بين أيدي عموم الباحثين والطلبة والمهتمين بمجال الخرائط والطبوغرافيا أينما كانوا...</p>
             </div>
         </div>
         <div style="height: 80px;"></div>
@@ -222,84 +241,13 @@
         <button class="close-chart" style="position:absolute; top:15px; left:15px; background:#f1f5f9; color:#64748b;" onclick="togglePanel('layers-panel')"><i class="fas fa-chevron-down"></i></button>
         <div style="margin-top: 20px;">
             <select id="lambert-zone" class="tool-input" onchange="updateProjection()">
-                <optgroup label="🇲🇦 المغرب (Maroc)">
-                    <option value="EPSG:26191" selected>Nord (Lambert I)</option>
-                    <option value="EPSG:26192">Centre (Lambert II)</option>
-                    <option value="EPSG:26193">Sud (Lambert III)</option>
-                    <option value="EPSG:26194">Grand Sud (Lambert IV)</option>
-                    <option value="EPSG:26195">Merchich Nord</option>
-                </optgroup>
-                <optgroup label="🇩🇿 الجزائر (Algérie)">
-                    <option value="EPSG:3059">Nord Sahara (Voirol)</option>
-                    <option value="EPSG:32629">UTM Zone 29N</option>
-                    <option value="EPSG:32630">UTM Zone 30N</option>
-                    <option value="EPSG:32631">UTM Zone 31N</option>
-                    <option value="EPSG:32632">UTM Zone 32N</option>
-                </optgroup>
-                <optgroup label="🇹🇳 تونس (Tunisie)">
-                    <option value="EPSG:22332">Carthage UTM (Nord)</option>
-                    <option value="EPSG:32632">UTM Zone 32N</option>
-                </optgroup>
-                <optgroup label="🇱🇾 ليبيا (Libye)">
-                    <option value="EPSG:32632">UTM Zone 32N</option>
-                    <option value="EPSG:32633">UTM Zone 33N</option>
-                    <option value="EPSG:32634">UTM Zone 34N</option>
-                </optgroup>
-                <optgroup label="🇪🇬 مصر (Egypte)">
-                    <option value="EPSG:22992">Red Belt (Le Caire/Delta)</option>
-                    <option value="EPSG:22991">Purple Belt</option>
-                    <option value="EPSG:22993">Green Belt</option>
-                    <option value="EPSG:22994">Blue Belt</option>
-                    <option value="EPSG:32636">UTM Zone 36N</option>
-                </optgroup>
-                <optgroup label="🇲🇷 موريتانيا (Mauritanie)">
-                    <option value="EPSG:32628">UTM Zone 28N</option>
-                    <option value="EPSG:32629">UTM Zone 29N</option>
-                </optgroup>
-                <optgroup label="🇸🇩 السودان (Soudan)">
-                    <option value="EPSG:20135">Adindan / UTM zone 35N</option>
-                    <option value="EPSG:20136">Adindan / UTM zone 36N</option>
-                    <option value="EPSG:20137">Adindan / UTM zone 37N</option>
-                    <option value="EPSG:32635">WGS84 UTM 35N</option>
-                    <option value="EPSG:32636">WGS84 UTM 36N</option>
-                </optgroup>
-                <optgroup label="🇵🇸 فلسطين & 🇯🇴 الأردن">
-                    <option value="EPSG:28191">Palestine 1923 Grid</option>
-                    <option value="EPSG:2039">Israel TM / Palestine Grid</option>
-                    <option value="EPSG:2314">JTM (Jordan TM)</option>
-                    <option value="EPSG:32636">UTM Zone 36N</option>
-                </optgroup>
-                <optgroup label="🇱🇧 لبنان & 🇸🇾 سوريا">
-                    <option value="EPSG:22770">Levant Stereographic</option>
-                    <option value="EPSG:32636">UTM Zone 36N</option>
-                    <option value="EPSG:32637">UTM Zone 37N</option>
-                </optgroup>
-                <optgroup label="🇮🇶 العراق (Iraq)">
-                    <option value="EPSG:32637">UTM Zone 37N</option>
-                    <option value="EPSG:32638">UTM Zone 38N</option>
-                </optgroup>
-                <optgroup label="🇸🇦 السعودية (KSA)">
-                    <option value="EPSG:24338">Ain el Abd UTM 38N</option>
-                    <option value="EPSG:24339">Ain el Abd UTM 39N</option>
-                    <option value="EPSG:32637">WGS84 UTM 37N</option>
-                    <option value="EPSG:32638">WGS84 UTM 38N</option>
-                    <option value="EPSG:32639">WGS84 UTM 39N</option>
-                </optgroup>
-                <optgroup label="دول الخليج (الإمارات/قطر/عمان/الكويت/البحرين)">
-                    <option value="EPSG:32638">UTM Zone 38N</option>
-                    <option value="EPSG:32639">UTM Zone 39N</option>
-                    <option value="EPSG:32640">UTM Zone 40N</option>
-                    <option value="EPSG:2932">Qatar National Grid</option>
-                    <option value="EPSG:31900">KUDAMS (Kuwait)</option>
-                </optgroup>
-                <optgroup label="🇾🇪 اليمن (Yemen)">
-                    <option value="EPSG:32638">UTM Zone 38N</option>
-                    <option value="EPSG:32639">UTM Zone 39N</option>
-                </optgroup>
-                <optgroup label="🌐 النظام العالمي (Global)">
-                    <option value="EPSG:4326">WGS84 (Lat/Lon)</option>
-                    <option value="EPSG:3857">Web Mercator (Google/Bing)</option>
-                </optgroup>
+                <optgroup label="🇲🇦 المغرب (Lambert)"><option value="EPSG:26191" selected>Lambert Zone I</option><option value="EPSG:26192">Lambert Zone II</option><option value="EPSG:26193">Lambert Zone III</option><option value="EPSG:26194">Lambert Zone IV</option><option value="EPSG:26195">Merchich</option></optgroup>
+                <optgroup label="🇩🇿 الجزائر (UTM)"><option value="EPSG:3059">Nord Sahara</option><option value="EPSG:32629">Zone 29N</option><option value="EPSG:32630">Zone 30N</option><option value="EPSG:32631">Zone 31N</option><option value="EPSG:32632">Zone 32N</option></optgroup>
+                <optgroup label="🇹🇳 تونس (Tunisie)"><option value="EPSG:22332">Carthage UTM</option><option value="EPSG:32632">Zone 32N</option></optgroup>
+                <optgroup label="🇱🇾 ليبيا (Libye)"><option value="EPSG:32632">Zone 32N</option><option value="EPSG:32633">Zone 33N</option><option value="EPSG:32634">Zone 34N</option></optgroup>
+                <optgroup label="🇪🇬 مصر (Egypte)"><option value="EPSG:22992">Red Belt</option><option value="EPSG:22991">Purple Belt</option><option value="EPSG:22993">Green Belt</option><option value="EPSG:22994">Blue Belt</option><option value="EPSG:32636">Zone 36N</option></optgroup>
+                <optgroup label="🇸🇦 السعودية"><option value="EPSG:32637">Zone 37N</option><option value="EPSG:32638">Zone 38N</option><option value="EPSG:32639">Zone 39N</option></optgroup>
+                <optgroup label="🇯🇴 الأردن"><option value="EPSG:2314">JTM</option><option value="EPSG:32636">Zone 36N</option></optgroup>
             </select>
             <div style="display:flex; gap:5px;">
                 <input id="input-x" class="tool-input" placeholder="X">
@@ -352,7 +300,11 @@
     </div>
 
     <div id="map"></div>
-    <div id="bottom-bar">Lat: 0 | Lng: 0</div>
+    
+    <div id="bottom-bar">
+        <div style="font-weight:bold; color:var(--primary)">XY: 0 | 0</div>
+        <div style="color:#64748b">Lat: 0 | Lng: 0</div>
+    </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
@@ -375,7 +327,6 @@
         try { firebase.initializeApp(firebaseConfig); } catch(e){}
         const auth = firebase.auth(); const db = firebase.database();
 
-        // 🟢 قاعدة بيانات الإحداثيات الكاملة (Local & Global)
         proj4.defs([
             ["EPSG:26191", "+proj=lcc +lat_1=33.3 +lat_0=33.3 +lon_0=-5.4 +k_0=0.999625769 +x_0=500000 +y_0=300000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"],
             ["EPSG:26192", "+proj=lcc +lat_1=29.7 +lat_0=29.7 +lon_0=-5.4 +k_0=0.999615596 +x_0=500000 +y_0=300000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"],
@@ -499,7 +450,19 @@
         function locateUser() { map.locate({setView:true, maxZoom:15}); }
         function clearMap() { drawnItems.clearLayers(); saveUserDrawings(); updateLayerList(); recordState(); }
         function createBuffer() { if(drawnItems.getLayers().length === 0) return alert("حدد شكلاً"); let layer = drawnItems.getLayers()[drawnItems.getLayers().length - 1]; let dist = parseFloat(document.getElementById('buffer-val').value); try { let buffered = turf.buffer(layer.toGeoJSON(), dist, {units: 'meters'}); let bufLayer = L.geoJSON(buffered, {style:{color:'red', dashArray:'5,5'}}); bufLayer.eachLayer(l => { l.customName = "Buffer "+dist; drawnItems.addLayer(l); attachPopup(l); }); saveUserDrawings(); updateLayerList(); recordState(); } catch(e) { alert("خطأ"); } }
-        map.on('mousemove', e => { try { let p = proj4("EPSG:4326", currentZone, [e.latlng.lng, e.latlng.lat]); document.getElementById('bottom-bar').innerHTML = `X: ${p[0].toFixed(0)} | Y: ${p[1].toFixed(0)} | Lat: ${e.latlng.lat.toFixed(4)}`; } catch(x){} });
+        function activateStreetView(){ alert("انقر للخريطة"); map.once('click', e => { document.getElementById('sv-overlay').style.display='flex'; document.getElementById('sv-iframe').src=`maps.google.com/0{e.latlng.lat},${e.latlng.lng}&output=svembed`; }); }
+        function closeStreetView(){ document.getElementById('sv-overlay').style.display='none'; document.getElementById('sv-iframe').src=""; }
+        
+        // 🟢 تحديث منطق الشريط السفلي (Split View)
+        map.on('mousemove', e => {
+            try {
+                let p = proj4("EPSG:4326", currentZone, [e.latlng.lng, e.latlng.lat]);
+                document.getElementById('bottom-bar').innerHTML = `
+                    <div style="font-weight:bold; color:#2563eb">📐 X: ${p[0].toFixed(2)} | Y: ${p[1].toFixed(2)}</div>
+                    <div style="color:#64748b">🌐 Lat: ${e.latlng.lat.toFixed(5)} | Lng: ${e.latlng.lng.toFixed(5)}</div>
+                `;
+            } catch(x){}
+        });
     </script>
 </body>
 </html>

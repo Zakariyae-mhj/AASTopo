@@ -1,1 +1,20 @@
-
+{
+  "name": "ZASTopo Pro",
+  "short_name": "ZASTopo",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "https://i.imgur.com/rP6Yotb.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://i.imgur.com/rP6Yotb.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

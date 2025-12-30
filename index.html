@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ZASTopo Pro | V73</title>
+    <title>ZASTopo Pro | GitHub Edition</title>
     
     <meta name="theme-color" content="#2563eb">
     <meta name="mobile-web-app-capable" content="yes">
@@ -11,8 +11,6 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://i.imgur.com/rP6Yotb.png">
     <link rel="icon" type="image/png" href="https://i.imgur.com/rP6Yotb.png">
-    
-    <link rel="manifest" href="manifest.json">
 
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -20,10 +18,12 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
     
     <style>
-        /* --- Styles --- */
+        /* --- التصميم (CSS) --- */
         :root { --primary: #2563eb; --glass: rgba(255, 255, 255, 0.95); }
         body { margin: 0; font-family: 'Cairo', sans-serif; overflow: hidden; background: #0f172a; overscroll-behavior: none; }
         #map { height: 100vh; width: 100%; z-index: 1; }
+        
+        /* إخفاء حقوق Leaflet */
         .leaflet-control-attribution { display: none !important; }
 
         .dock-container { position: absolute; top: 50%; transform: translateY(-50%); right: 15px; display: flex; flex-direction: column; gap: 12px; z-index: 2000; pointer-events: none; }
@@ -82,8 +82,23 @@
         .val-highlight { color: #d97706; font-weight: bold; font-size: 14px; border: 1px solid #fcd34d; background: #fffbeb; padding: 2px 5px; border-radius: 4px; display: inline-block; margin-top: 3px; }
         .feature-title { font-weight: bold; color: #1e293b; font-size: 15px; border-bottom: 2px solid #eee; padding-bottom: 5px; margin-bottom: 5px; }
 
-        /* شريط البحث في الوسط */
-        #search-bar { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); z-index: 1000; width: 320px; max-width: 80%; background: white; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; padding: 4px; align-items: center; transition: 0.3s; }
+        /* شريط البحث في الوسط (تحسينات V71) */
+        #search-bar { 
+            position: absolute; 
+            top: 15px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            z-index: 1000; 
+            width: 320px; 
+            max-width: 80%; 
+            background: white; 
+            border-radius: 30px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+            display: flex; 
+            padding: 4px; 
+            align-items: center; 
+            transition: 0.3s; 
+        }
         #search-bar input { border: none; background: transparent; padding: 0 15px; flex: 1; outline: none; font-family: inherit; font-size: 13px; height: 32px; }
         #search-bar button { width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--primary); color: white; cursor: pointer; }
         
@@ -229,13 +244,6 @@
                     <option value="EPSG:26194">Grand Sud (Lambert IV)</option>
                     <option value="EPSG:26195">Merchich Nord</option>
                 </optgroup>
-                <optgroup label="🇩🇿 الجزائر (Algérie)">
-                    <option value="EPSG:3059">Nord Sahara (Voirol)</option>
-                    <option value="EPSG:32629">UTM Zone 29N</option>
-                    <option value="EPSG:32630">UTM Zone 30N</option>
-                    <option value="EPSG:32631">UTM Zone 31N</option>
-                    <option value="EPSG:32632">UTM Zone 32N</option>
-                </optgroup>
                 <optgroup label="🌐 النظام العالمي (Global)"><option value="EPSG:4326">WGS84 (Lat/Lon)</option><option value="EPSG:3857">Web Mercator (Google/Bing)</option></optgroup>
             </select>
             <div style="display:flex; gap:5px;">
@@ -312,12 +320,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
     <script>
-        // إعدادات Firebase
         const firebaseConfig = { apiKey: "AIzaSyBHjDSoCDrZAh9KIW1LI4H6XxIdeB8YnFw", authDomain: "rusle-462022.firebaseapp.com", databaseURL: "https://rusle-462022-default-rtdb.firebaseio.com", projectId: "rusle-462022", storageBucket: "rusle-462022.firebasestorage.app", messagingSenderId: "106974487623", appId: "1:106974487623:web:f42e4cf7fd2e2218947d62", measurementId: "G-YVJL1T2VXM" };
         try { firebase.initializeApp(firebaseConfig); } catch(e){}
         const auth = firebase.auth(); const db = firebase.database();
 
-        // تعريف أنظمة الإحداثيات
         proj4.defs([
             ["EPSG:26191", "+proj=lcc +lat_1=33.3 +lat_0=33.3 +lon_0=-5.4 +k_0=0.999625769 +x_0=500000 +y_0=300000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"],
             ["EPSG:26192", "+proj=lcc +lat_1=29.7 +lat_0=29.7 +lon_0=-5.4 +k_0=0.999615596 +x_0=500000 +y_0=300000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"],
@@ -342,7 +348,7 @@
         var drawControl = new L.Control.Draw({ edit: { featureGroup: drawnItems }, draw: false }); 
         map.addControl(drawControl);
 
-        // أدوات الرسم والقياس
+        // أدوات الرسم
         let isEraserActive = false;
         function toggleEraser() { isEraserActive = !isEraserActive; document.getElementById('eraser-btn').classList.toggle('eraser-active', isEraserActive); map.getContainer().classList.toggle('eraser-cursor', isEraserActive); if(isEraserActive){ stopContinuousDraw(); drawnItems.eachLayer(l => l.on('click', eraserHandler)); } else { drawnItems.eachLayer(l => l.off('click', eraserHandler)); } }
         function eraserHandler(e) { if(!isEraserActive) return; L.DomEvent.stop(e); drawnItems.removeLayer(e.target); saveUserDrawings(); updateLayerList(); recordState(); }
@@ -363,6 +369,7 @@
             else if (layer instanceof L.Polygon) { let area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]); let ha = (area/10000).toFixed(4); let sqm = area.toFixed(2); content += `<div class="val-highlight">${ha} هكتار</div><div style="font-size:12px; color:#64748b;">${sqm} متر²</div>`; layer.bindPopup(content); }
         }
 
+        // إدارة الحالة (Undo/Redo)
         let stateStack = []; let currentStateIndex = -1; let isProgrammaticChange = false;
         function recordState() { if (isProgrammaticChange) return; if (currentStateIndex < stateStack.length - 1) stateStack = stateStack.slice(0, currentStateIndex + 1); if (stateStack.length > 20) { stateStack.shift(); currentStateIndex--; } stateStack.push(JSON.stringify(drawnItems.toGeoJSON())); currentStateIndex++; }
         function undo() { if (currentStateIndex > 0) { isProgrammaticChange = true; currentStateIndex--; const previousState = JSON.parse(stateStack[currentStateIndex]); drawnItems.clearLayers(); L.geoJSON(previousState, { onEachFeature: function(f, l) { l.customName = f.properties.customName || ""; l.customNotes = f.properties.customNotes || ""; l._customVisible = f.properties._customVisible; drawnItems.addLayer(l); attachPopup(l); l.on('click', eraserHandler); } }); isProgrammaticChange = false; saveUserDrawings(); updateLayerList(); } }
@@ -435,7 +442,6 @@
         }
         function logoutUser() { auth.signOut().then(() => location.reload()); }
         
-        // استرجاع البيانات عند الدخول
         function loadUserDrawings(uid) {
             db.ref('users/' + uid + '/drawings').once('value').then(snapshot => {
                 const data = snapshot.val();
@@ -450,7 +456,6 @@
                             drawnItems.addLayer(layer);
                             attachPopup(layer);
                             layer.on('click', eraserHandler);
-                            // استعادة حالة الظهور
                             if (layer._customVisible === false) {
                                 if (layer instanceof L.Marker) layer.setOpacity(0);
                                 else layer.setStyle({ stroke: false, fill: false });

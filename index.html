@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ZASTopo Pro | V71 (Center Search)</title>
+    <title>ZASTopo Pro | V73</title>
     
     <meta name="theme-color" content="#2563eb">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="ZASTopo Pro">
     <link rel="apple-touch-icon" href="https://i.imgur.com/rP6Yotb.png">
     <link rel="icon" type="image/png" href="https://i.imgur.com/rP6Yotb.png">
-    <link rel="manifest" href='data:application/manifest+json,{"name":"ZASTopo Pro","short_name":"ZASTopo","start_url":".","display":"standalone","background_color":"#ffffff","theme_color":"#2563eb","icons":[{"src":"https://i.imgur.com/rP6Yotb.png","sizes":"192x192","type":"image/png"},{"src":"https://i.imgur.com/rP6Yotb.png","sizes":"512x512","type":"image/png"}]}'>
+    
+    <link rel="manifest" href="manifest.json">
 
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -20,12 +21,9 @@
     
     <style>
         /* --- Styles --- */
-        :root { --primary: #2563eb; --glass: rgba(255, 255, 255, 0.95); --shadow: 0 8px 32px rgba(0,0,0,0.15); }
+        :root { --primary: #2563eb; --glass: rgba(255, 255, 255, 0.95); }
         body { margin: 0; font-family: 'Cairo', sans-serif; overflow: hidden; background: #0f172a; overscroll-behavior: none; }
         #map { height: 100vh; width: 100%; z-index: 1; }
-        * { -webkit-tap-highlight-color: transparent; }
-
-        /* إخفاء شعار Leaflet */
         .leaflet-control-attribution { display: none !important; }
 
         .dock-container { position: absolute; top: 50%; transform: translateY(-50%); right: 15px; display: flex; flex-direction: column; gap: 12px; z-index: 2000; pointer-events: none; }
@@ -34,14 +32,14 @@
         .dock-item:hover, .dock-item.active { background: var(--primary); color: white; transform: scale(1.1); }
         .desktop-tooltip::after { content: attr(data-tooltip); position: absolute; right: 55px; background: #1e293b; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; opacity: 0; pointer-events: none; transition: 0.2s; visibility: hidden; white-space: nowrap; font-family: 'Cairo'; }
         .desktop-tooltip:hover::after { opacity: 1; visibility: visible; right: 50px; }
-
+        
         .left-dock { position: absolute; top: 50%; transform: translateY(-50%); left: 15px; display: flex; flex-direction: column; gap: 10px; z-index: 2000; }
         .eraser-btn { background: white; color: #ef4444; border: 2px solid white; }
         .eraser-active { background: #ef4444 !important; color: white !important; animation: pulseRed 1.5s infinite; }
         .clear-btn { background: #1e293b; color: white; }
         .undo-redo-btn { background: white; color: #2563eb; }
         
-        .panel { position: absolute; top: 20px; right: 80px; width: 300px; background: var(--glass); backdrop-filter: blur(12px); border-radius: 16px; padding: 15px; box-shadow: var(--shadow); z-index: 2000; display: none; max-height: 85vh; overflow-y: auto; transition: 0.3s; }
+        .panel { position: absolute; top: 20px; right: 80px; width: 300px; background: var(--glass); backdrop-filter: blur(12px); border-radius: 16px; padding: 15px; box-shadow: 0 8px 32px rgba(0,0,0,0.15); z-index: 2000; display: none; max-height: 85vh; overflow-y: auto; transition: 0.3s; }
         .panel.active { display: block; animation: slideInRight 0.3s forwards; }
         @keyframes slideInRight { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         .panel h3 { margin: 0 0 12px 0; font-size: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; color: #1e293b; display: flex; justify-content: space-between; align-items: center; }
@@ -84,45 +82,12 @@
         .val-highlight { color: #d97706; font-weight: bold; font-size: 14px; border: 1px solid #fcd34d; background: #fffbeb; padding: 2px 5px; border-radius: 4px; display: inline-block; margin-top: 3px; }
         .feature-title { font-weight: bold; color: #1e293b; font-size: 15px; border-bottom: 2px solid #eee; padding-bottom: 5px; margin-bottom: 5px; }
 
-        /* 🟢 تنسيق شريط البحث الجديد (في الوسط تماماً) */
-        #search-bar { 
-            position: absolute; 
-            top: 15px; 
-            left: 50%; 
-            transform: translateX(-50%); /* توسيط */
-            z-index: 1000; 
-            width: 320px; 
-            max-width: 90%;
-            background: white; 
-            border-radius: 30px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
-            display: flex; 
-            padding: 4px; 
-            align-items: center; 
-            transition: 0.3s; 
-        }
+        /* شريط البحث في الوسط */
+        #search-bar { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); z-index: 1000; width: 320px; max-width: 80%; background: white; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; padding: 4px; align-items: center; transition: 0.3s; }
         #search-bar input { border: none; background: transparent; padding: 0 15px; flex: 1; outline: none; font-family: inherit; font-size: 13px; height: 32px; }
         #search-bar button { width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--primary); color: white; cursor: pointer; }
         
-        #bottom-bar { 
-            position: absolute; 
-            bottom: 10px; 
-            left: 10px; 
-            background: rgba(255,255,255,0.95); 
-            padding: 6px 12px; 
-            border-radius: 12px; 
-            font-size: 12px; 
-            z-index: 1000; 
-            font-family: monospace; 
-            dir: ltr; 
-            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-            border: 1px solid rgba(0,0,0,0.1);
-            text-align: left;
-        }
-
+        #bottom-bar { position: absolute; bottom: 10px; left: 10px; background: rgba(255,255,255,0.95); padding: 6px 12px; border-radius: 12px; font-size: 12px; z-index: 1000; font-family: monospace; dir: ltr; box-shadow: 0 2px 10px rgba(0,0,0,0.15); display: flex; flex-direction: column; gap: 2px; border: 1px solid rgba(0,0,0,0.1); text-align: left; }
         .eraser-cursor { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="red"><path d="M16.24 3.56l4.95 4.94c.78.79.78 2.05 0 2.84L12 20.53a4.008 4.008 0 0 1-5.66 0L2.81 17a4.008 4.008 0 0 1 0-5.66l9.19-9.19c.78-.78 2.05-.78 2.84 0l1.4 1.41zM4.22 15.58l3.54 3.53c.78.79 2.05.79 2.83 0L12 17.71l-6.37-6.36-1.41 1.41a2.003 2.003 0 0 0 0 2.82z"/></svg>'), auto !important; }
         
         #sv-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; justify-content: center; align-items: center; }
@@ -137,7 +102,7 @@
             .desktop-tooltip::after { display: none !important; }
             .panel { top: auto; bottom: 0; right: 0; left: 0; width: 100%; max-height: 75vh; border-radius: 25px 25px 0 0; box-sizing: border-box; padding: 20px; transform: translateY(100%); animation: none; transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
             .panel.active { transform: translateY(0); animation: none; }
-            #search-bar { top: 15px; left: 50%; transform: translateX(-50%); width: 85%; }
+            #search-bar { top: 15px; left: 50%; transform: translateX(-50%); width: 85%; max-width: 320px; }
             .left-dock { top: 70px; left: 15px; transform: none; flex-direction: row; }
             .dock-group:last-child { position: absolute; bottom: 80px; right: 15px; flex-direction: column; background: white; padding: 5px; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
             #chart-container { left: 0; bottom: 0; width: 100%; height: 40vh; border-radius: 25px 25px 0 0; box-sizing: border-box; }
@@ -347,10 +312,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
     <script>
+        // إعدادات Firebase
         const firebaseConfig = { apiKey: "AIzaSyBHjDSoCDrZAh9KIW1LI4H6XxIdeB8YnFw", authDomain: "rusle-462022.firebaseapp.com", databaseURL: "https://rusle-462022-default-rtdb.firebaseio.com", projectId: "rusle-462022", storageBucket: "rusle-462022.firebasestorage.app", messagingSenderId: "106974487623", appId: "1:106974487623:web:f42e4cf7fd2e2218947d62", measurementId: "G-YVJL1T2VXM" };
         try { firebase.initializeApp(firebaseConfig); } catch(e){}
         const auth = firebase.auth(); const db = firebase.database();
 
+        // تعريف أنظمة الإحداثيات
         proj4.defs([
             ["EPSG:26191", "+proj=lcc +lat_1=33.3 +lat_0=33.3 +lon_0=-5.4 +k_0=0.999625769 +x_0=500000 +y_0=300000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"],
             ["EPSG:26192", "+proj=lcc +lat_1=29.7 +lat_0=29.7 +lon_0=-5.4 +k_0=0.999615596 +x_0=500000 +y_0=300000 +a=6378249.2 +b=6356515 +towgs84=31,146,47,0,0,0,0 +units=m +no_defs"],
@@ -362,24 +329,6 @@
             ["EPSG:32630", "+proj=utm +zone=30 +datum=WGS84 +units=m +no_defs"],
             ["EPSG:32631", "+proj=utm +zone=31 +datum=WGS84 +units=m +no_defs"],
             ["EPSG:32632", "+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs"],
-            ["EPSG:32633", "+proj=utm +zone=33 +datum=WGS84 +units=m +no_defs"],
-            ["EPSG:32634", "+proj=utm +zone=34 +datum=WGS84 +units=m +no_defs"],
-            ["EPSG:32636", "+proj=utm +zone=36 +datum=WGS84 +units=m +no_defs"],
-            ["EPSG:32637", "+proj=utm +zone=37 +datum=WGS84 +units=m +no_defs"],
-            ["EPSG:32638", "+proj=utm +zone=38 +datum=WGS84 +units=m +no_defs"],
-            ["EPSG:32639", "+proj=utm +zone=39 +datum=WGS84 +units=m +no_defs"],
-            ["EPSG:32640", "+proj=utm +zone=40 +datum=WGS84 +units=m +no_defs"],
-            ["EPSG:22332", "+proj=utm +zone=32 +ellps=clrk80ign +towgs84=-263,6,431,0,0,0,0 +units=m +no_defs"],
-            ["EPSG:22992", "+proj=tmerc +lat_0=30 +lon_0=31 +k=1 +x_0=615000 +y_0=810000 +a=6378200 +b=6356818.17 +towgs84=-130,110,-13,0,0,0,0 +units=m +no_defs"],
-            ["EPSG:22991", "+proj=tmerc +lat_0=30 +lon_0=27 +k=1 +x_0=300000 +y_0=0 +a=6378200 +b=6356818.17 +towgs84=-130,110,-13,0,0,0,0 +units=m +no_defs"],
-            ["EPSG:22993", "+proj=tmerc +lat_0=30 +lon_0=35 +k=1 +x_0=300000 +y_0=0 +a=6378200 +b=6356818.17 +towgs84=-130,110,-13,0,0,0,0 +units=m +no_defs"],
-            ["EPSG:22994", "+proj=tmerc +lat_0=30 +lon_0=39 +k=1 +x_0=300000 +y_0=0 +a=6378200 +b=6356818.17 +towgs84=-130,110,-13,0,0,0,0 +units=m +no_defs"],
-            ["EPSG:24338", "+proj=utm +zone=38 +ellps=intl +towgs84=-143,-236,7,0,0,0,0 +units=m +no_defs"],
-            ["EPSG:24339", "+proj=utm +zone=39 +ellps=intl +towgs84=-143,-236,7,0,0,0,0 +units=m +no_defs"],
-            ["EPSG:2314", "+proj=tmerc +lat_0=0 +lon_0=37 +k=0.999935 +x_0=500000 +y_0=-3000000 +a=6378249.145 +b=6356514.86955 +towgs84=-133,-77,51,0,0,0,0 +units=m +no_defs"],
-            ["EPSG:28191", "+proj=tmerc +lat_0=31.7343936111111 +lon_0=35.2045169444445 +k=1 +x_0=170251.555 +y_0=1126867.909 +a=6378300.789 +b=6356566.435 +towgs84=-275.722,35.2833,304.117,-1.92,1.35,-5.63,2.54 +units=m +no_defs"],
-            ["EPSG:2039", "+proj=tmerc +lat_0=31.7343936111111 +lon_0=35.2045169444444 +k=1.0000067 +x_0=219529.584 +y_0=626907.39 +ellps=GRS80 +towgs84=-48,55,52,0,0,0,0 +units=m +no_defs"],
-            ["EPSG:22770", "+proj=stere +lat_0=34.2 +lon_0=39.15 +k=0.999534104 +x_0=0 +y_0=0 +a=6378249.2 +b=6356515 +towgs84=-182,-222,192,0,0,0,0 +units=m +no_defs"],
             ["EPSG:4326", "+proj=longlat +datum=WGS84 +no_defs"],
             ["EPSG:3857", "+proj=merc +a=6378137 +b=6378137 +lat_ts=0 +lon_0=0 +x_0=0 +y_0=0 +k=1 +units=m +nadgrids=@null +wktext +no_defs"]
         ]);
@@ -393,6 +342,7 @@
         var drawControl = new L.Control.Draw({ edit: { featureGroup: drawnItems }, draw: false }); 
         map.addControl(drawControl);
 
+        // أدوات الرسم والقياس
         let isEraserActive = false;
         function toggleEraser() { isEraserActive = !isEraserActive; document.getElementById('eraser-btn').classList.toggle('eraser-active', isEraserActive); map.getContainer().classList.toggle('eraser-cursor', isEraserActive); if(isEraserActive){ stopContinuousDraw(); drawnItems.eachLayer(l => l.on('click', eraserHandler)); } else { drawnItems.eachLayer(l => l.off('click', eraserHandler)); } }
         function eraserHandler(e) { if(!isEraserActive) return; L.DomEvent.stop(e); drawnItems.removeLayer(e.target); saveUserDrawings(); updateLayerList(); recordState(); }
@@ -449,9 +399,8 @@
         function downloadDXF() { let d="0\nSECTION\n2\nHEADER\n9\n$ACADVER\n1\nAC1009\n0\nENDSEC\n0\nSECTION\n2\nENTITIES\n"; drawnItems.eachLayer(l=>{ if(l instanceof L.Marker) { try{let p=proj4("EPSG:4326",currentZone,[l.getLatLng().lng,l.getLatLng().lat]); d+=`0\nPOINT\n8\nPoints\n10\n${p[0]}\n20\n${p[1]}\n30\n0.0\n`;}catch(e){} } }); d+="0\nENDSEC\n0\nEOF"; let b=new Blob([d],{type:'application/dxf'}); let a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download="export.dxf"; a.click(); }
         function downloadChart(){ let u=document.getElementById('elevationChart').toDataURL('image/png'); let a=document.createElement('a'); a.href=u; a.download='profile.png'; a.click(); }
         function takeScreenshotAndMetadata() { snapshoter.takeScreen('image').then(i=>{ let a=document.createElement('a'); a.href=i; a.download='map.jpg'; a.click(); }); }
-        function loadFile(i) { /* الاستيراد */ }
-
-        // 🟢 إزالة الكود القديم الذي كان يسبب الخطأ في saveUserDrawings
+        
+        // دوال الحفظ والمصادقة
         function saveUserDrawings() { 
             if(!auth.currentUser) return; 
             let f=[]; 
@@ -463,8 +412,58 @@
                 f.push(j);
             }); 
             db.ref('users/'+auth.currentUser.uid).set({drawings:JSON.stringify({type:"FeatureCollection",features:f})}); 
-            // 🚫 تم حذف تحديث عنصر save-status الذي تم حذفه
         }
+
+        let isLoginMode = true;
+        function toggleAuthMode() { 
+            isLoginMode = !isLoginMode; 
+            document.querySelectorAll('.signup-only').forEach(e => e.style.display = isLoginMode ? 'none' : 'block'); 
+            document.getElementById('submit-btn').innerText = isLoginMode ? 'دخول' : 'إنشاء حساب'; 
+        }
+        function handleAuth(e) { 
+            e.preventDefault(); 
+            const email = document.getElementById('email').value; 
+            const pass = document.getElementById('password').value; 
+            if(isLoginMode) { 
+                auth.signInWithEmailAndPassword(email, pass).then(() => { console.log("Logged In"); }).catch(e => alert(e.message)); 
+            } else { 
+                const fname = document.getElementById('fname').value; 
+                const lname = document.getElementById('lname').value; 
+                if(!fname || !lname) return alert("الاسم مطلوب"); 
+                auth.createUserWithEmailAndPassword(email, pass).then(cred => { return cred.user.updateProfile({ displayName: fname + " " + lname }); }).then(() => { alert("تم الإنشاء"); location.reload(); }).catch(e => alert(e.message)); 
+            } 
+        }
+        function logoutUser() { auth.signOut().then(() => location.reload()); }
+        
+        // استرجاع البيانات عند الدخول
+        function loadUserDrawings(uid) {
+            db.ref('users/' + uid + '/drawings').once('value').then(snapshot => {
+                const data = snapshot.val();
+                if (data) {
+                    const geojson = JSON.parse(data);
+                    drawnItems.clearLayers();
+                    L.geoJSON(geojson, {
+                        onEachFeature: function (feature, layer) {
+                            layer.customName = feature.properties.customName || "";
+                            layer.customNotes = feature.properties.customNotes || "";
+                            layer._customVisible = feature.properties._customVisible;
+                            drawnItems.addLayer(layer);
+                            attachPopup(layer);
+                            layer.on('click', eraserHandler);
+                            // استعادة حالة الظهور
+                            if (layer._customVisible === false) {
+                                if (layer instanceof L.Marker) layer.setOpacity(0);
+                                else layer.setStyle({ stroke: false, fill: false });
+                            }
+                        }
+                    });
+                    updateLayerList();
+                }
+            });
+        }
+
+        auth.onAuthStateChanged(user => { if (user) { document.getElementById('auth-overlay').style.display='none'; if(user.displayName) document.getElementById('display-name').innerText=user.displayName; loadUserDrawings(user.uid); } else { document.getElementById('auth-overlay').style.display='flex'; drawnItems.clearLayers(); } });
+        function togglePanel(id) { document.querySelectorAll('.panel').forEach(p=>{ if(p.id===id) p.classList.toggle('active'); else p.classList.remove('active'); }); }
 
         map.on('mousemove', e => {
             try {
